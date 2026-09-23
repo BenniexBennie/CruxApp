@@ -320,7 +320,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       <label class="field"><span>Name</span><input type="text" name="name" required maxlength="80" placeholder="e.g. Pinch block lifts"></label>
       <label class="field"><span>Category</span><select name="cat" id="exCat"></select></label>
       <fieldset><legend>Track per set</legend><div class="chips wrap" id="exFields"></div>
-        <p class="hint">The columns you fill in when you set a target or log it. Load is in pounds, edge in inches.</p></fieldset>
+        <p class="hint">The columns you fill in when you set a target or log it. Load is in pounds, edge size in mm.</p></fieldset>
       <fieldset><legend>Goals it trains</legend><div class="chips wrap" id="exGoals"></div></fieldset>
       <label class="field"><span>How-to notes</span><textarea name="notes" placeholder="Cues, form tips, progressions"></textarea></label>
       <label class="field"><span>Video link</span><input type="url" name="video" placeholder="https://…" inputmode="url"></label>
@@ -395,10 +395,10 @@ const catColor = c => CAT_COLOR[c] || "var(--grey)";
 const GRIPS = [["Half crimp", "Half"], ["Open hand", "Open"], ["Full crimp", "Full"], ["Three-finger drag", "3F drag"],
   ["Pinch", "Pinch"], ["Sloper", "Sloper"], ["Jug", "Jug"]];
 
-// What each set can record. Imperial units: load in pounds (+ added, − assistance), edge in inches.
+// What each set can record. Load in pounds (+ added, − assistance); edge in mm, like hangboards are labelled.
 // "edge" also brings a grip column with it.
 const FIELDS = [["reps", "Reps"], ["time", "Time (sec)"], ["load", "Load (lb)"], ["edge", "Edge + grip"]];
-const COL_HEAD = { reps: "Reps", time: "Sec", load: "± lb", edge: "Edge in", grip: "Grip" };
+const COL_HEAD = { reps: "Reps", time: "Sec", load: "± lb", edge: "Edge mm", grip: "Grip" };
 const DEFAULT_FIELDS = ["reps", "load"];
 const CAT_FIELDS = {
   "Warm-up": [], Climbing: ["reps"], Fingers: ["time", "load", "edge"], Power: ["reps"], Strength: ["reps", "load"],
@@ -519,15 +519,15 @@ const STARTERS = [
    db = { v, exercises, plan: { "YYYY-MM-DD": [entry, ...] }, plans, theme }
    exercise = { id, name, cat, goals, fields, notes, video }
    entry    = { id, ex, name, cat, fields, target: [set], log: [set], done, note, plan?, pk? }
-   set      = { reps?, time?, load? (lb), edge? (in), grip? }
+   set      = { reps?, time?, load? (lb), edge? (mm), grip? }
    ========================================================= */
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 4, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
+const freshDb = () => ({ v: 5, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
-// --- v4 helpers: old saves had preset numbers in kg / mm ---
+// --- v4 helpers: old saves had preset numbers, with load in kg ---
 function toLb(load) {
   const m = String(load ?? "").replace("−", "-").match(/([+-]?)\s*(\d+(?:[.,]\d+)?)\s*(kg|lbs?)?/i);
   if (!m) return undefined;
@@ -541,7 +541,7 @@ function pToSets(p) {
   if (p.on) s.time = p.on;
   const lb = toLb(p.load);
   if (lb !== undefined) s.load = lb;
-  if (p.edge) s.edge = Math.round(p.edge / 25.4 * 100) / 100;
+  if (p.edge) s.edge = p.edge;
   if (p.grip) s.grip = p.grip;
   if (!Object.keys(s).length) return [];
   return Array.from({ length: Math.min(p.sets || 1, 20) }, () => ({ ...s }));
@@ -575,7 +575,7 @@ function normalize(d) {
     d.v = 3;
   }
   if (d.v < 4) {
-    // Library becomes names only; planned numbers become targets, converted to lb / inches.
+    // Library becomes names only; planned numbers become targets, load converted to lb.
     for (const e of d.exercises) {
       const seed = SEED.find(x => x.id === e.id);
       e.fields = seed ? [...seed.fields] : fieldsFromP(e.p);
@@ -592,6 +592,13 @@ function normalize(d) {
       for (const day of pl.days) for (const s of day) { s.target = pToSets(s.p); delete s.p; delete s.prog; }
     }
     d.v = 4;
+  }
+  if (d.v < 5) {
+    // Version 4 briefly stored edges in inches; back to mm. Anything over 3 was already typed in mm.
+    const fix = sets => (sets || []).forEach(x => { if (x.edge != null && x.edge <= 3) x.edge = Math.round(x.edge * 25.4); });
+    for (const list of Object.values(d.plan)) for (const en of list) { fix(en.target); fix(en.log); }
+    for (const pl of d.plans) for (const day of pl.days) for (const sl of day) fix(sl.target);
+    d.v = 5;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.goals)) e.goals = [];
@@ -659,13 +666,13 @@ function fmtSet(s) {
     s.reps != null ? `${s.reps} rep${s.reps == 1 ? "" : "s"}` : "",
     s.time != null ? `${s.time}s` : "",
     s.load != null ? fmtLoad(s.load) : "",
-    s.edge != null ? `${s.edge} in` : "",
+    s.edge != null ? `${s.edge}mm` : "",
     s.grip ? s.grip.toLowerCase() : "",
   ].filter(Boolean).join(" ");
 }
 
 // Values shared by every set are shown once; identical sets in a row collapse:
-// "2 × +15 lb, +12.5 lb · 10s 0.75 in half crimp".
+// "2 × +15 lb, +12.5 lb · 10s 20mm half crimp".
 function fmtSets(sets) {
   sets = sets || [];
   if (sets.length < 2) return sets.length ? fmtSet(sets[0]) : "";
@@ -698,7 +705,7 @@ function setRowHTML(cols, s, i) {
         `<option value="${full}"${full === v ? " selected" : ""}>${short}</option>`).join("")}</select>`;
     }
     // No inputmode on load: iPhones then show a keypad that includes the minus sign.
-    const extra = c === "load" ? "" : c === "edge" ? ` min="0" inputmode="decimal"` : ` min="0" inputmode="numeric"`;
+    const extra = c === "load" ? "" : ` min="0" inputmode="numeric"`;
     return `<input type="number" step="any" data-f="${c}" value="${esc(v)}"${extra} aria-label="${label}">`;
   }).join("");
   return `<div class="setrow" style="--cols:${cols.length}"><span class="setn">${i + 1}</span>${cells}
