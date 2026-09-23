@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E6E9EC">
+<title>Crux Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6E9EC; --surface:#FFFFFF; --sunk:#F2F4F6; --ink:#17212B; --muted:#5A6774; --line:#CDD3D9;
+  --tape:#D1246C; --orange:#E2621B; --go:#0E8878; --blue:#2F63C8; --gold:#D89B00; --grey:#8A96A1;
+  --violet:#7A4FC4; --leaf:#3B8F3F; --cyan:#1B8FB5;
+  --display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  box-sizing:border-box;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A20; --surface:#1D252D; --sunk:#232C35; --ink:#E6EAEE; --muted:#98A4AF; --line:#303A44;
+    --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#6D7984;
+    --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A20; --surface:#1D252D; --sunk:#232C35; --ink:#E6EAEE; --muted:#98A4AF; --line:#303A44;
+  --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#6D7984;
+  --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
+  color-scheme:dark;
+}
+html{height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--body);-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.1;margin:0;letter-spacing:.005em}
+h2{font-size:1.75rem}
+h3{font-size:1.25rem;font-weight:600}
+p{margin:0}
+ul{list-style:none;margin:0;padding:0}
+[hidden]{display:none!important}
+
+/* ---------- Header & nav ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:720px;margin:0 auto}
+.top h1{font-size:1.9rem;display:flex;align-items:center;gap:10px}
+.logo{width:22px;height:22px;border-radius:5px 12px 6px 11px;background:var(--tape);transform:rotate(-8deg)}
+#sync{margin-left:auto;font-size:.8rem;color:var(--muted)}
+#sync.bad{color:var(--tape);font-weight:600}
+.iconbtn{border:0;background:transparent;padding:8px;border-radius:10px;color:var(--ink);display:grid;place-items:center}
+.iconbtn:hover{background:var(--sunk)}
+.iconbtn svg{width:24px;height:24px}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;max-width:240px;border:0;background:none;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font-weight:600;font-size:.85rem}
+.tabs button svg{width:24px;height:24px}
+.tabs button[aria-current="page"]{color:var(--ink)}
+.tabs button[aria-current="page"] svg{color:var(--tape)}
+
+main{max-width:720px;margin:0 auto;padding:4px 16px calc(110px + env(safe-area-inset-bottom,0px))}
+.stack>*+*{margin-top:12px}
+.card{background:var(--surface);border-radius:14px;padding:16px}
+.lede{color:var(--muted)}
+.muted{color:var(--muted)}
+.empty{color:var(--muted);padding:6px 0 2px;font-size:.95rem}
+.err{color:var(--tape);min-height:1.5em;font-weight:500;font-size:.95rem}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+.primary{background:var(--ink);color:var(--bg);border:0;border-radius:10px;padding:12px 18px;font-weight:600}
+.primary:hover{opacity:.9}
+.ghost{background:transparent;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:500}
+.ghost:hover{border-color:var(--muted)}
+.ghost:disabled{opacity:.45;cursor:default}
+.sm{padding:7px 12px;font-size:.9rem}
+.danger{color:var(--tape);border-color:color-mix(in srgb,var(--tape) 40%,transparent)}
+.linkish{background:none;border:0;color:var(--muted);text-decoration:underline;padding:4px}
+
+/* ---------- Forms ---------- */
+.field{display:block;margin-top:14px}
+.field>span,legend{display:block;font-weight:600;margin-bottom:6px;font-size:.95rem}
+input[type=number],input[type=date],input[type=text],input[type=url],input[type=search],select,textarea{width:100%;background:var(--sunk);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{min-height:76px;resize:vertical}
+fieldset{border:0;padding:0;margin:18px 0 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.grid2 .field{margin-top:0}
+.grid2 .field>span{font-size:.85rem;font-weight:500;color:var(--muted)}
+.hint{font-size:.85rem;color:var(--muted);margin-top:4px}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.9rem;font-weight:500;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg{display:flex;gap:8px}
+.seg .chip{flex:1}
+
+/* ---------- Week ---------- */
+.weekhead .bar:first-child{align-items:center}
+.wk{text-align:center;flex:1}
+.wk h2{font-size:1.6rem}
+.wk p{font-size:.9rem;min-height:1.6em}
+.progress{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden;margin:14px 0 10px}
+.progress>div{height:100%;background:var(--go);border-radius:99px;transition:width .25s}
+.day{scroll-margin-top:72px}
+.day.today{box-shadow:inset 4px 0 0 var(--tape)}
+.dayhead h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}
+.dayhead h3 small{font-family:var(--body);font-weight:500;font-size:.9rem;color:var(--muted);white-space:nowrap}
+.dayhead .ghost{flex:none;white-space:nowrap}
+.weekstats{flex-wrap:wrap}
+.weekstats>span:first-child{white-space:nowrap}
+.pill{font-family:var(--body);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;background:var(--tape);color:#fff;border-radius:99px;padding:2px 8px;align-self:center}
+.entries{margin-top:8px}
+.entry{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding:6px 0}
+.entry:first-child{border-top:0}
+.entry input[type=checkbox]{width:26px;height:26px;flex:none;accent-color:var(--go);margin:0 4px 0 0;cursor:pointer}
+.entrybtn{flex:1;min-width:0;display:flex;align-items:flex-start;gap:10px;text-align:left;border:0;background:none;padding:6px 0;border-radius:8px}
+.entrybtn strong{display:block;font-weight:600}
+.entrybtn small{display:block;color:var(--muted);font-size:.88rem;line-height:1.35}
+.entry.done strong{text-decoration:line-through;text-decoration-color:var(--muted);color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:3px;background:var(--c);flex:none;margin-top:7px}
+
+/* ---------- Library ---------- */
+.grouph{font-size:1rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 8px;display:flex;align-items:center;gap:8px}
+.list{padding:4px 16px}
+.exrow{width:100%;display:flex;align-items:flex-start;gap:10px;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:12px 0}
+.list li:first-child .exrow{border-top:0}
+.exrow strong{display:block;font-weight:600}
+.exrow small{display:block;color:var(--muted);font-size:.88rem;line-height:1.35}
+.exrow .grow{flex:1;min-width:0}
+.tag{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.added{flex:none;align-self:center;font-size:.85rem;font-weight:600;color:var(--go)}
+
+/* ---------- Dialogs (bottom sheets on phones) ---------- */
+dialog{border:0;padding:0;background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:92dvh;border-radius:18px 18px 0 0;margin:auto auto 0}
+dialog[open]{display:flex;flex-direction:column}
+dialog::backdrop{background:rgb(0 0 0 / .45)}
+@media (min-width:640px){dialog{margin:auto;border-radius:18px;max-height:86dvh}}
+.sheet-head{display:flex;align-items:center;gap:8px;padding:14px 12px 10px 18px;border-bottom:1px solid var(--line)}
+.sheet-head h2{font-size:1.5rem;flex:1;min-width:0}
+.sheet-body{padding:4px 18px 18px;overflow-y:auto;flex:1}
+.sheet-foot{display:flex;gap:10px;align-items:center;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.sheet-foot .spacer{flex:1}
+.pickbar{padding:12px 18px 0}
+.pickbar .chips{margin-top:10px}
+details.howto{background:var(--sunk);border-radius:10px;padding:10px 12px;margin-top:14px}
+details.howto summary{font-weight:600;cursor:pointer}
+details.howto p{margin-top:6px;white-space:pre-wrap}
+details.howto a{color:var(--blue)}
+
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;font-size:.95rem;z-index:20;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1><span class="logo" aria-hidden="true"></span>Crux</h1>
+  <span id="sync" aria-live="polite"></span>
+  <button class="iconbtn" id="settingsBtn" aria-label="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main>
+  <section id="view-week" class="stack" aria-label="Week plan"></section>
+
+  <section id="view-library" hidden aria-label="Exercise library">
+    <div class="bar">
+      <div><h2>Library</h2><p class="lede" id="libCount"></p></div>
+      <button class="primary" id="newExBtn">+ New exercise</button>
+    </div>
+    <div class="field"><input type="search" id="libSearch" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises"></div>
+    <div class="chips" id="libChips" role="group" aria-label="Filter by category" style="margin-top:10px"></div>
+    <div id="libList"></div>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Sections">
+  <button data-tab="week" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Week
+  </button>
+  <button data-tab="library">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
+    Library
+  </button>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Pick exercises to add to a day -->
+<dialog id="pickDialog" aria-labelledby="pickTitle">
+  <div class="sheet-head">
+    <h2 id="pickTitle">Add exercises</h2>
+    <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="pickbar">
+    <input type="search" id="pickSearch" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises">
+    <div class="chips" id="pickChips" role="group" aria-label="Filter by category"></div>
+  </div>
+  <div class="sheet-body" id="pickList"></div>
+  <div class="sheet-foot">
+    <span class="muted" id="pickCount"></span><span class="spacer"></span>
+    <button class="primary" data-close>Done</button>
+  </div>
+</dialog>
+
+<!-- Edit a scheduled exercise (this day only) -->
+<dialog id="entryDialog" aria-labelledby="entryTitle">
+  <form id="entryForm" novalidate style="display:contents">
+    <div class="sheet-head">
+      <h2 id="entryTitle"></h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <p class="hint" style="margin-top:12px">Changes here only affect this day. Your library stays the same.</p>
+      <div id="entryHowto"></div>
+      <fieldset><legend>Plan</legend><div class="grid2" id="entryParams"></div></fieldset>
+      <label class="field"><span>Date</span><input type="date" name="date" required></label>
+      <label class="field"><span>Session notes</span><textarea name="note" placeholder="How did it go? Felt strong, left index a bit sore…"></textarea></label>
+      <p class="err" id="entryErr"></p>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="ghost sm danger" id="entryRemove">Remove</button>
+      <button type="button" class="linkish" id="entryReset">Reset to library</button>
+      <span class="spacer"></span>
+      <button type="submit" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Create / edit a library exercise -->
+<dialog id="exDialog" aria-labelledby="exTitle">
+  <form id="exForm" novalidate style="display:contents">
+    <div class="sheet-head">
+      <h2 id="exTitle">New exercise</h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <label class="field"><span>Name</span><input type="text" name="name" required maxlength="80" placeholder="e.g. Pinch block lifts"></label>
+      <label class="field"><span>Category</span><select name="cat" id="exCat"></select></label>
+      <fieldset><legend>Default plan</legend><p class="hint" style="margin:-2px 0 10px">Fill in only what applies. These become the starting numbers each time you schedule it.</p><div class="grid2" id="exParams"></div></fieldset>
+      <label class="field"><span>How-to notes</span><textarea name="notes" placeholder="Cues, form tips, progressions"></textarea></label>
+      <label class="field"><span>Video link</span><input type="url" name="video" placeholder="https://…" inputmode="url"></label>
+      <p class="err" id="exErr"></p>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="ghost sm danger" id="exDelete">Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="ghost" data-close>Cancel</button>
+      <button type="submit" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Settings -->
+<dialog id="settingsDialog" aria-labelledby="setTitle">
+  <div class="sheet-head">
+    <h2 id="setTitle">Settings</h2>
+    <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="sheet-body">
+    <fieldset><legend>Theme</legend>
+      <div class="seg" id="themeSeg">
+        <button type="button" class="chip" data-theme="system">System</button>
+        <button type="button" class="chip" data-theme="light">Light</button>
+        <button type="button" class="chip" data-theme="dark">Dark</button>
+      </div>
+    </fieldset>
+    <fieldset><legend>Backup</legend>
+      <p class="hint" style="margin:-2px 0 10px">Your plan is saved in this browser only. Export a backup now and then, or to move it to another device.</p>
+      <div class="row">
+        <button type="button" class="ghost sm" id="exportBtn">Export backup</button>
+        <button type="button" class="ghost sm" id="importBtn">Import backup</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+    </fieldset>
+    <fieldset><legend>Library</legend>
+      <button type="button" class="ghost sm" id="restoreBtn">Restore starter exercises</button>
+      <p class="hint">Adds back any built-in exercises you deleted. Your own exercises are untouched.</p>
+    </fieldset>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Data definitions
+   ========================================================= */
+
+// Categories, in display order, with the colour token used for their dot.
+const CATS = [
+  ["Warm-up", "var(--grey)"],
+  ["Fingers", "var(--tape)"],
+  ["Power", "var(--orange)"],
+  ["Power endurance", "var(--gold)"],
+  ["Endurance", "var(--go)"],
+  ["Technique", "var(--blue)"],
+  ["Strength", "var(--ink)"],
+  ["Antagonist", "var(--violet)"],
+  ["Core", "var(--muted)"],
+  ["Mobility", "var(--leaf)"],
+  ["Cardio", "var(--cyan)"],
+];
+const CAT_COLOR = Object.fromEntries(CATS);
+const catColor = c => CAT_COLOR[c] || "var(--grey)";
+
+const GRIPS = ["Half crimp", "Open hand", "Full crimp", "Three-finger drag", "Pinch", "Sloper", "Jug"];
+
+// Every exercise and scheduled entry carries a params object `p` with any of these keys.
+const PARAMS = [
+  { k: "sets",     label: "Sets",                 type: "number" },
+  { k: "reps",     label: "Reps",                 type: "number" },
+  { k: "on",       label: "Hang / work (sec)",    type: "number" },
+  { k: "off",      label: "Rest between reps (sec)", type: "number" },
+  { k: "setRest",  label: "Rest between sets (min)", type: "number" },
+  { k: "duration", label: "Duration (min)",       type: "number" },
+  { k: "edge",     label: "Edge (mm)",            type: "number" },
+  { k: "grip",     label: "Grip",                 type: "grip" },
+  { k: "load",     label: "Load",                 type: "text", ph: "+10 kg" },
+];
+
+// Starter library. Built-in ids start with "s-" so they can be restored later.
+const SEED = [
+  { id: "s-warmup", name: "Bouldering warm-up", cat: "Warm-up", p: { duration: 20 }, notes: "Easy traversing, then 6–10 problems ramping from very easy to about two grades below your max. Add a few progressive hangs before any fingerboarding." },
+  { id: "s-maxhang", name: "Max hangs", cat: "Fingers", p: { sets: 5, on: 10, setRest: 3, edge: 20, grip: "Half crimp", load: "+5 kg" }, notes: "Hang 10 s with a load you could just about hold for 13 s. Full rest between sets. Stop if form breaks or fingers feel tweaky." },
+  { id: "s-repeaters", name: "Repeaters", cat: "Fingers", p: { sets: 6, reps: 6, on: 7, off: 3, setRest: 3, edge: 20, grip: "Half crimp" }, notes: "7 s hang, 3 s rest, six times = one set. Pick a load where the last rep of the last set is hard but clean." },
+  { id: "s-minedge", name: "Minimum edge hangs", cat: "Fingers", p: { sets: 5, on: 10, setRest: 3, grip: "Half crimp" }, notes: "Bodyweight only. Use the smallest edge you can hold for 10 s; progress by shrinking the edge a couple of mm at a time." },
+  { id: "s-openhand", name: "Open-hand hangs", cat: "Fingers", p: { sets: 4, on: 10, setRest: 3, edge: 20, grip: "Open hand" }, notes: "Builds drag strength for slopers and pockets. Keep shoulders engaged." },
+  { id: "s-limit", name: "Limit bouldering", cat: "Power", p: { duration: 60, setRest: 3 }, notes: "3–5 problems at or just above your max. Short attempts with 3+ min rest. Quality over quantity: stop when you stop getting closer." },
+  { id: "s-board", name: "Board session", cat: "Power", p: { duration: 60 }, notes: "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts." },
+  { id: "s-campus", name: "Campus ladders", cat: "Power", p: { sets: 5, setRest: 3 }, notes: "1-2-3-4 or 1-3-5 ladders, no feet. Only once you have a solid finger-strength base. Stop at the first sloppy catch." },
+  { id: "s-4x4", name: "4x4s", cat: "Power endurance", p: { sets: 4, reps: 4, setRest: 4 }, notes: "Four problems back to back, four times. Pick problems 3–4 grades below your max." },
+  { id: "s-linked", name: "Linked boulder circuits", cat: "Power endurance", p: { sets: 3, setRest: 5 }, notes: "Link 2–3 problems into one 20–30 move circuit with no rest." },
+  { id: "s-arc", name: "ARC traversing", cat: "Endurance", p: { sets: 2, duration: 30, setRest: 10 }, notes: "Continuous easy climbing. A light pump that never builds. Great for recovery days and footwork." },
+  { id: "s-mileage", name: "Easy mileage", cat: "Endurance", p: { duration: 45 }, notes: "Lots of problems well below your max. Focus on smooth, efficient movement." },
+  { id: "s-silent", name: "Silent feet", cat: "Technique", p: { duration: 15 }, notes: "Climb easy problems placing every foot without a sound. Watch each foothold until your foot is on it." },
+  { id: "s-flash", name: "Flash practice", cat: "Technique", p: { duration: 30 }, notes: "Read new problems from the ground, then give each one a single flash attempt. Review what you missed." },
+  { id: "s-pullup", name: "Pull-ups", cat: "Strength", p: { sets: 4, reps: 6, setRest: 2 }, notes: "Dead hang to chin over bar. Control the lowering." },
+  { id: "s-wpullup", name: "Weighted pull-ups", cat: "Strength", p: { sets: 5, reps: 3, setRest: 3, load: "+10 kg" }, notes: "Heavy and crisp. Leave 1–2 reps in reserve." },
+  { id: "s-lockoff", name: "Lock-offs", cat: "Strength", p: { sets: 3, reps: 3, on: 5, setRest: 2 }, notes: "Hold at full lock and 90°, 5 s each. One-arm-assisted if you can." },
+  { id: "s-deadlift", name: "Deadlift", cat: "Strength", p: { sets: 3, reps: 5, setRest: 3 }, notes: "Brace hard, bar close to the body. Builds posterior chain for heel hooks and body tension." },
+  { id: "s-squat", name: "Back squat", cat: "Strength", p: { sets: 3, reps: 5, setRest: 3 }, notes: "" },
+  { id: "s-pushup", name: "Push-ups", cat: "Antagonist", p: { sets: 3, reps: 15, setRest: 1.5 }, notes: "Balances all the pulling. Keep a straight body line." },
+  { id: "s-ohp", name: "Overhead press", cat: "Antagonist", p: { sets: 3, reps: 8, setRest: 2 }, notes: "" },
+  { id: "s-wrist", name: "Reverse wrist curls", cat: "Antagonist", p: { sets: 3, reps: 15, setRest: 1 }, notes: "Light dumbbell. Helps keep elbows healthy." },
+  { id: "s-extrot", name: "Band external rotations", cat: "Antagonist", p: { sets: 3, reps: 15, setRest: 1 }, notes: "Elbow tucked to your side. A shoulder-health staple." },
+  { id: "s-legraise", name: "Hanging leg raises", cat: "Core", p: { sets: 3, reps: 8, setRest: 1.5 }, notes: "Toes to bar if you can. No swinging." },
+  { id: "s-lever", name: "Front lever progression", cat: "Core", p: { sets: 5, on: 8, setRest: 2 }, notes: "Tuck → advanced tuck → one leg → full. Hold the hardest version you can for the time." },
+  { id: "s-plank", name: "Plank", cat: "Core", p: { sets: 3, on: 45, setRest: 1 }, notes: "" },
+  { id: "s-hips", name: "Hip mobility flow", cat: "Mobility", p: { duration: 10 }, notes: "90/90 switches, frog stretch, deep squat hold. Helps high steps and drop knees." },
+  { id: "s-shoulder", name: "Shoulder mobility", cat: "Mobility", p: { duration: 10 }, notes: "Band dislocates, thoracic rotations, wall slides." },
+  { id: "s-stretch", name: "Post-session stretch", cat: "Mobility", p: { duration: 15 }, notes: "Forearms, lats, hips, hamstrings." },
+  { id: "s-zone2", name: "Zone 2 cardio", cat: "Cardio", p: { duration: 40 }, notes: "Run, bike or row at an easy, conversational pace." },
+];
+
+/* =========================================================
+   Storage
+   db = { v, exercises: [...], plan: { "YYYY-MM-DD": [entry, ...] }, theme }
+   entry = { id, ex, name, cat, p, done, note }
+   ========================================================= */
+
+const STORE = "crux.v1";
+const clone = o => JSON.parse(JSON.stringify(o));
+const freshDb = () => ({ v: 1, exercises: clone(SEED), plan: {}, theme: "system" });
+const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (validDb(d)) return d;
+    }
+  } catch (e) { /* storage blocked or corrupt: start fresh in memory */ }
+  return freshDb();
+}
+
+let db = load();
+let storageOk = true;
+
+function save() {
+  try {
+    localStorage.setItem(STORE, JSON.stringify(db));
+    storageOk = true;
+  } catch (e) {
+    storageOk = false;
+  }
+  const s = $("#sync");
+  s.textContent = storageOk ? "Saved on this device" : "Not saving: storage blocked";
+  s.classList.toggle("bad", !storageOk);
+}
+
+/* =========================================================
+   Helpers
+   ========================================================= */
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const findEx = id => db.exercises.find(e => e.id === id);
+
+// Dates are handled as local "YYYY-MM-DD" keys to avoid timezone surprises.
+const pad = n => String(n).padStart(2, "0");
+const dkey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
+const fmt = (d, opts) => d.toLocaleDateString(undefined, opts);
+
+function summary(p = {}) {
+  const s = [];
+  if (p.sets && p.reps) s.push(`${p.sets} × ${p.reps}`);
+  else if (p.sets) s.push(`${p.sets} ${p.sets == 1 ? "set" : "sets"}`);
+  else if (p.reps) s.push(`${p.reps} reps`);
+  if (p.on && p.off) s.push(`${p.on}s on / ${p.off}s off`);
+  else if (p.on) s.push(`${p.on}s hold`);
+  if (p.duration) s.push(`${p.duration} min`);
+  if (p.setRest) s.push(`${p.setRest} min rest`);
+  const fingers = [p.edge ? `${p.edge}mm` : "", p.grip ? p.grip.toLowerCase() : ""].filter(Boolean).join(" ");
+  if (fingers) s.push(fingers);
+  if (p.load) s.push(p.load);
+  return s.join(" · ");
+}
+
+function paramFieldsHTML(p = {}) {
+  return PARAMS.map(({ k, label, type, ph }) => {
+    const v = p[k] ?? "";
+    let input;
+    if (type === "grip") {
+      input = `<select name="${k}"><option value="">—</option>${GRIPS.map(g => `<option${g === v ? " selected" : ""}>${g}</option>`).join("")}</select>`;
+    } else if (type === "number") {
+      input = `<input type="number" name="${k}" value="${esc(v)}" min="0" step="any" inputmode="decimal">`;
+    } else {
+      input = `<input type="text" name="${k}" value="${esc(v)}" placeholder="${esc(ph || "")}" maxlength="30">`;
+    }
+    return `<label class="field"><span>${label}</span>${input}</label>`;
+  }).join("");
+}
+
+function readParams(root) {
+  const p = {};
+  for (const { k, type } of PARAMS) {
+    const v = root.querySelector(`[name="${k}"]`).value.trim();
+    if (v === "") continue;
+    if (type === "number") {
+      const n = Number(v);
+      if (Number.isFinite(n) && n > 0) p[k] = n;
+    } else {
+      p[k] = v;
+    }
+  }
+  return p;
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+function applyTheme() {
+  const t = db.theme || "system";
+  if (t === "system") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  document.querySelectorAll("#themeSeg .chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.theme === t)));
+}
+
+/* =========================================================
+   App state (not saved)
+   ========================================================= */
+
+const state = {
+  tab: "week",
+  week: mondayOf(new Date()),
+  libQuery: "", libCat: "All",
+  pickQuery: "", pickCat: "All", pickDate: null, pickAdded: {},
+  editEntry: null,   // { date, id }
+  editEx: null,      // exercise id, or null for a new one
+};
+
+/* =========================================================
+   Week view
+   ========================================================= */
+
+const ICON_L = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`;
+const ICON_R = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
+
+function weekDays(start = state.week) {
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+}
+
+function entryHTML(date, e) {
+  const ex = findEx(e.ex);
+  const name = ex ? ex.name : e.name;   // follow library renames
+  const cat = ex ? ex.cat : e.cat;
+  return `<li class="entry${e.done ? " done" : ""}">
+    <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="Mark ${esc(name)} done">
+    <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
+      <span class="dot" style="--c:${catColor(cat)}"></span>
+      <span><strong>${esc(name)}</strong><small>${esc(summary(e.p) || cat)}${e.note ? " · 📝" : ""}</small></span>
+    </button>
+  </li>`;
+}
+
+function renderWeek() {
+  const days = weekDays();
+  const todayKey = dkey(new Date());
+  const isCurrent = dkey(state.week) === dkey(mondayOf(new Date()));
+  let total = 0, done = 0;
+  for (const d of days) for (const e of db.plan[dkey(d)] || []) { total++; if (e.done) done++; }
+
+  const end = days[6];
+  const sameMonth = end.getMonth() === state.week.getMonth();
+  const range = `${fmt(state.week, { month: "short", day: "numeric" })} – ${fmt(end, sameMonth ? { day: "numeric" } : { month: "short", day: "numeric" })}`;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  let html = `<div class="card weekhead">
+    <div class="bar">
+      <button class="iconbtn" data-act="prev" aria-label="Previous week">${ICON_L}</button>
+      <div class="wk"><h2>${range}</h2>
+        <p class="muted">${isCurrent ? "This week" : `<button class="linkish" data-act="today">Back to this week</button>`}</p>
+      </div>
+      <button class="iconbtn" data-act="next" aria-label="Next week">${ICON_R}</button>
+    </div>
+    <div class="progress" role="progressbar" aria-label="Week progress" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div style="width:${pct}%"></div></div>
+    <div class="bar weekstats">
+      <span class="muted">${total ? `${done} of ${total} done` : "Nothing planned yet"}</span>
+      <span class="row">
+        <button class="ghost sm" data-act="copy"${total ? "" : " disabled"}>Copy to next week</button>
+        ${total ? `<button class="ghost sm danger" data-act="clear">Clear</button>` : ""}
+      </span>
+    </div>
+  </div>`;
+
+  for (const d of days) {
+    const k = dkey(d);
+    const entries = db.plan[k] || [];
+    const isToday = k === todayKey;
+    html += `<section class="card day${isToday ? " today" : ""}" id="day-${k}">
+      <div class="bar dayhead">
+        <h3>${fmt(d, { weekday: "long" })} <small>${fmt(d, { month: "short", day: "numeric" })}</small>${isToday ? `<span class="pill">Today</span>` : ""}</h3>
+        <button class="ghost sm" data-act="add" data-date="${k}">+ Add</button>
+      </div>
+      ${entries.length ? `<ul class="entries">${entries.map(e => entryHTML(k, e)).join("")}</ul>` : `<p class="empty">Rest day</p>`}
+    </section>`;
+  }
+  $("#view-week").innerHTML = html;
+}
+
+function getEntry(date, id) {
+  return (db.plan[date] || []).find(e => e.id === id);
+}
+
+function removeEntry(date, id) {
+  const list = (db.plan[date] || []).filter(e => e.id !== id);
+  if (list.length) db.plan[date] = list; else delete db.plan[date];
+}
+
+function copyWeekForward() {
+  const days = weekDays();
+  let n = 0, existing = 0;
+  for (const d of days) {
+    n += (db.plan[dkey(d)] || []).length;
+    existing += (db.plan[dkey(addDays(d, 7))] || []).length;
+  }
+  if (!n) return;
+  if (existing && !confirm(`Next week already has ${existing} exercise${existing === 1 ? "" : "s"}. Add this week's ${n} as well?`)) return;
+  for (const d of days) {
+    const src = db.plan[dkey(d)] || [];
+    if (!src.length) continue;
+    const tk = dkey(addDays(d, 7));
+    db.plan[tk] = (db.plan[tk] || []).concat(src.map(e => ({ ...clone(e), id: uid(), done: false, note: "" })));
+  }
+  save();
+  toast(`Copied ${n} exercise${n === 1 ? "" : "s"} to next week`);
+}
+
+function clearWeek() {
+  if (!confirm("Remove everything planned for this week?")) return;
+  for (const d of weekDays()) delete db.plan[dkey(d)];
+  save();
+  renderWeek();
+}
+
+$("#view-week").addEventListener("click", ev => {
+  const t = ev.target.closest("[data-act]");
+  if (!t) return;
+  const { act, date, id } = t.dataset;
+  if (act === "prev") { state.week = addDays(state.week, -7); renderWeek(); }
+  else if (act === "next") { state.week = addDays(state.week, 7); renderWeek(); }
+  else if (act === "today") { state.week = mondayOf(new Date()); renderWeek(); }
+  else if (act === "copy") copyWeekForward();
+  else if (act === "clear") clearWeek();
+  else if (act === "add") openPicker(date);
+  else if (act === "entry") openEntry(date, id);
+  else if (act === "toggle") {
+    const e = getEntry(date, id);
+    if (e) { e.done = t.checked; save(); renderWeek(); }
+  }
+});
+
+/* =========================================================
+   Exercise lists (library + picker share filtering)
+   ========================================================= */
+
+function filterExercises(q, cat) {
+  q = q.trim().toLowerCase();
+  return db.exercises.filter(e =>
+    (cat === "All" || e.cat === cat) &&
+    (!q || e.name.toLowerCase().includes(q) || e.cat.toLowerCase().includes(q) || (e.notes || "").toLowerCase().includes(q)));
+}
+
+function groupedHTML(list, rowFn) {
+  if (!list.length) return `<p class="empty" style="padding:16px 0">No exercises match.</p>`;
+  const order = CATS.map(c => c[0]);
+  const cats = [...new Set(list.map(e => e.cat))].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
+  return cats.map(c => `<h3 class="grouph"><span class="dot" style="--c:${catColor(c)};margin:0"></span>${esc(c)}</h3>
+    <ul class="card list">${list.filter(e => e.cat === c).sort((a, b) => a.name.localeCompare(b.name)).map(rowFn).join("")}</ul>`).join("");
+}
+
+function renderChips(el, current) {
+  el.innerHTML = ["All", ...CATS.map(c => c[0])].map(c =>
+    `<button type="button" class="chip" data-cat="${esc(c)}" aria-pressed="${c === current}">${esc(c)}</button>`).join("");
+}
+
+/* ---------- Library view ---------- */
+
+function renderLibrary() {
+  $("#libCount").textContent = `${db.exercises.length} exercises`;
+  const list = filterExercises(state.libQuery, state.libCat);
+  $("#libList").innerHTML = groupedHTML(list, e => `<li><button class="exrow" data-id="${esc(e.id)}">
+      <span class="grow"><strong>${esc(e.name)}${e.id.startsWith("s-") ? "" : `<span class="tag">Mine</span>`}</strong>
+      <small>${esc(summary(e.p) || "No default plan")}</small></span>
+    </button></li>`);
+}
+
+$("#libSearch").addEventListener("input", e => { state.libQuery = e.target.value; renderLibrary(); });
+$("#libChips").addEventListener("click", e => {
+  const b = e.target.closest("[data-cat]"); if (!b) return;
+  state.libCat = b.dataset.cat; renderChips($("#libChips"), state.libCat); renderLibrary();
+});
+$("#libList").addEventListener("click", e => {
+  const b = e.target.closest("[data-id]"); if (b) openExercise(b.dataset.id);
+});
+$("#newExBtn").addEventListener("click", () => openExercise(null));
+
+/* ---------- Picker (add to a day) ---------- */
+
+function openPicker(date) {
+  state.pickDate = date;
+  state.pickAdded = {};
+  state.pickQuery = "";
+  $("#pickSearch").value = "";
+  $("#pickTitle").textContent = `Add to ${fmt(parseKey(date), { weekday: "short", month: "short", day: "numeric" })}`;
+  renderChips($("#pickChips"), state.pickCat);
+  renderPicker();
+  $("#pickDialog").showModal();
+}
+
+function renderPicker() {
+  const list = filterExercises(state.pickQuery, state.pickCat);
+  $("#pickList").innerHTML = groupedHTML(list, e => {
+    const n = state.pickAdded[e.id] || 0;
+    return `<li><button class="exrow" data-id="${esc(e.id)}">
+      <span class="grow"><strong>${esc(e.name)}</strong><small>${esc(summary(e.p) || e.cat)}</small></span>
+      ${n ? `<span class="added">✓ Added${n > 1 ? ` ×${n}` : ""}</span>` : ""}
+    </button></li>`;
+  });
+  const total = Object.values(state.pickAdded).reduce((a, b) => a + b, 0);
+  $("#pickCount").textContent = total ? `${total} added` : "Tap to add";
+}
+
+$("#pickSearch").addEventListener("input", e => { state.pickQuery = e.target.value; renderPicker(); });
+$("#pickChips").addEventListener("click", e => {
+  const b = e.target.closest("[data-cat]"); if (!b) return;
+  state.pickCat = b.dataset.cat; renderChips($("#pickChips"), state.pickCat); renderPicker();
+});
+$("#pickList").addEventListener("click", e => {
+  const b = e.target.closest("[data-id]"); if (!b) return;
+  const ex = findEx(b.dataset.id); if (!ex) return;
+  const k = state.pickDate;
+  (db.plan[k] ||= []).push({ id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, p: clone(ex.p || {}), done: false, note: "" });
+  state.pickAdded[ex.id] = (state.pickAdded[ex.id] || 0) + 1;
+  save();
+  renderPicker();
+  renderWeek();
+});
+
+/* =========================================================
+   Entry dialog: edit one scheduled exercise
+   ========================================================= */
+
+function howtoHTML(ex) {
+  if (!ex || (!ex.notes && !ex.video)) return "";
+  const link = ex.video ? `<p><a href="${esc(ex.video)}" target="_blank" rel="noopener noreferrer">Watch demo video ↗</a></p>` : "";
+  return `<details class="howto"><summary>How to</summary>${ex.notes ? `<p>${esc(ex.notes)}</p>` : ""}${link}</details>`;
+}
+
+function openEntry(date, id) {
+  const e = getEntry(date, id); if (!e) return;
+  const ex = findEx(e.ex);
+  state.editEntry = { date, id };
+  const f = $("#entryForm");
+  $("#entryTitle").textContent = ex ? ex.name : e.name;
+  $("#entryHowto").innerHTML = howtoHTML(ex);
+  $("#entryParams").innerHTML = paramFieldsHTML(e.p);
+  f.date.value = date;
+  f.note.value = e.note || "";
+  $("#entryReset").hidden = !ex;
+  $("#entryErr").textContent = "";
+  $("#entryDialog").showModal();
+}
+
+$("#entryForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const { date, id } = state.editEntry;
+  const e = getEntry(date, id); if (!e) return;
+  const f = ev.target;
+  const newDate = f.date.value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) { $("#entryErr").textContent = "Pick a date."; return; }
+  e.p = readParams($("#entryParams"));
+  e.note = f.note.value.trim();
+  if (newDate !== date) {
+    removeEntry(date, id);
+    (db.plan[newDate] ||= []).push(e);
+  }
+  save();
+  $("#entryDialog").close();
+  renderWeek();
+  if (newDate !== date) toast(`Moved to ${fmt(parseKey(newDate), { weekday: "short", month: "short", day: "numeric" })}`);
+});
+
+$("#entryReset").addEventListener("click", () => {
+  const e = getEntry(state.editEntry.date, state.editEntry.id);
+  const ex = e && findEx(e.ex);
+  if (ex) $("#entryParams").innerHTML = paramFieldsHTML(ex.p);
+});
+
+$("#entryRemove").addEventListener("click", () => {
+  removeEntry(state.editEntry.date, state.editEntry.id);
+  save();
+  $("#entryDialog").close();
+  renderWeek();
+});
+
+/* =========================================================
+   Exercise dialog: create / edit a library exercise
+   ========================================================= */
+
+$("#exCat").innerHTML = CATS.map(([c]) => `<option>${esc(c)}</option>`).join("");
+
+function openExercise(id) {
+  const ex = id ? findEx(id) : null;
+  state.editEx = ex ? ex.id : null;
+  const f = $("#exForm");
+  $("#exTitle").textContent = ex ? "Edit exercise" : "New exercise";
+  f.name.value = ex ? ex.name : "";
+  f.cat.value = ex ? ex.cat : (state.libCat !== "All" ? state.libCat : "Fingers");
+  $("#exParams").innerHTML = paramFieldsHTML(ex ? ex.p : {});
+  f.notes.value = ex ? ex.notes || "" : "";
+  f.video.value = ex ? ex.video || "" : "";
+  $("#exDelete").hidden = !ex;
+  $("#exErr").textContent = "";
+  $("#exDialog").showModal();
+  if (!ex) f.name.focus();
+}
+
+$("#exForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const f = ev.target;
+  const name = f.name.value.trim();
+  const video = f.video.value.trim();
+  if (!name) { $("#exErr").textContent = "Give it a name."; f.name.focus(); return; }
+  if (video && !/^https?:\/\//i.test(video)) { $("#exErr").textContent = "Video link should start with https://"; f.video.focus(); return; }
+  const data = { name, cat: f.cat.value, p: readParams($("#exParams")), notes: f.notes.value.trim(), video };
+  if (state.editEx) Object.assign(findEx(state.editEx), data);
+  else db.exercises.push({ id: "x-" + uid(), ...data });
+  save();
+  $("#exDialog").close();
+  renderLibrary();
+  renderWeek();
+  toast(state.editEx ? "Exercise updated" : `Added ${name} to your library`);
+});
+
+$("#exDelete").addEventListener("click", () => {
+  const ex = findEx(state.editEx); if (!ex) return;
+  if (!confirm(`Delete "${ex.name}" from your library? Anything already scheduled stays on your calendar.`)) return;
+  db.exercises = db.exercises.filter(e => e.id !== ex.id);
+  save();
+  $("#exDialog").close();
+  renderLibrary();
+});
+
+/* =========================================================
+   Settings: theme, backup, restore
+   ========================================================= */
+
+$("#settingsBtn").addEventListener("click", () => { applyTheme(); $("#settingsDialog").showModal(); });
+
+$("#themeSeg").addEventListener("click", e => {
+  const b = e.target.closest("[data-theme]"); if (!b) return;
+  db.theme = b.dataset.theme; save(); applyTheme();
+});
+
+$("#exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `crux-backup-${dkey(new Date())}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+$("#importBtn").addEventListener("click", () => $("#importFile").click());
+$("#importFile").addEventListener("change", async e => {
+  const file = e.target.files[0]; e.target.value = "";
+  if (!file) return;
+  try {
+    const d = JSON.parse(await file.text());
+    if (!validDb(d)) throw new Error("bad file");
+    if (!confirm("Replace everything in this browser with the backup?")) return;
+    db = d;
+    save(); applyTheme(); renderAll();
+    $("#settingsDialog").close();
+    toast("Backup imported");
+  } catch (err) {
+    toast("That file isn't a Crux backup");
+  }
+});
+
+$("#restoreBtn").addEventListener("click", () => {
+  const have = new Set(db.exercises.map(e => e.id));
+  const missing = SEED.filter(s => !have.has(s.id));
+  db.exercises.push(...clone(missing));
+  save(); renderLibrary();
+  toast(missing.length ? `Restored ${missing.length} exercise${missing.length === 1 ? "" : "s"}` : "All starter exercises are already there");
+});
+
+/* =========================================================
+   Tabs, dialogs, boot
+   ========================================================= */
+
+function showTab(tab) {
+  state.tab = tab;
+  $("#view-week").hidden = tab !== "week";
+  $("#view-library").hidden = tab !== "library";
+  document.querySelectorAll(".tabs button").forEach(b => {
+    if (b.dataset.tab === tab) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+// Close buttons and tapping the backdrop close any dialog.
+document.querySelectorAll("dialog").forEach(d => {
+  d.addEventListener("click", e => {
+    if (e.target === d || e.target.closest("[data-close]")) d.close();
+  });
+});
+
+function renderAll() {
+  renderChips($("#libChips"), state.libCat);
+  renderLibrary();
+  renderWeek();
+}
+
+applyTheme();
+renderAll();
+save();
+
+// On a phone, jump to today's card so you don't have to scroll past Monday.
+const todayCard = document.getElementById("day-" + dkey(new Date()));
+if (todayCard && new Date().getDay() !== 1) todayCard.scrollIntoView({ block: "start" });
+</script>
+</body>
+</html>
