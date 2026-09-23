@@ -164,11 +164,12 @@ dialog[open]{display:flex;flex-direction:column}
 .sheetform{display:flex;flex-direction:column;flex:1;min-height:0;margin:0}
 dialog::backdrop{background:rgb(0 0 0 / .45)}
 dialog:not([open]){display:none}
-/* Editors shown as pages in the normal flow (see openSheet) */
-dialog.as-page{position:static;display:flex;flex-direction:column;width:100%;max-width:none;height:auto;max-height:none;margin:0;border-radius:20px;box-shadow:0 2px 0 var(--line);overflow:visible}
-dialog.as-page .sheet-body{overflow:visible}
-dialog.as-page .sheet-foot{border-radius:0 0 20px 20px}
-#pagehost:empty{display:none}
+/* Fallback bottom sheet when the browser won't open a modal dialog */
+dialog.as-sheet{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:50;margin:0 auto;max-height:calc(100% - 16px)}
+/* Stretched frame (Claude app): a pop-up placed on the page next to where you tapped; JS sets top/height */
+dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;margin:0 auto;border-radius:20px;box-shadow:0 18px 50px rgb(0 0 0 / .35)}
+#scrim{position:fixed;inset:0;z-index:45;background:rgb(0 0 0 / .45)}
+#scrim.abs{position:absolute;inset:auto;left:0;right:0;top:0}
 #errbar{position:fixed;left:12px;right:12px;top:calc(8px + env(safe-area-inset-top,0px));z-index:60;background:var(--danger);color:#fff;border-radius:14px;padding:12px 14px;font-weight:700;font-size:.92rem;display:flex;gap:10px;align-items:flex-start;box-shadow:0 6px 20px rgb(0 0 0 / .25)}
 #errbar span{flex:1;min-width:0;overflow-wrap:anywhere}
 #errbar button{border:0;background:rgb(255 255 255 / .25);color:#fff;border-radius:8px;padding:4px 10px;font-weight:800}
@@ -178,13 +179,18 @@ dialog.as-page .sheet-foot{border-radius:0 0 20px 20px}
 .sheet-body{padding:4px 18px 18px;overflow-y:auto;flex:1;min-height:0}
 .sheet-foot{display:flex;gap:10px;align-items:center;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .sheet-foot .spacer{flex:1}
-/* The exercise picker is a page of its own (not a floating sheet), so it shows up
-   however the viewer sizes the frame. */
-.pickpage-head{display:flex;flex-direction:column;gap:10px}
-.pickpage-head h2{font-size:1.5rem}
-#pickList .grouph{margin:16px 0 6px;font-size:.85rem}
-#pickList .exrow{padding:12px 0;min-height:52px;align-items:center}
-.donebar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pickbar{padding:10px 16px 0}
+.pickbar .chips{margin-top:8px;padding-bottom:8px}
+/* The exercise picker gets most of the screen so the list has room */
+#pickDialog{height:90vh;height:90dvh}
+@media (min-width:640px){#pickDialog{height:86vh;height:86dvh}}
+#pickDialog .sheet-head{padding:10px 8px 6px 16px;border-bottom:0}
+#pickDialog .sheet-head h2{font-size:1.25rem}
+#pickDialog .sheet-body{padding:0 16px 16px;border-top:1px solid var(--line)}
+#pickDialog .grouph{margin:14px 0 6px;font-size:.85rem}
+#pickDialog .list{padding:0 14px}
+#pickDialog .exrow{padding:12px 0;min-height:50px;align-items:center}
+#pickDialog .sheet-foot{padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 details.howto{background:var(--sunk);border-radius:10px;padding:10px 12px;margin-top:14px}
 details.howto summary{font-weight:600;cursor:pointer}
 details.howto p{margin-top:6px;white-space:pre-wrap}
@@ -258,24 +264,10 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 </header>
 
 <main>
-  <div id="pagehost"></div>
   <section id="view-week" class="stack" aria-label="Week plan"></section>
 
   <section id="view-plan" class="stack" hidden aria-label="Plan builder"></section>
 
-  <section id="view-pick" class="stack" hidden aria-labelledby="pickTitle">
-    <div class="pickpage-head">
-      <div class="donebar">
-        <h2 id="pickTitle">Add exercises</h2>
-        <button type="button" class="primary" data-pickdone>Done</button>
-      </div>
-      <p class="muted" id="pickCount"></p>
-      <input type="search" id="pickSearch" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises">
-      <div class="chips" id="pickChips" role="group" aria-label="Filter by category"></div>
-    </div>
-    <div id="pickList"></div>
-    <button type="button" class="primary" data-pickdone style="width:100%">Done</button>
-  </section>
 
   <section id="view-library" hidden aria-label="Exercise library">
     <div class="bar">
@@ -304,6 +296,24 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 </nav>
 
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="scrim" hidden></div>
+
+<!-- Pick exercises to add to a day -->
+<dialog id="pickDialog" aria-labelledby="pickTitle">
+  <div class="sheet-head">
+    <h2 id="pickTitle">Add exercises</h2>
+    <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="pickbar">
+    <input type="search" id="pickSearch" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises">
+    <div class="chips" id="pickChips" role="group" aria-label="Filter by category"></div>
+  </div>
+  <div class="sheet-body" id="pickList"></div>
+  <div class="sheet-foot">
+    <span class="muted" id="pickCount">Tap an exercise to add it and set its sets and reps.</span><span class="spacer"></span>
+    <button class="ghost" data-close>Close</button>
+  </div>
+</dialog>
 <div id="errbar" role="alert" hidden><span id="errmsg"></span><button type="button" id="errclose">OK</button></div>
 
 
@@ -341,6 +351,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
     <div class="sheet-foot">
       <button type="button" class="ghost sm danger" id="entryRemove">Remove</button>
       <span class="spacer"></span>
+      <button type="submit" class="ghost sm" id="entryAddAnother" style="white-space:nowrap" hidden>Save &amp; add more</button>
       <button type="submit" class="primary">Save</button>
     </div>
   </form>
@@ -872,62 +883,71 @@ function history(exId) {
   return out.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-/* ---------- Pages (formerly pop-up sheets) ----------
-   The Claude app can stretch this page's frame to the full length of the page, which
-   pushes anything pinned to the screen (pop-ups, bottom sheets) out of view. So every
-   editor opens as a page at the top of the content instead: the rest of the app is
-   hidden, the editor is shown in the normal flow, and it is scrolled into view. */
-const sheetStack = [];   // open editors, newest last
-let hiddenViews = [];    // views hidden while editors are open
+/* ---------- Pop-ups ----------
+   In a normal browser: a bottom sheet (showModal, or a fixed sheet if that's blocked).
+   The Claude app can stretch this page's frame to its full length, where anything pinned
+   to the screen ends up far from where you are; there the pop-up is placed on the page
+   next to where you tapped instead. (isStretched and lastTapY are defined with toast.) */
+const sheetStack = [];   // open pop-ups, newest last
+
+function showScrim(onPage) {
+  const sc = $("#scrim");
+  sc.hidden = false;
+  sc.classList.toggle("abs", onPage);
+  sc.style.height = onPage ? document.documentElement.scrollHeight + "px" : "";
+}
 
 function openSheet(d) {
-  if (!sheetStack.length) {
-    d._returnTo = document.activeElement;
-    hiddenViews = ["view-week", "view-plan", "view-library", "view-pick"].filter(id => !$("#" + id).hidden);
-    hiddenViews.forEach(id => { $("#" + id).hidden = true; });
-  } else {
-    sheetStack[sheetStack.length - 1].hidden = true;   // e.g. a confirmation over the exercise editor
-  }
-  $("#pagehost").appendChild(d);
-  d.hidden = false;
-  d.setAttribute("open", "");
-  d.classList.add("as-page");
   sheetStack.push(d);
-  window.scrollTo(0, 0);
-  d.scrollIntoView({ block: "start" });
+  if (isStretched()) {
+    const h = Math.round((screen.height || 700) * 0.8);
+    const docH = document.documentElement.scrollHeight;
+    d.setAttribute("open", "");
+    d.classList.add("as-float");
+    d.style.maxHeight = h + "px";
+    if (d.id === "pickDialog") d.style.height = h + "px";
+    // Next to where you tapped (also for a confirmation over another pop-up, which may be scrolled).
+    const top = Math.min(Math.max(8, lastTapY - h * 0.35), Math.max(8, docH - h - 8));
+    d.style.top = top + "px";
+    showScrim(true);
+    return;
+  }
+  try { if (typeof d.showModal === "function") d.showModal(); } catch (e) { /* blocked: use the fallback */ }
+  if (!d.open) {
+    d.setAttribute("open", "");
+    d.classList.add("as-sheet");
+    showScrim(false);
+  }
 }
 
 function closeSheet(d) {
-  const i = sheetStack.indexOf(d);
-  if (i < 0) return;
-  sheetStack.splice(i, 1);
-  d.removeAttribute("open");
-  d.classList.remove("as-page");
-  if (sheetStack.length) {
-    const prev = sheetStack[sheetStack.length - 1];
-    prev.hidden = false;
-    prev.scrollIntoView({ block: "start" });
-  } else {
-    hiddenViews.forEach(id => { $("#" + id).hidden = false; });
-    hiddenViews = [];
-    const back = d._returnTo;
-    d._returnTo = null;
-    // Back to what opened it, e.g. the exercise you tapped (after the week re-renders).
-    setTimeout(() => {
-      const target = back && back.isConnected ? back
-        : state.returnId ? document.querySelector(`[data-item="${state.returnId}"]`) : null;
-      state.returnId = null;
-      if (target) target.scrollIntoView({ block: "center" });
-    }, 0);
+  if (!d.hasAttribute("open")) return;
+  if (d.classList.contains("as-float") || d.classList.contains("as-sheet")) {
+    d.removeAttribute("open");
+    d.classList.remove("as-float", "as-sheet");
+    d.style.top = d.style.maxHeight = d.style.height = "";
+    d.dispatchEvent(new Event("close"));
+  } else if (typeof d.close === "function") {
+    d.close();   // fires "close" itself
   }
-  d.dispatchEvent(new Event("close"));
 }
+
+// Keep the stack in sync however a pop-up closes (buttons, Escape, backdrop).
+document.querySelectorAll("dialog").forEach(d => d.addEventListener("close", () => {
+  const i = sheetStack.indexOf(d);
+  if (i >= 0) sheetStack.splice(i, 1);
+  if (!document.querySelector("dialog.as-float, dialog.as-sheet")) $("#scrim").hidden = true;
+}));
 
 function closeAllSheets() {
   while (sheetStack.length) closeSheet(sheetStack[sheetStack.length - 1]);
 }
 
-document.addEventListener("keydown", e => { if (e.key === "Escape" && sheetStack.length) closeSheet(sheetStack[sheetStack.length - 1]); });
+const topSheet = () => sheetStack[sheetStack.length - 1];
+document.addEventListener("click", e => { if (e.target.id === "scrim" && topSheet()) closeSheet(topSheet()); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && topSheet() && !topSheet().matches(":modal")) closeSheet(topSheet());
+});
 
 // Resolves true/false. Used instead of the browser's confirm dialog, which the artifact viewer always cancels.
 function askConfirm(message, okLabel = "OK", danger = false) {
@@ -1187,12 +1207,7 @@ function openPicker(target) {
   $("#pickTitle").textContent = target.kind === "cal" ? `Add to ${fmt(parseKey(target.date), { weekday: "long", month: "short", day: "numeric" })}` : `Add to ${dayName(target.day)}`;
   renderChips($("#pickChips"), state.pickCat);
   renderPicker();
-  // Show the picker in place of the current tab and bring it into view.
-  state.pickReturn = state.tab;
-  for (const id of ["view-week", "view-plan", "view-library"]) $("#" + id).hidden = true;
-  $("#view-pick").hidden = false;
-  window.scrollTo(0, 0);
-  $("#view-pick").scrollIntoView({ block: "start" });
+  openSheet($("#pickDialog"));
 }
 
 function renderPicker() {
@@ -1204,19 +1219,7 @@ function renderPicker() {
       ${n ? `<span class="added">✓ Added${n > 1 ? ` ×${n}` : ""}</span>` : ""}
     </button></li>`;
   });
-  const total = Object.values(state.pickAdded).reduce((a, b) => a + b, 0);
-  $("#pickCount").textContent = total ? `${total} added. Tap more, or Done to go back.` : "Tap an exercise to add it.";
 }
-
-// Done: back to the tab you came from, scrolled to the day you were adding to.
-function closePicker() {
-  const t = state.pickTarget;
-  $("#view-pick").hidden = true;
-  showTab(state.pickReturn || "week");
-  const day = t && (t.kind === "cal" ? document.getElementById("day-" + t.date) : document.querySelector(`[data-drop="${t.day}"][data-kind="plan"]`));
-  if (day) day.scrollIntoView({ block: "center" });
-}
-document.addEventListener("click", e => { if (e.target.closest("[data-pickdone]")) closePicker(); });
 
 $("#pickSearch").addEventListener("input", e => { state.pickQuery = e.target.value; renderPicker(); });
 $("#pickChips").addEventListener("click", e => {
@@ -1235,10 +1238,11 @@ $("#pickList").addEventListener("click", e => {
     plan.days[t.day].push(item);
     markDirty(plan);
   }
-  state.pickAdded[ex.id] = (state.pickAdded[ex.id] || 0) + 1;
   save();
-  renderPicker();
   t.kind === "cal" ? renderWeek() : renderPlanBody();
+  // Straight on to its sets and reps.
+  closeSheet($("#pickDialog"));
+  openEntry(t.kind === "cal" ? { kind: "cal", date: t.date, id: item.id, fresh: true } : { kind: "plan", day: t.day, id: item.id, fresh: true });
 });
 
 /* =========================================================
@@ -1263,7 +1267,6 @@ function editedItem() {
 
 function openEntry(target) {
   state.editEntry = target;
-  state.returnId = target.id;
   const item = editedItem(); if (!item) return;
   const isPlan = target.kind === "plan";
   const ex = findEx(item.ex);
@@ -1272,9 +1275,12 @@ function openEntry(target) {
   const hasSets = cols.length > 0;
 
   $("#entryTitle").textContent = nameOf(item);
-  $("#entryHint").textContent = isPlan
-    ? "The target repeats every week of the plan. You log what you actually did from the Week tab."
-    : "Set a target before the session, then log what you actually did.";
+  const where = isPlan ? dayName(target.day) : fmt(parseKey(target.date), { weekday: "long" });
+  $("#entryHint").textContent = target.fresh
+    ? `Added to ${where}. Set your sets and reps${isPlan ? "." : ", or log them after your session."}`
+    : isPlan
+      ? "The target repeats every week of the plan. You log what you actually did from the Week tab."
+      : "Set a target before the session, then log what you actually did.";
   $("#entryHowto").innerHTML = howtoHTML(ex);
 
   const last = lastLog(item.ex, isPlan ? tomorrowKey() : target.date, item.id);
@@ -1284,7 +1290,11 @@ function openEntry(target) {
     : "";
 
   for (const id of ["targetSets", "logSets"]) $("#" + id).dataset.cols = JSON.stringify(cols);
-  renderSets($("#targetSets"), item.target || []);
+  // Just added: start from last time's sets, or one empty set ready to fill in.
+  const startTarget = target.fresh && hasSets && !(item.target || []).length
+    ? (last ? clone(last.entry.log) : [{}])
+    : item.target || [];
+  renderSets($("#targetSets"), startTarget);
   renderSets($("#logSets"), item.log || []);
   $("#targetSec").hidden = !hasSets;
   $("#logSec").hidden = isPlan || !hasSets;
@@ -1301,8 +1311,13 @@ function openEntry(target) {
     f.note.value = item.note || "";
   }
   $("#entryErr").textContent = "";
+  $("#entryAddAnother").hidden = !target.fresh;
   openSheet($("#entryDialog"));
+  if (target.fresh && hasSets) setTimeout(() => { const i = $("#targetSets [data-f]"); if (i) i.focus({ preventScroll: true }); }, 60);
 }
+
+// "Save & add another" saves, then reopens the exercise list for the same day.
+$("#entryAddAnother").addEventListener("click", () => { state.addAnother = true; });
 
 $("#copyLastBtn").addEventListener("click", () => {
   if (state.lastSets) renderSets($("#targetSets"), clone(state.lastSets));
@@ -1321,6 +1336,7 @@ $("#entryForm").addEventListener("submit", ev => {
   const log = readSets($("#logSets"));
   const bad = $("#entryForm .bad");
   if (bad) {
+    state.addAnother = false;
     $("#entryErr").textContent = "The highlighted box isn't a number. Use numbers like 5, 12.5, +25 or -15.";
     bad.focus();
     return;
@@ -1338,6 +1354,7 @@ $("#entryForm").addEventListener("submit", ev => {
     save();
     closeSheet($("#entryDialog"));
     renderPlanBody();
+    if (state.addAnother) { state.addAnother = false; openPicker({ kind: "plan", day }); }
     return;
   }
 
@@ -1358,6 +1375,7 @@ $("#entryForm").addEventListener("submit", ev => {
   renderWeek();
   renderLibrary();
   if (newDate !== t.date) toast(`Moved to ${shortDate(newDate)}`);
+  if (state.addAnother) { state.addAnother = false; openPicker({ kind: "cal", date: newDate }); }
 });
 
 $("#entryRemove").addEventListener("click", () => {
@@ -1864,7 +1882,6 @@ function showTab(tab) {
   $("#view-plan").hidden = tab !== "plan";
   if (tab === "plan") renderPlanTab();
   $("#view-library").hidden = tab !== "library";
-  $("#view-pick").hidden = true;
   document.querySelectorAll(".tabs button").forEach(b => {
     if (b.dataset.tab === tab) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
@@ -1876,7 +1893,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 // Close buttons and tapping the backdrop close any dialog.
 document.querySelectorAll("dialog").forEach(d => {
   d.addEventListener("click", e => {
-    if (e.target.closest("[data-close]")) closeSheet(d);
+    if (e.target === d || e.target.closest("[data-close]")) closeSheet(d);
   });
 });
 
