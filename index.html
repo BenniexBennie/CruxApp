@@ -395,13 +395,14 @@ const COL_HEAD = { reps: "Reps", time: "Sec", load: "± lb", edge: "Edge mm", gr
 const DEFAULT_FIELDS = ["reps", "load"];
 const CAT_FIELDS = {
   "Warm-up & prehab": ["reps", "load"], Climbing: ["reps"], "Climbing power": ["reps"], Fingers: ["time", "load", "edge"],
-  Strength: ["reps", "load"], Core: ["reps", "time"], Mobility: [],
+  Strength: ["reps", "load"], Core: ["reps", "time"], Mobility: ["time"],
 };
 const FIELD_OVERRIDES = {
   "s-warmup": [], "s-limit": [], "s-board": [], "s-dyno": [], "s-arc": [], "s-mileage": [], "s-rice": [],
   "s-lockoff": ["reps", "time", "load"], "s-oap-neg": ["reps", "time", "load"], "s-oap-lock": ["reps", "time", "load"],
   "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
   "s-scappull": ["reps"], "s-fingerext": ["reps"],
+  "s-9090": ["reps"], "s-cossack": ["reps"], "s-dislocate": ["reps"], "s-openbook": ["reps"], "s-wallslide": ["reps"],
 };
 const defaultFields = (id, cat) => [...(FIELD_OVERRIDES[id] ?? CAT_FIELDS[cat] ?? DEFAULT_FIELDS)];
 
@@ -443,7 +444,7 @@ const SEED = [
   { id: "s-squat", name: "Back squat", cat: "Strength", notes: "" },
   // Antagonists (in Warm-up & prehab)
   { id: "s-pushup", name: "Push-ups", cat: "Warm-up & prehab", notes: "Balances all the pulling. Keep a straight body line." },
-  { id: "s-ohp", name: "Overhead press", cat: "Warm-up & prehab", notes: "" },
+  { id: "s-ohp", name: "Overhead press", cat: "Strength", notes: "Balances all the pulling. Strict press, ribs down, no leaning back." },
   { id: "s-wrist", name: "Reverse wrist curls", cat: "Warm-up & prehab", notes: "Light dumbbell. Helps keep elbows healthy." },
   { id: "s-extrot", name: "Band external rotations", cat: "Warm-up & prehab", notes: "Elbow tucked to your side. A shoulder-health staple." },
   { id: "s-fingerext", name: "Finger extensions (band)", cat: "Warm-up & prehab", notes: "Rubber band around the fingertips; open the hand fully against it. Balances all the gripping." },
@@ -458,9 +459,22 @@ const SEED = [
   { id: "s-lever", name: "Front lever progression", cat: "Core", notes: "Tuck → advanced tuck → one leg → full. Hold the hardest version you can for the time." },
   { id: "s-plank", name: "Plank", cat: "Core", notes: "" },
   // Mobility
-  { id: "s-hips", name: "Hip mobility flow", cat: "Mobility", notes: "90/90 switches, frog stretch, deep squat hold. Helps high steps and drop knees." },
-  { id: "s-shoulder", name: "Shoulder mobility", cat: "Mobility", notes: "Band dislocates, thoracic rotations, wall slides." },
-  { id: "s-stretch", name: "Post-session stretch", cat: "Mobility", notes: "Forearms, lats, hips, hamstrings." },
+  // hips
+  { id: "s-9090", name: "90/90 hip switches", cat: "Mobility", notes: "Sit with both knees bent at 90°, one in front and one to the side. Rotate both knees to the other side without using your hands. Reps = switches. Helps drop knees and hip turns." },
+  { id: "s-frog", name: "Frog stretch", cat: "Mobility", notes: "On all fours, knees wide, shins parallel; rock hips back slowly. Opens the hips for frogging and high steps." },
+  { id: "s-squathold", name: "Deep squat hold", cat: "Mobility", notes: "Heels down, chest up, elbows pushing knees out. Hold onto something if needed." },
+  { id: "s-couch", name: "Couch stretch", cat: "Mobility", notes: "Back knee against a wall or couch, front foot forward; squeeze the glute of the back leg. Hip flexors. Time per side." },
+  { id: "s-pancake", name: "Pancake stretch", cat: "Mobility", notes: "Seated with legs wide, hinge forward from the hips with a flat back. Hamstrings and adductors for high steps." },
+  { id: "s-cossack", name: "Cossack squats", cat: "Mobility", notes: "Wide stance, shift into a deep squat on one side with the other leg straight. Reps per side." },
+  // shoulders and upper back
+  { id: "s-dislocate", name: "Band shoulder dislocates", cat: "Mobility", notes: "Straight arms, pass a band or stick from front to back overhead and return. Narrow the grip as you loosen up." },
+  { id: "s-openbook", name: "Open book rotations", cat: "Mobility", notes: "Lying on your side, knees bent, open the top arm across to the other side following it with your eyes. Thoracic rotation. Reps per side." },
+  { id: "s-wallslide", name: "Wall slides", cat: "Mobility", notes: "Back and arms flat against a wall, slide arms up overhead and down without losing contact." },
+  { id: "s-lat", name: "Lat stretch", cat: "Mobility", notes: "Hands on a bench or bar, hips back, chest sinking toward the floor. Time per side or both together." },
+  { id: "s-pec", name: "Doorway pec stretch", cat: "Mobility", notes: "Forearm on a door frame at shoulder height, step through gently. Counteracts the hunched climber posture." },
+  // forearms
+  { id: "s-flexor", name: "Forearm flexor stretch", cat: "Mobility", notes: "Arm straight, palm up, gently pull the fingers back. Great after hard finger sessions." },
+  { id: "s-extensor", name: "Forearm extensor stretch", cat: "Mobility", notes: "Arm straight, palm down, gently fold the wrist and fingers down." },
 ];
 SEED.forEach(x => { x.fields = defaultFields(x.id, x.cat); });
 
@@ -477,23 +491,23 @@ const STARTERS = [
   { name: "One-arm pull-up", weeks: 10,
     blurb: "2 heavy pulling days around 2 climbing days. Assisted one-arms, negatives, lock-offs and weighted pull-ups.",
     days: [["s-warmup", "s-oap-assist", "s-oap-neg", "s-scappull", "s-facepull"], ["s-limit"], [],
-      ["s-warmup", "s-wpullup", "s-oap-lock", "s-archer", "s-lever", "s-ohp"], [], ["s-board", "s-extrot"], ["s-stretch"]] },
+      ["s-warmup", "s-wpullup", "s-oap-lock", "s-archer", "s-lever", "s-ohp"], [], ["s-board", "s-extrot"], ["s-flexor", "s-lat", "s-pancake"]] },
   { name: "Finger strength", weeks: 12,
     blurb: "2 finger sessions a week: max hangs then limit bouldering, one-arm hangs then board.",
     days: [["s-warmup", "s-maxhang", "s-limit", "s-fingerext"], [], ["s-mileage"],
-      ["s-warmup", "s-oah", "s-board", "s-rice"], [], ["s-warmup", "s-blocklift", "s-4x4"], ["s-stretch"]] },
+      ["s-warmup", "s-oah", "s-board", "s-rice"], [], ["s-warmup", "s-blocklift", "s-4x4"], ["s-flexor", "s-lat", "s-pancake"]] },
   { name: "Climbing power", weeks: 8,
     blurb: "3 short, high-quality sessions: campus, limit bouldering, dynos and explosive pulling.",
     days: [["s-warmup", "s-campus", "s-limit", "s-explosive"], [], ["s-warmup", "s-dyno", "s-legraise", "s-facepull"], [],
-      ["s-warmup", "s-bumps", "s-board", "s-lever"], [], ["s-stretch"]] },
+      ["s-warmup", "s-bumps", "s-board", "s-lever"], [], ["s-flexor", "s-lat", "s-pancake"]] },
   { name: "Endurance", weeks: 8,
     blurb: "Power endurance (4x4s, EMOMs) plus aerobic base (ARC, mileage) to stay on longer.",
     days: [["s-warmup", "s-4x4", "s-extrot"], [], ["s-arc", "s-repeaters"], [], ["s-warmup", "s-emom", "s-linked"],
-      ["s-mileage", "s-updown"], ["s-stretch"]] },
+      ["s-mileage", "s-updown"], ["s-flexor", "s-lat", "s-pancake"]] },
   { name: "Injury-proofing", weeks: 6,
     blurb: "Short fingers, elbow and shoulder sessions to add alongside your normal climbing.",
     days: [[], ["s-fingerext", "s-rice", "s-pronsup", "s-eccwrist", "s-wrist"], [],
-      ["s-facepull", "s-ytw", "s-extrot", "s-pushup", "s-shoulder"], [], [], ["s-hips", "s-stretch"]] },
+      ["s-facepull", "s-ytw", "s-extrot", "s-pushup", "s-dislocate", "s-openbook"], [], [], ["s-9090", "s-couch", "s-flexor", "s-extensor"]] },
 ];
 
 /* =========================================================
@@ -506,7 +520,7 @@ const STARTERS = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 6, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
+const freshDb = () => ({ v: 7, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -585,6 +599,16 @@ function normalize(d) {
     for (const list of Object.values(d.plan)) for (const en of list) en.cat = recat(en.cat);
     for (const pl of d.plans) for (const day of pl.days) for (const sl of day) sl.cat = recat(sl.cat);
     d.v = 6;
+  }
+  if (d.v < 7) {
+    // Overhead press to Strength; general mobility routines replaced by specific drills.
+    const ohp = d.exercises.find(e => e.id === "s-ohp");
+    if (ohp && ohp.cat === "Warm-up & prehab") ohp.cat = "Strength";
+    const OLD = ["s-hips", "s-shoulder", "s-stretch"];
+    const have = new Set(d.exercises.map(e => e.id));
+    d.exercises = d.exercises.filter(e => !OLD.includes(e.id));
+    d.exercises.push(...clone(SEED.filter(x => x.cat === "Mobility" && !have.has(x.id))));
+    d.v = 7;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
