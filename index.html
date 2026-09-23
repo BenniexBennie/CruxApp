@@ -13,6 +13,7 @@
   --bg:#E6E9EC; --surface:#FFFFFF; --sunk:#F2F4F6; --ink:#17212B; --muted:#5A6774; --line:#CDD3D9;
   --tape:#D1246C; --orange:#E2621B; --go:#0E8878; --blue:#2F63C8; --gold:#D89B00; --grey:#8A96A1;
   --violet:#7A4FC4; --leaf:#3B8F3F; --cyan:#1B8FB5;
+  --bar-build:#00897A; --bar-deload:#2F63C8;
   --display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   box-sizing:border-box;
@@ -23,6 +24,7 @@
     --bg:#141A20; --surface:#1D252D; --sunk:#232C35; --ink:#E6EAEE; --muted:#98A4AF; --line:#303A44;
     --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#6D7984;
     --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
+    --bar-build:#1FA893; --bar-deload:#5A8BF5;
     color-scheme:dark;
   }
 }
@@ -30,6 +32,7 @@
   --bg:#141A20; --surface:#1D252D; --sunk:#232C35; --ink:#E6EAEE; --muted:#98A4AF; --line:#303A44;
   --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#6D7984;
   --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
+  --bar-build:#1FA893; --bar-deload:#5A8BF5;
   color-scheme:dark;
 }
 html{height:100%}
@@ -151,6 +154,43 @@ details.howto summary{font-weight:600;cursor:pointer}
 details.howto p{margin-top:6px;white-space:pre-wrap}
 details.howto a{color:var(--blue)}
 
+/* ---------- Plan ---------- */
+.plancard{display:block;width:100%;text-align:left;border:0;color:inherit}
+.plancard strong{font-family:var(--display);font-size:1.35rem;font-weight:700}
+.plancard .meta{color:var(--muted);font-size:.92rem;margin-top:2px}
+.status{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-radius:99px;padding:2px 8px;white-space:nowrap}
+.status.on{background:var(--go);color:#fff}
+.status.draft{border:1px solid var(--line);color:var(--muted)}
+.status.dirty{background:var(--gold);color:#17212B}
+input[type=range]{width:100%;accent-color:var(--tape)}
+.rangeval{font-family:var(--display);font-size:1.3rem;font-weight:700;color:var(--ink);margin-left:6px}
+.steps{margin:12px 0 0;padding-left:20px;list-style:decimal;color:var(--muted)}
+.steps li+li{margin-top:4px}
+.progtag{display:inline-block;font-size:.75rem;font-weight:600;color:var(--muted);background:var(--sunk);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:1px;white-space:nowrap}
+.planline{font-size:.9rem;color:var(--muted);text-align:center;margin-top:10px}
+.planline b{color:var(--ink);font-weight:600}
+.chart{position:relative;display:flex;align-items:flex-end;gap:2px;height:140px;margin-top:52px;border-bottom:1px solid var(--line)}
+.barcol{position:relative;flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;border-radius:4px 4px 0 0}
+.barcol:hover .bar-fill{filter:brightness(1.12)}
+.bar-fill{width:100%;border-radius:4px 4px 0 0;background:var(--bar-build)}
+.barcol.deload .bar-fill{background:var(--bar-deload)}
+.tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:.8rem;line-height:1.3;padding:6px 8px;border-radius:8px;white-space:nowrap;z-index:2;pointer-events:none;text-align:left}
+.barcol.first .tip{left:0;transform:none}
+.barcol.last .tip{left:auto;right:0;transform:none}
+.barcol:hover .tip,.barcol:focus-visible .tip{display:block}
+.axis{display:flex;gap:2px;margin-top:4px}
+.axis span{flex:1;text-align:center;font-size:.72rem;color:var(--muted)}
+.legend{display:flex;gap:16px;font-size:.85rem;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
+details.wkd{background:var(--surface);border-radius:14px;padding:12px 16px}
+details.wkd+details.wkd{margin-top:8px}
+details.wkd summary{cursor:pointer;font-weight:600;display:flex;gap:8px;align-items:center}
+details.wkd summary .muted{font-weight:400;font-size:.9rem}
+.wkday{margin-top:10px}
+.wkday b{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.wkday li{font-size:.92rem;padding:2px 0}
+.wkday li small{color:var(--muted)}
+
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;font-size:.95rem;z-index:20;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.show{opacity:1}
 </style>
@@ -168,6 +208,8 @@ details.howto a{color:var(--blue)}
 <main>
   <section id="view-week" class="stack" aria-label="Week plan"></section>
 
+  <section id="view-plan" hidden aria-label="Plan builder"></section>
+
   <section id="view-library" hidden aria-label="Exercise library">
     <div class="bar">
       <div><h2>Library</h2><p class="lede" id="libCount"></p></div>
@@ -183,6 +225,10 @@ details.howto a{color:var(--blue)}
   <button data-tab="week" aria-current="page">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     Week
+  </button>
+  <button data-tab="plan">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h4v-6H3zM10 20h4V9h-4zM17 20h4V4h-4z"/></svg>
+    Plan
   </button>
   <button data-tab="library">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
@@ -217,11 +263,17 @@ details.howto a{color:var(--blue)}
       <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="sheet-body">
-      <p class="hint" style="margin-top:12px">Changes here only affect this day. Your library stays the same.</p>
+      <p class="hint" style="margin-top:12px" id="entryHint"></p>
       <div id="entryHowto"></div>
+      <div id="entryPlanFields">
+        <label class="field"><span>Each week, progress by</span><select name="prog" id="entryProg"></select></label>
+        <label class="field"><span>Day</span><select name="day" id="entryDay"></select></label>
+      </div>
       <fieldset><legend>Plan</legend><div class="grid2" id="entryParams"></div></fieldset>
-      <label class="field"><span>Date</span><input type="date" name="date" required></label>
+      <div id="entryCalFields">
+      <label class="field"><span>Date</span><input type="date" name="date"></label>
       <label class="field"><span>Session notes</span><textarea name="note" placeholder="How did it go? Felt strong, left index a bit sore…"></textarea></label>
+      </div>
       <p class="err" id="entryErr"></p>
     </div>
     <div class="sheet-foot">
@@ -367,15 +419,21 @@ const SEED = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 1, exercises: clone(SEED), plan: {}, theme: "system" });
+const freshDb = () => ({ v: 1, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
+
+// Older saves predate plans.
+function normalize(d) {
+  if (!Array.isArray(d.plans)) d.plans = [];
+  return d;
+}
 
 function load() {
   try {
     const raw = localStorage.getItem(STORE);
     if (raw) {
       const d = JSON.parse(raw);
-      if (validDb(d)) return d;
+      if (validDb(d)) return normalize(d);
     }
   } catch (e) { /* storage blocked or corrupt: start fresh in memory */ }
   return freshDb();
@@ -404,6 +462,9 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const findEx = id => db.exercises.find(e => e.id === id);
+// Scheduled items keep a copy of the name, but follow library renames while the exercise exists.
+const nameOf = item => (findEx(item.ex) || item).name;
+const catOf = item => (findEx(item.ex) || item).cat;
 
 // Dates are handled as local "YYYY-MM-DD" keys to avoid timezone surprises.
 const pad = n => String(n).padStart(2, "0");
@@ -482,8 +543,9 @@ const state = {
   tab: "week",
   week: mondayOf(new Date()),
   libQuery: "", libCat: "All",
-  pickQuery: "", pickCat: "All", pickDate: null, pickAdded: {},
-  editEntry: null,   // { date, id }
+  pickQuery: "", pickCat: "All", pickTarget: null, pickAdded: {},
+  editEntry: null,   // see openEntry
+  planId: null,      // plan open in the builder
   editEx: null,      // exercise id, or null for a new one
 };
 
@@ -499,14 +561,12 @@ function weekDays(start = state.week) {
 }
 
 function entryHTML(date, e) {
-  const ex = findEx(e.ex);
-  const name = ex ? ex.name : e.name;   // follow library renames
-  const cat = ex ? ex.cat : e.cat;
+  const name = nameOf(e), cat = catOf(e);
   return `<li class="entry${e.done ? " done" : ""}">
     <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="Mark ${esc(name)} done">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
-      <span><strong>${esc(name)}</strong><small>${esc(summary(e.p) || cat)}${e.note ? " · 📝" : ""}</small></span>
+      <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong><small>${esc(summary(e.p) || cat)}${e.note ? " · 📝" : ""}</small></span>
     </button>
   </li>`;
 }
@@ -522,6 +582,8 @@ function renderWeek() {
   const sameMonth = end.getMonth() === state.week.getMonth();
   const range = `${fmt(state.week, { month: "short", day: "numeric" })} – ${fmt(end, sameMonth ? { day: "numeric" } : { month: "short", day: "numeric" })}`;
   const pct = total ? Math.round((done / total) * 100) : 0;
+  const pw = planForWeek(state.week);
+  const planLine = pw ? `<p class="planline"><b>${esc(pw.plan.name)}</b> · Week ${pw.i + 1} of ${pw.plan.weeks} · ${weekInfo(pw.i).deload ? "Deload" : "Build"}</p>` : "";
 
   let html = `<div class="card weekhead">
     <div class="bar">
@@ -531,6 +593,7 @@ function renderWeek() {
       </div>
       <button class="iconbtn" data-act="next" aria-label="Next week">${ICON_R}</button>
     </div>
+    ${planLine}
     <div class="progress" role="progressbar" aria-label="Week progress" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div style="width:${pct}%"></div></div>
     <div class="bar weekstats">
       <span class="muted">${total ? `${done} of ${total} done` : "Nothing planned yet"}</span>
@@ -600,8 +663,8 @@ $("#view-week").addEventListener("click", ev => {
   else if (act === "today") { state.week = mondayOf(new Date()); renderWeek(); }
   else if (act === "copy") copyWeekForward();
   else if (act === "clear") clearWeek();
-  else if (act === "add") openPicker(date);
-  else if (act === "entry") openEntry(date, id);
+  else if (act === "add") openPicker({ kind: "cal", date });
+  else if (act === "entry") openEntry({ kind: "cal", date, id });
   else if (act === "toggle") {
     const e = getEntry(date, id);
     if (e) { e.done = t.checked; save(); renderWeek(); }
@@ -653,14 +716,17 @@ $("#libList").addEventListener("click", e => {
 });
 $("#newExBtn").addEventListener("click", () => openExercise(null));
 
-/* ---------- Picker (add to a day) ---------- */
+/* ---------- Picker (add to a calendar day or a plan's example week) ---------- */
 
-function openPicker(date) {
-  state.pickDate = date;
+// target = { kind: "cal", date } or { kind: "plan", day }
+function openPicker(target) {
+  state.pickTarget = target;
   state.pickAdded = {};
   state.pickQuery = "";
   $("#pickSearch").value = "";
-  $("#pickTitle").textContent = `Add to ${fmt(parseKey(date), { weekday: "short", month: "short", day: "numeric" })}`;
+  $("#pickTitle").textContent = target.kind === "cal"
+    ? `Add to ${fmt(parseKey(target.date), { weekday: "short", month: "short", day: "numeric" })}`
+    : `Add to ${dayName(target.day)}`;
   renderChips($("#pickChips"), state.pickCat);
   renderPicker();
   $("#pickDialog").showModal();
@@ -687,16 +753,25 @@ $("#pickChips").addEventListener("click", e => {
 $("#pickList").addEventListener("click", e => {
   const b = e.target.closest("[data-id]"); if (!b) return;
   const ex = findEx(b.dataset.id); if (!ex) return;
-  const k = state.pickDate;
-  (db.plan[k] ||= []).push({ id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, p: clone(ex.p || {}), done: false, note: "" });
+  const t = state.pickTarget;
+  const item = { id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, p: clone(ex.p || {}) };
+  if (t.kind === "cal") {
+    (db.plan[t.date] ||= []).push({ ...item, done: false, note: "" });
+  } else {
+    const plan = currentPlan(); if (!plan) return;
+    plan.days[t.day].push({ ...item, prog: "auto" });
+    markDirty(plan);
+  }
   state.pickAdded[ex.id] = (state.pickAdded[ex.id] || 0) + 1;
   save();
   renderPicker();
-  renderWeek();
+  t.kind === "cal" ? renderWeek() : renderPlanBody();
 });
 
 /* =========================================================
-   Entry dialog: edit one scheduled exercise
+   Entry dialog: edit one scheduled exercise, or one slot
+   in a plan's example week. state.editEntry is
+   { kind: "cal", date, id } or { kind: "plan", day, id }.
    ========================================================= */
 
 function howtoHTML(ex) {
@@ -705,16 +780,46 @@ function howtoHTML(ex) {
   return `<details class="howto"><summary>How to</summary>${ex.notes ? `<p>${esc(ex.notes)}</p>` : ""}${link}</details>`;
 }
 
-function openEntry(date, id) {
-  const e = getEntry(date, id); if (!e) return;
-  const ex = findEx(e.ex);
-  state.editEntry = { date, id };
+function editedItem() {
+  const t = state.editEntry;
+  if (!t) return null;
+  if (t.kind === "cal") return getEntry(t.date, t.id);
+  const plan = currentPlan();
+  return plan && plan.days[t.day].find(s => s.id === t.id);
+}
+
+// Keep the "Automatic (↑ load)" label honest while the numbers are being edited.
+function refreshAutoLabel() {
+  const item = editedItem(); if (!item || state.editEntry.kind !== "plan") return;
+  const guess = autoProg({ ...item, p: readParams($("#entryParams")) });
+  $("#entryProg").options[0].textContent = `Automatic (${PROG_LABEL[guess]})`;
+}
+$("#entryParams").addEventListener("input", refreshAutoLabel);
+
+function openEntry(target) {
+  state.editEntry = target;
+  const item = editedItem(); if (!item) return;
+  const isPlan = target.kind === "plan";
+  const ex = findEx(item.ex);
   const f = $("#entryForm");
-  $("#entryTitle").textContent = ex ? ex.name : e.name;
+  $("#entryTitle").textContent = nameOf(item);
+  $("#entryHint").textContent = isPlan
+    ? "These are your week 1 numbers. Crux works out every week after this."
+    : "Changes here only affect this day. Your library stays the same.";
   $("#entryHowto").innerHTML = howtoHTML(ex);
-  $("#entryParams").innerHTML = paramFieldsHTML(e.p);
-  f.date.value = date;
-  f.note.value = e.note || "";
+  $("#entryParams").innerHTML = paramFieldsHTML(item.p);
+  $("#entryPlanFields").hidden = !isPlan;
+  $("#entryCalFields").hidden = isPlan;
+  if (isPlan) {
+    $("#entryProg").innerHTML = PROGS.map(([k, label]) => `<option value="${k}">${label}</option>`).join("");
+    $("#entryProg").value = item.prog || "auto";
+    $("#entryDay").innerHTML = [0, 1, 2, 3, 4, 5, 6].map(i => `<option value="${i}">${dayName(i)}</option>`).join("");
+    $("#entryDay").value = String(target.day);
+    refreshAutoLabel();
+  } else {
+    f.date.value = target.date;
+    f.note.value = item.note || "";
+  }
   $("#entryReset").hidden = !ex;
   $("#entryErr").textContent = "";
   $("#entryDialog").showModal();
@@ -722,34 +827,426 @@ function openEntry(date, id) {
 
 $("#entryForm").addEventListener("submit", ev => {
   ev.preventDefault();
-  const { date, id } = state.editEntry;
-  const e = getEntry(date, id); if (!e) return;
+  const t = state.editEntry;
+  const item = editedItem(); if (!item) return;
   const f = ev.target;
+
+  if (t.kind === "plan") {
+    const plan = currentPlan();
+    item.p = readParams($("#entryParams"));
+    item.prog = f.prog.value;
+    const day = Number(f.day.value);
+    if (day !== t.day) {
+      plan.days[t.day] = plan.days[t.day].filter(s => s.id !== item.id);
+      plan.days[day].push(item);
+    }
+    markDirty(plan);
+    save();
+    $("#entryDialog").close();
+    renderPlanBody();
+    return;
+  }
+
   const newDate = f.date.value;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) { $("#entryErr").textContent = "Pick a date."; return; }
-  e.p = readParams($("#entryParams"));
-  e.note = f.note.value.trim();
-  if (newDate !== date) {
-    removeEntry(date, id);
-    (db.plan[newDate] ||= []).push(e);
+  item.p = readParams($("#entryParams"));
+  item.note = f.note.value.trim();
+  if (newDate !== t.date) {
+    removeEntry(t.date, t.id);
+    (db.plan[newDate] ||= []).push(item);
   }
   save();
   $("#entryDialog").close();
   renderWeek();
-  if (newDate !== date) toast(`Moved to ${fmt(parseKey(newDate), { weekday: "short", month: "short", day: "numeric" })}`);
+  if (newDate !== t.date) toast(`Moved to ${fmt(parseKey(newDate), { weekday: "short", month: "short", day: "numeric" })}`);
 });
 
 $("#entryReset").addEventListener("click", () => {
-  const e = getEntry(state.editEntry.date, state.editEntry.id);
-  const ex = e && findEx(e.ex);
-  if (ex) $("#entryParams").innerHTML = paramFieldsHTML(ex.p);
+  const item = editedItem();
+  const ex = item && findEx(item.ex);
+  if (ex) { $("#entryParams").innerHTML = paramFieldsHTML(ex.p); refreshAutoLabel(); }
 });
 
 $("#entryRemove").addEventListener("click", () => {
-  removeEntry(state.editEntry.date, state.editEntry.id);
+  const t = state.editEntry;
+  if (t.kind === "plan") {
+    const plan = currentPlan();
+    plan.days[t.day] = plan.days[t.day].filter(s => s.id !== t.id);
+    markDirty(plan);
+    save();
+    $("#entryDialog").close();
+    renderPlanBody();
+    return;
+  }
+  removeEntry(t.date, t.id);
   save();
   $("#entryDialog").close();
   renderWeek();
+});
+
+/* =========================================================
+   Plans: an example week progressed over 4–16 weeks
+
+   Cycle: 3 build weeks, then 1 deload week, repeating.
+   "step" is how far along the progression a week is:
+     build weeks in block b are steps 2b, 2b+1, 2b+2
+     the deload week goes back to step 2b with ~40% less volume
+   so each new block starts where the previous one peaked.
+
+   plan = { id, name, weeks, start: "YYYY-MM-DD" (a Monday), pace,
+            days: [[slot...] x 7], applied, dirty }
+   slot = { id, ex, name, cat, p, prog }
+   Calendar entries made from a plan carry { plan, pk, wk }.
+   ========================================================= */
+
+// Increase per step, by pace. Fractions accumulate and round down,
+// e.g. edge 0.5 = 1 mm smaller every 2 steps.
+const PACES = {
+  conservative: { label: "Conservative", load: 0.5, edge: 0.25, reps: 0.25, sets: 0.2, on: 0.5, duration: 0.025, rate: 0.02,
+    hint: "+0.5 kg per build week, edge 1 mm smaller every 4, +1 rep every 4. For coming back from injury or newer to hangboarding." },
+  moderate: { label: "Moderate", load: 1, edge: 0.5, reps: 0.5, sets: 0.34, on: 1, duration: 0.05, rate: 0.04,
+    hint: "+1 kg per build week, edge 1 mm smaller every 2, +1 rep every 2. A good default for most people." },
+  aggressive: { label: "Aggressive", load: 2, edge: 0.75, reps: 0.75, sets: 0.5, on: 1.5, duration: 0.075, rate: 0.06,
+    hint: "+2 kg per build week, edge 3 mm smaller every 4, +3 reps every 4. Only if you've trained fingers consistently for a year or more." },
+};
+const PROGS = [["auto", "Automatic"], ["load", "Add load"], ["edge", "Smaller edge"], ["reps", "More reps"],
+  ["on", "Longer hang / hold"], ["duration", "Longer duration"], ["sets", "More sets"], ["hold", "Hold steady"]];
+const PROG_LABEL = { load: "↑ load", edge: "↓ edge", reps: "↑ reps", on: "↑ hold", duration: "↑ time", sets: "↑ sets", hold: "steady" };
+const MIN_EDGE = 6;
+
+const dayName = i => fmt(addDays(new Date(2024, 0, 1), i), { weekday: "long" }); // 2024-01-01 was a Monday
+const currentPlan = () => (db.plans || []).find(p => p.id === state.planId);
+const markDirty = plan => { if (plan.applied) plan.dirty = true; };
+
+// "+5 kg", "-10kg", "+10 lb" -> { value, unit }. Anything else isn't progressable.
+function parseLoad(s) {
+  const m = String(s || "").replace("−", "-").match(/^\s*([+-]?)\s*(\d+(?:[.,]\d+)?)\s*(kg|lbs?)?\s*$/i);
+  if (!m) return null;
+  const value = Number(m[2].replace(",", ".")) * (m[1] === "-" ? -1 : 1);
+  return { value, unit: (m[3] || "kg").toLowerCase().startsWith("lb") ? "lb" : "kg" };
+}
+const fmtLoad = (v, unit) => v === 0 ? "Bodyweight" : `${v > 0 ? "+" : "-"}${Math.abs(v)} ${unit}`;
+
+function autoProg(slot) {
+  const p = slot.p || {}, cat = catOf(slot);
+  if (cat === "Warm-up" || cat === "Mobility") return "hold";
+  if (parseLoad(p.load)) return "load";
+  if (p.edge) return "edge";
+  if (p.reps) return "reps";
+  if (p.on) return "on";
+  if (p.duration && (cat === "Endurance" || cat === "Cardio")) return "duration";
+  if (p.sets) return "sets";
+  return "hold";
+}
+
+// The choice actually used: a manual pick falls back to "hold" if the exercise lacks that number.
+function effectiveProg(slot) {
+  const m = slot.prog && slot.prog !== "auto" ? slot.prog : autoProg(slot);
+  const p = slot.p || {};
+  if (m === "load") return parseLoad(p.load) ? m : "hold";
+  if (m === "hold") return m;
+  return p[m] ? m : "hold";
+}
+
+function weekInfo(i) {
+  const block = Math.floor(i / 4), phase = i % 4, deload = phase === 3;
+  return { deload, step: block * 2 + (deload ? 0 : phase) };
+}
+
+function progress(slot, i, pace) {
+  const P = PACES[pace] || PACES.moderate;
+  const { deload, step } = weekInfo(i);
+  const p = clone(slot.p || {});
+  const m = effectiveProg(slot);
+  if (m === "hold") return p;
+  const inc = rate => Math.floor(step * rate + 1e-9);
+  if (m === "load") {
+    const L = parseLoad(p.load);
+    const v = Math.round((L.value + step * P.load * (L.unit === "lb" ? 2 : 1)) * 2) / 2;
+    p.load = fmtLoad(v, L.unit);
+  } else if (m === "edge") {
+    p.edge = Math.min(p.edge, Math.max(MIN_EDGE, p.edge - inc(P.edge)));
+  } else if (m === "duration") {
+    p.duration = Math.round(p.duration * (1 + step * P.duration));
+  } else {
+    p[m] += inc(P[m]);
+  }
+  if (deload) {
+    if (p.sets > 1) p.sets = Math.max(1, Math.round(p.sets * 0.6));
+    else if (p.duration) p.duration = Math.round(p.duration * 0.6);
+    else if (p.reps > 1) p.reps = Math.max(1, Math.round(p.reps * 0.6));
+  }
+  return p;
+}
+
+// Rough relative workload for the chart: week 1 = 100.
+function weekScore(i, pace) {
+  const { deload, step } = weekInfo(i);
+  return Math.round(100 * (1 + step * (PACES[pace] || PACES.moderate).rate) * (deload ? 0.6 : 1));
+}
+
+const slotCount = plan => plan.days.reduce((n, d) => n + d.length, 0);
+
+function newPlan() {
+  const mon = mondayOf(new Date());
+  const plan = {
+    id: "p-" + uid(), name: `Plan ${(db.plans.length || 0) + 1}`, weeks: 12,
+    start: dkey(new Date().getDay() === 1 ? mon : addDays(mon, 7)),
+    pace: "moderate", days: [[], [], [], [], [], [], []], applied: false, dirty: false,
+  };
+  db.plans.push(plan);
+  save();
+  return plan;
+}
+
+// Removes this plan's workouts from the calendar. keepDone leaves checked-off ones as history.
+function stripPlan(plan, keepDone) {
+  const old = {};
+  for (const k of Object.keys(db.plan)) {
+    db.plan[k] = db.plan[k].filter(e => {
+      if (e.plan !== plan.id) return true;
+      old[e.pk] = e;
+      return keepDone && e.done;
+    });
+    if (!db.plan[k].length) delete db.plan[k];
+  }
+  return old;
+}
+
+function applyPlan(plan) {
+  const old = stripPlan(plan, false);
+  const start = parseKey(plan.start);
+  let n = 0;
+  for (let w = 0; w < plan.weeks; w++) {
+    for (let d = 0; d < 7; d++) {
+      for (const slot of plan.days[d]) {
+        const k = dkey(addDays(start, w * 7 + d));
+        const pk = `${slot.id}:${w}`;
+        const prev = old[pk] || {};
+        (db.plan[k] ||= []).push({
+          id: uid(), ex: slot.ex, name: slot.name, cat: slot.cat, p: progress(slot, w, plan.pace),
+          done: !!prev.done, note: prev.note || "", plan: plan.id, pk, wk: w + 1,
+        });
+        n++;
+      }
+    }
+  }
+  plan.applied = true;
+  plan.dirty = false;
+  save();
+  return n;
+}
+
+// Which applied plan (if any) covers a given Monday, and which week of it.
+function planForWeek(monday) {
+  for (const p of db.plans || []) {
+    if (!p.applied) continue;
+    const i = Math.round((monday - parseKey(p.start)) / 864e5 / 7);
+    if (i >= 0 && i < p.weeks) return { plan: p, i };
+  }
+  return null;
+}
+
+/* ---------- Plan tab ---------- */
+
+function planRange(plan) {
+  const s = parseKey(plan.start), e = addDays(s, plan.weeks * 7 - 1);
+  const o = { month: "short", day: "numeric" };
+  return `${fmt(s, o)} – ${fmt(e, s.getFullYear() === e.getFullYear() ? o : { ...o, year: "numeric" })}`;
+}
+
+function statusHTML(plan) {
+  if (!plan.applied) return `<span class="status draft">Draft</span>`;
+  if (plan.dirty) return `<span class="status dirty">Changed</span>`;
+  return `<span class="status on">On calendar</span>`;
+}
+
+function renderPlanTab() {
+  const plan = currentPlan();
+  if (plan) return renderBuilder(plan);
+  state.planId = null;
+  const plans = db.plans || [];
+  $("#view-plan").innerHTML = `
+    <div class="bar">
+      <div><h2>Plans</h2><p class="lede">Build one example week. Crux grows it over 4–16 weeks.</p></div>
+      <button class="primary" data-act="newplan">+ New plan</button>
+    </div>
+    ${plans.length ? plans.map(p => `
+      <button class="card plancard" data-act="openplan" data-id="${esc(p.id)}">
+        <span class="bar"><strong>${esc(p.name)}</strong>${statusHTML(p)}</span>
+        <span class="meta" style="display:block">${p.weeks} weeks · ${PACES[p.pace].label} · ${planRange(p)} · ${slotCount(p)} exercises/week</span>
+      </button>`).join("") : `
+      <div class="card">
+        <h3>How it works</h3>
+        <ol class="steps">
+          <li>Pick a length (4–16 weeks), a start week and a pace.</li>
+          <li>Build one example week from your library.</li>
+          <li>Crux runs 3 build weeks then 1 easier deload week, over and over, adding a little load, reps or time as it goes.</li>
+          <li>Preview every week, then add the whole plan to your calendar.</li>
+        </ol>
+      </div>`}`;
+}
+
+function renderBuilder(plan) {
+  $("#view-plan").innerHTML = `
+    <button class="linkish" data-act="backplans">‹ All plans</button>
+    <div class="card">
+      <label class="field" style="margin-top:0"><span>Plan name</span><input type="text" id="planName" maxlength="60" value="${esc(plan.name)}"></label>
+      <label class="field"><span>Length <span class="rangeval" id="planWeeksOut">${plan.weeks} weeks</span></span>
+        <input type="range" id="planWeeks" min="4" max="16" step="1" value="${plan.weeks}"></label>
+      <label class="field"><span>Start week</span><input type="date" id="planStart" value="${plan.start}"></label>
+      <p class="hint" id="planRangeHint">${planRange(plan)}</p>
+      <fieldset><legend>Pace</legend>
+        <div class="seg" id="planPace">${Object.entries(PACES).map(([k, v]) =>
+          `<button type="button" class="chip" data-pace="${k}" aria-pressed="${k === plan.pace}">${v.label}</button>`).join("")}</div>
+        <p class="hint" id="paceHint">${PACES[plan.pace].hint}</p>
+      </fieldset>
+    </div>
+    <h3 class="grouph">Example week</h3>
+    <p class="hint" style="margin:-4px 0 10px">What a typical week looks like at the start. These numbers are week 1.</p>
+    <div id="planDays" class="stack"></div>
+    <div id="planPreview"></div>
+    <div class="card" id="planActions" style="margin-top:16px"></div>`;
+  renderPlanBody();
+}
+
+// Re-renders everything below the setup card (keeps inputs focused while typing).
+function renderPlanBody() {
+  const plan = currentPlan(); if (!plan || !$("#planDays")) return;
+
+  $("#planDays").innerHTML = plan.days.map((slots, d) => `
+    <section class="card day">
+      <div class="bar dayhead"><h3>${dayName(d)}</h3>
+        <button class="ghost sm" data-act="planadd" data-day="${d}">+ Add</button></div>
+      ${slots.length ? `<ul class="entries">${slots.map(s => `
+        <li class="entry"><button class="entrybtn" data-act="planslot" data-day="${d}" data-id="${esc(s.id)}">
+          <span class="dot" style="--c:${catColor(catOf(s))}"></span>
+          <span><strong>${esc(nameOf(s))}<span class="progtag">${PROG_LABEL[effectiveProg(s)]}</span></strong>
+          <small>${esc(summary(s.p) || catOf(s))}</small></span>
+        </button></li>`).join("")}</ul>` : `<p class="empty">Rest day</p>`}
+    </section>`).join("");
+
+  const n = slotCount(plan);
+  if (!n) {
+    $("#planPreview").innerHTML = "";
+  } else {
+    const scores = Array.from({ length: plan.weeks }, (_, i) => weekScore(i, plan.pace));
+    const max = Math.max(...scores);
+    const start = parseKey(plan.start);
+    const bars = scores.map((sc, i) => {
+      const dl = weekInfo(i).deload;
+      const cls = `barcol${dl ? " deload" : ""}${i < 2 ? " first" : ""}${i >= plan.weeks - 2 ? " last" : ""}`;
+      return `<button class="${cls}" data-act="jumpweek" data-week="${i}" aria-label="Week ${i + 1}, ${dl ? "deload" : "build"}, workload ${sc}">
+        <span class="bar-fill" style="height:${(sc / max) * 100}%"></span>
+        <span class="tip"><b>Week ${i + 1}</b> · ${dl ? "Deload" : "Build"}<br>${fmt(addDays(start, i * 7), { month: "short", day: "numeric" })} · workload ${sc}</span>
+      </button>`;
+    }).join("");
+    const weeksHTML = scores.map((sc, i) => {
+      const dl = weekInfo(i).deload;
+      const days = plan.days.map((slots, d) => slots.length ? `<div class="wkday"><b>${dayName(d).slice(0, 3)}</b><ul>${slots.map(s =>
+        `<li>${esc(nameOf(s))} <small>${esc(summary(progress(s, i, plan.pace)))}</small></li>`).join("")}</ul></div>` : "").join("");
+      return `<details class="wkd" id="wk-${i}"><summary>Week ${i + 1}
+        <span class="muted">${fmt(addDays(start, i * 7), { month: "short", day: "numeric" })} · ${dl ? "Deload" : "Build"}</span></summary>${days}</details>`;
+    }).join("");
+    $("#planPreview").innerHTML = `
+      <h3 class="grouph">Preview</h3>
+      <div class="card">
+        <strong>Estimated weekly workload</strong>
+        <p class="hint" style="margin-top:0">Week 1 = 100. Tap a bar to see that week.</p>
+        <div class="chart">${bars}</div>
+        <div class="axis">${scores.map((_, i) => `<span>${plan.weeks > 12 && i % 2 ? "" : i + 1}</span>`).join("")}</div>
+        <div class="legend"><span><i style="background:var(--bar-build)"></i>Build week</span><span><i style="background:var(--bar-deload)"></i>Deload week (less volume)</span></div>
+      </div>
+      <div style="margin-top:12px">${weeksHTML}</div>`;
+  }
+
+  const total = n * plan.weeks;
+  let actions;
+  if (!plan.applied) {
+    actions = `<p class="muted">${n ? `Adds ${total} workouts to your calendar, ${planRange(plan)}.` : "Add some exercises to the example week first."}</p>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" data-act="applyplan"${n ? "" : " disabled"}>Add to calendar</button>
+        <span style="flex:1"></span>
+        <button class="ghost sm danger" data-act="deleteplan">Delete plan</button>
+      </div>`;
+  } else {
+    actions = `<p class="muted">${plan.dirty ? "You've changed this plan since adding it to your calendar." : `On your calendar, ${planRange(plan)}.`}</p>
+      <div class="row" style="margin-top:12px">
+        ${plan.dirty ? `<button class="primary" data-act="applyplan">Update calendar</button>` : `<button class="primary" data-act="viewplan">View on calendar</button>`}
+        <button class="ghost sm" data-act="unapplyplan">Remove from calendar</button>
+        <span style="flex:1"></span>
+        <button class="ghost sm danger" data-act="deleteplan">Delete plan</button>
+      </div>`;
+  }
+  $("#planActions").innerHTML = actions;
+}
+
+$("#view-plan").addEventListener("click", ev => {
+  const t = ev.target.closest("[data-act]"); if (!t) return;
+  const act = t.dataset.act;
+  const plan = currentPlan();
+  if (act === "newplan") { state.planId = newPlan().id; renderPlanTab(); window.scrollTo(0, 0); }
+  else if (act === "openplan") { state.planId = t.dataset.id; renderPlanTab(); window.scrollTo(0, 0); }
+  else if (act === "backplans") { state.planId = null; renderPlanTab(); }
+  else if (act === "planadd") openPicker({ kind: "plan", day: Number(t.dataset.day) });
+  else if (act === "planslot") openEntry({ kind: "plan", day: Number(t.dataset.day), id: t.dataset.id });
+  else if (act === "jumpweek") {
+    const d = $(`#wk-${t.dataset.week}`);
+    if (d) { d.open = true; d.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  }
+  else if (act === "applyplan") {
+    if (plan.applied && !confirm("Update your calendar with the changed plan? Any edits you made to this plan's workouts on the calendar will be replaced. Checked-off items and notes are kept.")) return;
+    const wasApplied = plan.applied;
+    const n = applyPlan(plan);
+    renderPlanTab(); renderWeek();
+    toast(wasApplied ? "Calendar updated" : `Added ${n} workouts to your calendar`);
+  }
+  else if (act === "viewplan") { state.week = parseKey(plan.start); renderWeek(); showTab("week"); }
+  else if (act === "unapplyplan") {
+    if (!confirm("Remove this plan's workouts from your calendar? Ones you've checked off stay as history.")) return;
+    stripPlan(plan, true);
+    plan.applied = false; plan.dirty = false;
+    save(); renderPlanTab(); renderWeek();
+  }
+  else if (act === "deleteplan") {
+    if (!confirm(`Delete "${plan.name}"?${plan.applied ? " Its workouts will be removed from your calendar (checked-off ones stay)." : ""}`)) return;
+    stripPlan(plan, true);
+    db.plans = db.plans.filter(p => p.id !== plan.id);
+    state.planId = null;
+    save(); renderPlanTab(); renderWeek();
+  }
+});
+
+$("#view-plan").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-pace]"); if (!b) return;
+  const plan = currentPlan();
+  plan.pace = b.dataset.pace;
+  markDirty(plan); save();
+  document.querySelectorAll("#planPace .chip").forEach(c => c.setAttribute("aria-pressed", String(c === b)));
+  $("#paceHint").textContent = PACES[plan.pace].hint;
+  renderPlanBody();
+});
+
+$("#view-plan").addEventListener("input", ev => {
+  const plan = currentPlan(); if (!plan) return;
+  if (ev.target.id === "planName") {
+    plan.name = ev.target.value.trim() || "Untitled plan";
+    save();
+  } else if (ev.target.id === "planWeeks") {
+    plan.weeks = Number(ev.target.value);
+    $("#planWeeksOut").textContent = `${plan.weeks} weeks`;
+    $("#planRangeHint").textContent = planRange(plan);
+    markDirty(plan); save(); renderPlanBody();
+  }
+});
+
+$("#view-plan").addEventListener("change", ev => {
+  const plan = currentPlan(); if (!plan || ev.target.id !== "planStart") return;
+  if (!ev.target.value) { ev.target.value = plan.start; return; }
+  plan.start = dkey(mondayOf(parseKey(ev.target.value)));   // plans always start on a Monday
+  ev.target.value = plan.start;
+  $("#planRangeHint").textContent = planRange(plan);
+  markDirty(plan); save(); renderPlanBody();
 });
 
 /* =========================================================
@@ -828,7 +1325,8 @@ $("#importFile").addEventListener("change", async e => {
     const d = JSON.parse(await file.text());
     if (!validDb(d)) throw new Error("bad file");
     if (!confirm("Replace everything in this browser with the backup?")) return;
-    db = d;
+    db = normalize(d);
+    state.planId = null;
     save(); applyTheme(); renderAll();
     $("#settingsDialog").close();
     toast("Backup imported");
@@ -852,6 +1350,8 @@ $("#restoreBtn").addEventListener("click", () => {
 function showTab(tab) {
   state.tab = tab;
   $("#view-week").hidden = tab !== "week";
+  $("#view-plan").hidden = tab !== "plan";
+  if (tab === "plan") renderPlanTab();
   $("#view-library").hidden = tab !== "library";
   document.querySelectorAll(".tabs button").forEach(b => {
     if (b.dataset.tab === tab) b.setAttribute("aria-current", "page");
@@ -872,6 +1372,7 @@ function renderAll() {
   renderChips($("#libChips"), state.libCat);
   renderLibrary();
   renderWeek();
+  renderPlanTab();
 }
 
 applyTheme();
