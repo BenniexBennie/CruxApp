@@ -402,6 +402,7 @@ const FIELD_OVERRIDES = {
   "s-lockoff": ["reps", "time", "load"], "s-oap-neg": ["reps", "time", "load"], "s-oap-lock": ["reps", "time", "load"],
   "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
   "s-scappull": ["reps"], "s-fingerext": ["reps"],
+  "s-dips": ["reps"],
   "s-9090": ["reps"], "s-cossack": ["reps"], "s-dislocate": ["reps"], "s-openbook": ["reps"], "s-wallslide": ["reps"],
 };
 const defaultFields = (id, cat) => [...(FIELD_OVERRIDES[id] ?? CAT_FIELDS[cat] ?? DEFAULT_FIELDS)];
@@ -442,6 +443,13 @@ const SEED = [
   { id: "s-typewriter", name: "Typewriter pull-ups", cat: "Strength", notes: "Pull to the top, then slide side to side over each hand while staying high. One rep = there and back." },
   { id: "s-deadlift", name: "Deadlift", cat: "Strength", notes: "Brace hard, bar close to the body. Builds posterior chain for heel hooks and body tension." },
   { id: "s-squat", name: "Back squat", cat: "Strength", notes: "" },
+  { id: "s-bench", name: "Bench press", cat: "Strength", notes: "Feet planted, shoulder blades pinched, bar to lower chest. Use a spotter or safeties for heavy sets." },
+  { id: "s-inclinedb", name: "Incline dumbbell press", cat: "Strength", notes: "Bench at 30–45°. Lower with control to the sides of the chest; elbows about 45° from the body." },
+  { id: "s-hammer", name: "Hammer curls", cat: "Strength", notes: "Palms facing each other, elbows pinned to your sides. Load = weight per dumbbell." },
+  { id: "s-pushdown", name: "Tricep push-downs", cat: "Strength", notes: "Cable or band. Elbows tucked and still; only the forearms move." },
+  { id: "s-dips", name: "Dips", cat: "Strength", notes: "Parallel bars, lower until shoulders are just below elbows. Stop short if shoulders complain." },
+  { id: "s-wdips", name: "Weighted dips", cat: "Strength", notes: "Dip belt or dumbbell between the feet. Same depth as bodyweight dips; leave a rep in reserve." },
+  { id: "s-dbextrot", name: "Dumbbell external rotations", cat: "Strength", notes: "Rotator cuff. Lying on your side, elbow bent 90° and tucked against your ribs, rotate the dumbbell up. Light weight, slow. Reps per side." },
   // Antagonists (in Warm-up & prehab)
   { id: "s-pushup", name: "Push-ups", cat: "Warm-up & prehab", notes: "Balances all the pulling. Keep a straight body line." },
   { id: "s-ohp", name: "Overhead press", cat: "Strength", notes: "Balances all the pulling. Strict press, ribs down, no leaning back." },
@@ -486,6 +494,9 @@ const V2_TRIMMED = ["s-zone2", "s-silent", "s-flash"];
 const V3_CLIMBING = { "s-limit": "Power", "s-board": "Power", "s-dyno": "Power", "s-4x4": "Power endurance",
   "s-linked": "Power endurance", "s-emom": "Power endurance", "s-arc": "Endurance", "s-mileage": "Endurance", "s-updown": "Endurance" };
 
+// Library version 8: strength exercises added.
+const V8_ADDED = ["s-bench", "s-inclinedb", "s-hammer", "s-pushdown", "s-dips", "s-wdips", "s-dbextrot"];
+
 // Starter plans for the Plan tab: exercise ids per day, Monday first.
 const STARTERS = [
   { name: "One-arm pull-up", weeks: 10,
@@ -520,7 +531,7 @@ const STARTERS = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 7, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
+const freshDb = () => ({ v: 8, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -609,6 +620,12 @@ function normalize(d) {
     d.exercises = d.exercises.filter(e => !OLD.includes(e.id));
     d.exercises.push(...clone(SEED.filter(x => x.cat === "Mobility" && !have.has(x.id))));
     d.v = 7;
+  }
+  if (d.v < 8) {
+    // New strength exercises.
+    const have = new Set(d.exercises.map(e => e.id));
+    d.exercises.push(...clone(SEED.filter(x => V8_ADDED.includes(x.id) && !have.has(x.id))));
+    d.v = 8;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
