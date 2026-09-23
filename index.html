@@ -163,6 +163,14 @@ dialog{border:0;padding:0;background:var(--surface);color:var(--ink);width:100%;
 dialog[open]{display:flex;flex-direction:column}
 .sheetform{display:flex;flex-direction:column;flex:1;min-height:0;margin:0}
 dialog::backdrop{background:rgb(0 0 0 / .45)}
+dialog:not([open]){display:none}
+/* Fallback when the viewer or browser won't open a modal dialog */
+dialog.as-sheet{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:50;margin:0 auto}
+@media (min-width:640px){dialog.as-sheet{top:50%;bottom:auto;transform:translateY(-50%)}}
+#scrim{position:fixed;inset:0;z-index:45;background:rgb(0 0 0 / .45)}
+#errbar{position:fixed;left:12px;right:12px;top:calc(8px + env(safe-area-inset-top,0px));z-index:60;background:var(--danger);color:#fff;border-radius:14px;padding:12px 14px;font-weight:700;font-size:.92rem;display:flex;gap:10px;align-items:flex-start;box-shadow:0 6px 20px rgb(0 0 0 / .25)}
+#errbar span{flex:1;min-width:0;overflow-wrap:anywhere}
+#errbar button{border:0;background:rgb(255 255 255 / .25);color:#fff;border-radius:8px;padding:4px 10px;font-weight:800}
 @media (min-width:640px){dialog{margin:auto;border-radius:18px;max-height:86dvh}}
 .sheet-head{display:flex;align-items:center;gap:8px;padding:14px 12px 10px 18px;border-bottom:1px solid var(--line)}
 .sheet-head h2{font-size:1.5rem;flex:1;min-width:0}
@@ -273,6 +281,8 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 </nav>
 
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="scrim" hidden></div>
+<div id="errbar" role="alert" hidden><span id="errmsg"></span><button type="button" id="errclose">OK</button></div>
 
 <!-- Pick exercises to add to a day -->
 <dialog id="pickDialog" aria-labelledby="pickTitle">
@@ -399,6 +409,17 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 
 <script>
 "use strict";
+
+// If anything goes wrong, say so on screen instead of silently doing nothing.
+function showError(msg) {
+  const bar = document.getElementById("errbar");
+  if (!bar) return;
+  document.getElementById("errmsg").textContent = `Something went wrong: ${msg}`;
+  bar.hidden = false;
+}
+window.addEventListener("error", e => showError(e.message || "unknown error"));
+window.addEventListener("unhandledrejection", e => showError((e.reason && e.reason.message) || String(e.reason)));
+document.addEventListener("click", e => { if (e.target.id === "errclose") document.getElementById("errbar").hidden = true; });
 
 /* =========================================================
    Data definitions
@@ -845,6 +866,33 @@ function history(exId) {
   return out.sort((a, b) => b.date.localeCompare(a.date));
 }
 
+/* ---------- Sheets ----------
+   Dialogs open with showModal() when allowed. Some viewers and older phone browsers
+   refuse or lack it, so fall back to showing the dialog as a fixed sheet over a scrim. */
+function openSheet(d) {
+  try { if (typeof d.showModal === "function") d.showModal(); } catch (e) { /* blocked: use the fallback */ }
+  if (!d.open) {
+    d.setAttribute("open", "");
+    d.classList.add("as-sheet");
+    $("#scrim").hidden = false;
+  }
+}
+
+function closeSheet(d) {
+  if (!d.hasAttribute("open")) return;
+  const fallback = d.classList.contains("as-sheet");
+  if (!fallback && typeof d.close === "function") { d.close(); return; }   // fires "close" itself
+  d.removeAttribute("open");
+  d.classList.remove("as-sheet");
+  if (!document.querySelector("dialog.as-sheet")) $("#scrim").hidden = true;
+  d.dispatchEvent(new Event("close"));
+}
+
+// Tapping the scrim or pressing Escape closes the top fallback sheet.
+const topSheet = () => [...document.querySelectorAll("dialog.as-sheet")].pop();
+document.addEventListener("click", e => { if (e.target.id === "scrim" && topSheet()) closeSheet(topSheet()); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && topSheet()) closeSheet(topSheet()); });
+
 // Resolves true/false. Used instead of the browser's confirm dialog, which the artifact viewer always cancels.
 function askConfirm(message, okLabel = "OK", danger = false) {
   const d = $("#confirmDialog");
@@ -853,11 +901,11 @@ function askConfirm(message, okLabel = "OK", danger = false) {
   yes.textContent = okLabel;
   yes.classList.toggle("danger", danger);
   return new Promise(resolve => {
-    const done = v => { d.onclose = null; if (d.open) d.close(); resolve(v); };
+    const done = v => { d.onclose = null; closeSheet(d); resolve(v); };
     yes.onclick = () => done(true);
     $("#confirmNo").onclick = () => done(false);
     d.onclose = () => resolve(false);
-    d.showModal();
+    openSheet(d);
   });
 }
 
@@ -1094,7 +1142,7 @@ function openPicker(target) {
   $("#pickTitle").textContent = target.kind === "cal" ? `Add to ${shortDate(target.date)}` : `Add to ${dayName(target.day)}`;
   renderChips($("#pickChips"), state.pickCat);
   renderPicker();
-  $("#pickDialog").showModal();
+  openSheet($("#pickDialog"));
 }
 
 function renderPicker() {
@@ -1192,7 +1240,7 @@ function openEntry(target) {
     f.note.value = item.note || "";
   }
   $("#entryErr").textContent = "";
-  $("#entryDialog").showModal();
+  openSheet($("#entryDialog"));
 }
 
 $("#copyLastBtn").addEventListener("click", () => {
@@ -1227,7 +1275,7 @@ $("#entryForm").addEventListener("submit", ev => {
     }
     markDirty(plan);
     save();
-    $("#entryDialog").close();
+    closeSheet($("#entryDialog"));
     renderPlanBody();
     return;
   }
@@ -1245,7 +1293,7 @@ $("#entryForm").addEventListener("submit", ev => {
     (db.plan[newDate] ||= []).push(item);
   }
   save();
-  $("#entryDialog").close();
+  closeSheet($("#entryDialog"));
   renderWeek();
   renderLibrary();
   if (newDate !== t.date) toast(`Moved to ${shortDate(newDate)}`);
@@ -1253,7 +1301,7 @@ $("#entryForm").addEventListener("submit", ev => {
 
 $("#entryRemove").addEventListener("click", () => {
   const t = state.editEntry;
-  $("#entryDialog").close();
+  closeSheet($("#entryDialog"));
   removeItem(t.kind, t.kind === "plan" ? String(t.day) : t.date, t.id);
 });
 
@@ -1655,7 +1703,7 @@ function openExercise(id) {
     : `<li class="muted">Nothing logged yet.</li>`;
   $("#exDelete").hidden = !ex;
   $("#exErr").textContent = "";
-  $("#exDialog").showModal();
+  openSheet($("#exDialog"));
   if (!ex) f.name.focus();
 }
 
@@ -1682,7 +1730,7 @@ $("#exForm").addEventListener("submit", ev => {
   if (state.editEx) Object.assign(findEx(state.editEx), data);
   else db.exercises.push({ id: "x-" + uid(), ...data });
   save();
-  $("#exDialog").close();
+  closeSheet($("#exDialog"));
   renderChips($("#libChips"), state.libCat);
   renderLibrary();
   renderWeek();
@@ -1694,7 +1742,7 @@ $("#exDelete").addEventListener("click", async () => {
   if (!(await askConfirm(`Delete "${ex.name}" from your library? Anything already on your calendar, and its logs, stays.`, "Delete", true))) return;
   db.exercises = db.exercises.filter(e => e.id !== ex.id);
   save();
-  $("#exDialog").close();
+  closeSheet($("#exDialog"));
   renderLibrary();
 });
 
@@ -1702,7 +1750,7 @@ $("#exDelete").addEventListener("click", async () => {
    Settings: theme, backup, restore
    ========================================================= */
 
-$("#settingsBtn").addEventListener("click", () => { applyTheme(); $("#settingsDialog").showModal(); });
+$("#settingsBtn").addEventListener("click", () => { applyTheme(); openSheet($("#settingsDialog")); });
 
 $("#themeSeg").addEventListener("click", e => {
   const b = e.target.closest("[data-theme]"); if (!b) return;
@@ -1729,7 +1777,7 @@ $("#importFile").addEventListener("change", async e => {
     db = normalize(d);
     state.planId = null;
     save(); applyTheme(); renderAll();
-    $("#settingsDialog").close();
+    closeSheet($("#settingsDialog"));
     toast("Backup imported");
   } catch (err) {
     toast("That file isn't a Training Plan backup");
@@ -1765,7 +1813,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 // Close buttons and tapping the backdrop close any dialog.
 document.querySelectorAll("dialog").forEach(d => {
   d.addEventListener("click", e => {
-    if (e.target === d || e.target.closest("[data-close]")) d.close();
+    if (e.target === d || e.target.closest("[data-close]")) closeSheet(d);
   });
 });
 
