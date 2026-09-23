@@ -164,10 +164,11 @@ dialog[open]{display:flex;flex-direction:column}
 .sheetform{display:flex;flex-direction:column;flex:1;min-height:0;margin:0}
 dialog::backdrop{background:rgb(0 0 0 / .45)}
 dialog:not([open]){display:none}
-/* Fallback when the viewer or browser won't open a modal dialog */
-dialog.as-sheet{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:50;margin:0 auto;max-height:calc(100% - 16px)}
-@media (min-width:640px){dialog.as-sheet{top:50%;bottom:auto;transform:translateY(-50%)}}
-#scrim{position:fixed;inset:0;z-index:45;background:rgb(0 0 0 / .45)}
+/* Editors shown as pages in the normal flow (see openSheet) */
+dialog.as-page{position:static;display:flex;flex-direction:column;width:100%;max-width:none;height:auto;max-height:none;margin:0;border-radius:20px;box-shadow:0 2px 0 var(--line);overflow:visible}
+dialog.as-page .sheet-body{overflow:visible}
+dialog.as-page .sheet-foot{border-radius:0 0 20px 20px}
+#pagehost:empty{display:none}
 #errbar{position:fixed;left:12px;right:12px;top:calc(8px + env(safe-area-inset-top,0px));z-index:60;background:var(--danger);color:#fff;border-radius:14px;padding:12px 14px;font-weight:700;font-size:.92rem;display:flex;gap:10px;align-items:flex-start;box-shadow:0 6px 20px rgb(0 0 0 / .25)}
 #errbar span{flex:1;min-width:0;overflow-wrap:anywhere}
 #errbar button{border:0;background:rgb(255 255 255 / .25);color:#fff;border-radius:8px;padding:4px 10px;font-weight:800}
@@ -177,19 +178,13 @@ dialog.as-sheet{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:50;margi
 .sheet-body{padding:4px 18px 18px;overflow-y:auto;flex:1;min-height:0}
 .sheet-foot{display:flex;gap:10px;align-items:center;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .sheet-foot .spacer{flex:1}
-.pickbar{padding:10px 16px 0}
-.pickbar .chips{margin-top:8px;padding-bottom:8px}
-/* The exercise picker gets (almost) the whole screen so the list has room */
-#pickDialog{height:94vh;height:94dvh;max-height:none}
-#pickDialog.as-sheet{top:calc(8px + env(safe-area-inset-top,0px));height:auto;max-height:none}
-@media (min-width:640px){#pickDialog{height:86vh;height:86dvh}}
-#pickDialog .sheet-head{padding:10px 8px 6px 16px;border-bottom:0}
-#pickDialog .sheet-head h2{font-size:1.25rem}
-#pickDialog .sheet-body{padding:0 16px 16px;border-top:1px solid var(--line)}
-#pickDialog .grouph{margin:14px 0 6px;font-size:.85rem}
-#pickDialog .list{padding:0 14px}
-#pickDialog .exrow{padding:11px 0;min-height:48px;align-items:center}
-#pickDialog .sheet-foot{padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+/* The exercise picker is a page of its own (not a floating sheet), so it shows up
+   however the viewer sizes the frame. */
+.pickpage-head{display:flex;flex-direction:column;gap:10px}
+.pickpage-head h2{font-size:1.5rem}
+#pickList .grouph{margin:16px 0 6px;font-size:.85rem}
+#pickList .exrow{padding:12px 0;min-height:52px;align-items:center}
+.donebar{display:flex;align-items:center;justify-content:space-between;gap:12px}
 details.howto{background:var(--sunk);border-radius:10px;padding:10px 12px;margin-top:14px}
 details.howto summary{font-weight:600;cursor:pointer}
 details.howto p{margin-top:6px;white-space:pre-wrap}
@@ -210,6 +205,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .progtag{display:inline-block;font-size:.75rem;font-weight:600;color:var(--muted);background:var(--sunk);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:1px;white-space:nowrap}
 .planline{font-size:.9rem;color:var(--muted);text-align:center;margin-top:10px}
 .planline b{color:var(--ink);font-weight:600}
+.stretched .tabs{position:static;max-width:720px;margin:0 auto 8px;border:0;border-radius:16px;background:var(--surface)}
+.stretched main{padding-bottom:40px}
 #confirmMsg{font-size:1.05rem;font-weight:600;max-width:46ch}
 dialog.confirm{max-width:440px}
 
@@ -261,9 +258,24 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 </header>
 
 <main>
+  <div id="pagehost"></div>
   <section id="view-week" class="stack" aria-label="Week plan"></section>
 
   <section id="view-plan" class="stack" hidden aria-label="Plan builder"></section>
+
+  <section id="view-pick" class="stack" hidden aria-labelledby="pickTitle">
+    <div class="pickpage-head">
+      <div class="donebar">
+        <h2 id="pickTitle">Add exercises</h2>
+        <button type="button" class="primary" data-pickdone>Done</button>
+      </div>
+      <p class="muted" id="pickCount"></p>
+      <input type="search" id="pickSearch" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises">
+      <div class="chips" id="pickChips" role="group" aria-label="Filter by category"></div>
+    </div>
+    <div id="pickList"></div>
+    <button type="button" class="primary" data-pickdone style="width:100%">Done</button>
+  </section>
 
   <section id="view-library" hidden aria-label="Exercise library">
     <div class="bar">
@@ -292,25 +304,8 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 </nav>
 
 <div id="toast" role="status" aria-live="polite"></div>
-<div id="scrim" hidden></div>
 <div id="errbar" role="alert" hidden><span id="errmsg"></span><button type="button" id="errclose">OK</button></div>
 
-<!-- Pick exercises to add to a day -->
-<dialog id="pickDialog" aria-labelledby="pickTitle">
-  <div class="sheet-head">
-    <h2 id="pickTitle">Add exercises</h2>
-    <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-  </div>
-  <div class="pickbar">
-    <input type="search" id="pickSearch" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises">
-    <div class="chips" id="pickChips" role="group" aria-label="Filter by category"></div>
-  </div>
-  <div class="sheet-body" id="pickList"></div>
-  <div class="sheet-foot">
-    <span class="muted" id="pickCount"></span><span class="spacer"></span>
-    <button class="primary" data-close>Done</button>
-  </div>
-</dialog>
 
 <!-- Target + log for one scheduled exercise (or a plan slot's target) -->
 <dialog id="entryDialog" aria-labelledby="entryTitle">
@@ -877,32 +872,62 @@ function history(exId) {
   return out.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-/* ---------- Sheets ----------
-   Dialogs open with showModal() when allowed. Some viewers and older phone browsers
-   refuse or lack it, so fall back to showing the dialog as a fixed sheet over a scrim. */
+/* ---------- Pages (formerly pop-up sheets) ----------
+   The Claude app can stretch this page's frame to the full length of the page, which
+   pushes anything pinned to the screen (pop-ups, bottom sheets) out of view. So every
+   editor opens as a page at the top of the content instead: the rest of the app is
+   hidden, the editor is shown in the normal flow, and it is scrolled into view. */
+const sheetStack = [];   // open editors, newest last
+let hiddenViews = [];    // views hidden while editors are open
+
 function openSheet(d) {
-  try { if (typeof d.showModal === "function") d.showModal(); } catch (e) { /* blocked: use the fallback */ }
-  if (!d.open) {
-    d.setAttribute("open", "");
-    d.classList.add("as-sheet");
-    $("#scrim").hidden = false;
+  if (!sheetStack.length) {
+    d._returnTo = document.activeElement;
+    hiddenViews = ["view-week", "view-plan", "view-library", "view-pick"].filter(id => !$("#" + id).hidden);
+    hiddenViews.forEach(id => { $("#" + id).hidden = true; });
+  } else {
+    sheetStack[sheetStack.length - 1].hidden = true;   // e.g. a confirmation over the exercise editor
   }
+  $("#pagehost").appendChild(d);
+  d.hidden = false;
+  d.setAttribute("open", "");
+  d.classList.add("as-page");
+  sheetStack.push(d);
+  window.scrollTo(0, 0);
+  d.scrollIntoView({ block: "start" });
 }
 
 function closeSheet(d) {
-  if (!d.hasAttribute("open")) return;
-  const fallback = d.classList.contains("as-sheet");
-  if (!fallback && typeof d.close === "function") { d.close(); return; }   // fires "close" itself
+  const i = sheetStack.indexOf(d);
+  if (i < 0) return;
+  sheetStack.splice(i, 1);
   d.removeAttribute("open");
-  d.classList.remove("as-sheet");
-  if (!document.querySelector("dialog.as-sheet")) $("#scrim").hidden = true;
+  d.classList.remove("as-page");
+  if (sheetStack.length) {
+    const prev = sheetStack[sheetStack.length - 1];
+    prev.hidden = false;
+    prev.scrollIntoView({ block: "start" });
+  } else {
+    hiddenViews.forEach(id => { $("#" + id).hidden = false; });
+    hiddenViews = [];
+    const back = d._returnTo;
+    d._returnTo = null;
+    // Back to what opened it, e.g. the exercise you tapped (after the week re-renders).
+    setTimeout(() => {
+      const target = back && back.isConnected ? back
+        : state.returnId ? document.querySelector(`[data-item="${state.returnId}"]`) : null;
+      state.returnId = null;
+      if (target) target.scrollIntoView({ block: "center" });
+    }, 0);
+  }
   d.dispatchEvent(new Event("close"));
 }
 
-// Tapping the scrim or pressing Escape closes the top fallback sheet.
-const topSheet = () => [...document.querySelectorAll("dialog.as-sheet")].pop();
-document.addEventListener("click", e => { if (e.target.id === "scrim" && topSheet()) closeSheet(topSheet()); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && topSheet()) closeSheet(topSheet()); });
+function closeAllSheets() {
+  while (sheetStack.length) closeSheet(sheetStack[sheetStack.length - 1]);
+}
+
+document.addEventListener("keydown", e => { if (e.key === "Escape" && sheetStack.length) closeSheet(sheetStack[sheetStack.length - 1]); });
 
 // Resolves true/false. Used instead of the browser's confirm dialog, which the artifact viewer always cancels.
 function askConfirm(message, okLabel = "OK", danger = false) {
@@ -921,9 +946,18 @@ function askConfirm(message, okLabel = "OK", danger = false) {
 }
 
 let toastTimer;
+// Stretched frame: the page is taller than the phone's screen, so "fixed" things sit
+// at the ends of the whole page. Detected once the page has laid out.
+const isStretched = () => innerHeight > (screen.height || 0) + 80;
+let lastTapY = 0;
+document.addEventListener("pointerdown", e => { lastTapY = e.pageY; }, true);
+
 // action (optional) = { label, run }, e.g. Undo.
 function toast(msg, action) {
   const t = $("#toast");
+  // Normally pinned above the tab bar; in a stretched frame, shown next to where you tapped.
+  if (isStretched()) { t.style.position = "absolute"; t.style.top = Math.max(8, lastTapY - 70) + "px"; t.style.bottom = "auto"; }
+  else { t.style.position = t.style.top = t.style.bottom = ""; }
   t.innerHTML = `<span>${esc(msg)}</span>${action ? `<button type="button">${esc(action.label)}</button>` : ""}`;
   t.classList.toggle("has-action", !!action);
   if (action) t.querySelector("button").onclick = () => { t.classList.remove("show"); action.run(); };
@@ -1150,10 +1184,15 @@ function openPicker(target) {
   state.pickAdded = {};
   state.pickQuery = "";
   $("#pickSearch").value = "";
-  $("#pickTitle").textContent = target.kind === "cal" ? `Add to ${shortDate(target.date)}` : `Add to ${dayName(target.day)}`;
+  $("#pickTitle").textContent = target.kind === "cal" ? `Add to ${fmt(parseKey(target.date), { weekday: "long", month: "short", day: "numeric" })}` : `Add to ${dayName(target.day)}`;
   renderChips($("#pickChips"), state.pickCat);
   renderPicker();
-  openSheet($("#pickDialog"));
+  // Show the picker in place of the current tab and bring it into view.
+  state.pickReturn = state.tab;
+  for (const id of ["view-week", "view-plan", "view-library"]) $("#" + id).hidden = true;
+  $("#view-pick").hidden = false;
+  window.scrollTo(0, 0);
+  $("#view-pick").scrollIntoView({ block: "start" });
 }
 
 function renderPicker() {
@@ -1166,8 +1205,18 @@ function renderPicker() {
     </button></li>`;
   });
   const total = Object.values(state.pickAdded).reduce((a, b) => a + b, 0);
-  $("#pickCount").textContent = total ? `${total} added` : "Tap to add";
+  $("#pickCount").textContent = total ? `${total} added. Tap more, or Done to go back.` : "Tap an exercise to add it.";
 }
+
+// Done: back to the tab you came from, scrolled to the day you were adding to.
+function closePicker() {
+  const t = state.pickTarget;
+  $("#view-pick").hidden = true;
+  showTab(state.pickReturn || "week");
+  const day = t && (t.kind === "cal" ? document.getElementById("day-" + t.date) : document.querySelector(`[data-drop="${t.day}"][data-kind="plan"]`));
+  if (day) day.scrollIntoView({ block: "center" });
+}
+document.addEventListener("click", e => { if (e.target.closest("[data-pickdone]")) closePicker(); });
 
 $("#pickSearch").addEventListener("input", e => { state.pickQuery = e.target.value; renderPicker(); });
 $("#pickChips").addEventListener("click", e => {
@@ -1214,6 +1263,7 @@ function editedItem() {
 
 function openEntry(target) {
   state.editEntry = target;
+  state.returnId = target.id;
   const item = editedItem(); if (!item) return;
   const isPlan = target.kind === "plan";
   const ex = findEx(item.ex);
@@ -1808,11 +1858,13 @@ $("#restoreBtn").addEventListener("click", () => {
    ========================================================= */
 
 function showTab(tab) {
+  closeAllSheets();
   state.tab = tab;
   $("#view-week").hidden = tab !== "week";
   $("#view-plan").hidden = tab !== "plan";
   if (tab === "plan") renderPlanTab();
   $("#view-library").hidden = tab !== "library";
+  $("#view-pick").hidden = true;
   document.querySelectorAll(".tabs button").forEach(b => {
     if (b.dataset.tab === tab) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
@@ -1824,7 +1876,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 // Close buttons and tapping the backdrop close any dialog.
 document.querySelectorAll("dialog").forEach(d => {
   d.addEventListener("click", e => {
-    if (e.target === d || e.target.closest("[data-close]")) closeSheet(d);
+    if (e.target.closest("[data-close]")) closeSheet(d);
   });
 });
 
@@ -1838,6 +1890,15 @@ function renderAll() {
 applyTheme();
 renderAll();
 save();
+
+// In a stretched frame the bottom tab bar would sit at the very end of the page: put it under the header.
+function placeTabs() {
+  const nav = $(".tabs"), stretched = isStretched();
+  document.documentElement.classList.toggle("stretched", stretched);
+  if (stretched && nav.previousElementSibling !== $(".top")) $(".top").after(nav);
+}
+placeTabs();
+setTimeout(placeTabs, 500);
 
 // On a phone, jump to today's card so you don't have to scroll past Monday.
 const todayCard = document.getElementById("day-" + dkey(new Date()));
