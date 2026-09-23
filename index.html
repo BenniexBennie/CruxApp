@@ -143,11 +143,12 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 /* ---------- Dialogs (bottom sheets on phones) ---------- */
 dialog{border:0;padding:0;background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:92dvh;border-radius:18px 18px 0 0;margin:auto auto 0}
 dialog[open]{display:flex;flex-direction:column}
+.sheetform{display:flex;flex-direction:column;flex:1;min-height:0;margin:0}
 dialog::backdrop{background:rgb(0 0 0 / .45)}
 @media (min-width:640px){dialog{margin:auto;border-radius:18px;max-height:86dvh}}
 .sheet-head{display:flex;align-items:center;gap:8px;padding:14px 12px 10px 18px;border-bottom:1px solid var(--line)}
 .sheet-head h2{font-size:1.5rem;flex:1;min-width:0}
-.sheet-body{padding:4px 18px 18px;overflow-y:auto;flex:1}
+.sheet-body{padding:4px 18px 18px;overflow-y:auto;flex:1;min-height:0}
 .sheet-foot{display:flex;gap:10px;align-items:center;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .sheet-foot .spacer{flex:1}
 .pickbar{padding:12px 18px 0}
@@ -196,6 +197,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .setrow.head{margin-top:10px}
 .setrow.head span{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap;overflow:hidden}
 .setrow input,.setrow select{padding:8px 6px;min-width:0;border-radius:8px}
+.setrow input.bad{border-color:var(--tape);background:color-mix(in srgb,var(--tape) 10%,var(--sunk))}
 .setrow .rm{padding:6px}
 .setn{font-weight:600;color:var(--muted);text-align:center}
 .setsec .ghost{margin-top:10px}
@@ -270,7 +272,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 
 <!-- Target + log for one scheduled exercise (or a plan slot's target) -->
 <dialog id="entryDialog" aria-labelledby="entryTitle">
-  <form id="entryForm" novalidate style="display:contents">
+  <form id="entryForm" class="sheetform" novalidate>
     <div class="sheet-head">
       <h2 id="entryTitle"></h2>
       <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
@@ -309,7 +311,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 
 <!-- Create / edit a library exercise -->
 <dialog id="exDialog" aria-labelledby="exTitle">
-  <form id="exForm" novalidate style="display:contents">
+  <form id="exForm" class="sheetform" novalidate>
     <div class="sheet-head">
       <h2 id="exTitle">New exercise</h2>
       <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
@@ -687,9 +689,11 @@ function setRowHTML(cols, s, i) {
       return `<select data-f="grip" aria-label="${label}"><option value="">—</option>${GRIPS.map(([full, short]) =>
         `<option value="${full}"${full === v ? " selected" : ""}>${short}</option>`).join("")}</select>`;
     }
-    // No inputmode on load: iPhones then show a keypad that includes the minus sign.
-    const extra = c === "load" ? "" : ` min="0" inputmode="numeric"`;
-    return `<input type="number" step="any" data-f="${c}" value="${esc(v)}"${extra} aria-label="${label}">`;
+    // Text inputs, parsed by parseNum: iPhone number fields silently blank out "+25" or "12,5".
+    // Load gets the full keyboard so + and − are available; the rest get the number pad.
+    const mode = c === "load" ? "" : ` inputmode="decimal"`;
+    const ph = c === "load" ? ` placeholder="+0"` : "";
+    return `<input type="text" data-f="${c}" value="${esc(v)}"${mode}${ph} autocomplete="off" aria-label="${label}">`;
   }).join("");
   return `<div class="setrow" style="--cols:${cols.length}"><span class="setn">${i + 1}</span>${cells}
     <button type="button" class="rm" data-rmset="${i}" aria-label="Remove set ${i + 1}">${ICON_X}</button></div>`;
@@ -704,14 +708,24 @@ function renderSets(box, sets) {
     : `<p class="empty">No sets yet.</p>`;
 }
 
+// Accepts "+25", "-15", "−15", "25 lb", "12,5", "20mm", "10s". Returns NaN if it isn't a number.
+function parseNum(v) {
+  const t = v.replace(/[−–]/g, "-").replace(",", ".").replace(/\s*(lbs?|mm|sec|s)$/i, "").replace(/\s+/g, "");
+  return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(t) ? Number(t) : NaN;
+}
+
+// Unreadable boxes get the .bad class so Save can point at them instead of losing the number.
 function readSets(box, keepEmpty) {
   return [...box.querySelectorAll(".setrow:not(.head)")].map(row => {
     const s = {};
     row.querySelectorAll("[data-f]").forEach(el => {
       const v = el.value.trim();
+      el.classList.remove("bad");
       if (v === "") return;
-      if (el.dataset.f === "grip") s.grip = v;
-      else if (Number.isFinite(Number(v))) s[el.dataset.f] = Number(v);
+      if (el.dataset.f === "grip") { s.grip = v; return; }
+      const n = parseNum(v);
+      if (Number.isFinite(n) && (n >= 0 || el.dataset.f === "load")) s[el.dataset.f] = n;
+      else el.classList.add("bad");
     });
     return s;
   }).filter(s => keepEmpty || Object.keys(s).length);
@@ -1103,7 +1117,15 @@ $("#entryForm").addEventListener("submit", ev => {
   const t = state.editEntry;
   const item = editedItem(); if (!item) return;
   const f = ev.target;
-  item.target = readSets($("#targetSets"));
+  const target = readSets($("#targetSets"));
+  const log = readSets($("#logSets"));
+  const bad = $("#entryForm .bad");
+  if (bad) {
+    $("#entryErr").textContent = "The highlighted box isn't a number. Use numbers like 5, 12.5, +25 or -15.";
+    bad.focus();
+    return;
+  }
+  item.target = target;
 
   if (t.kind === "plan") {
     const plan = currentPlan();
@@ -1122,7 +1144,7 @@ $("#entryForm").addEventListener("submit", ev => {
   const newDate = f.date.value;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) { $("#entryErr").textContent = "Pick a date."; return; }
   const hadLog = item.log.length > 0;
-  item.log = readSets($("#logSets"));
+  item.log = log;
   item.note = f.note.value.trim();
   if (item.log.length && !hadLog) item.done = true;   // logging it counts as doing it
   if (newDate !== t.date) {
