@@ -159,26 +159,37 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 .added{flex:none;align-self:center;font-size:.85rem;font-weight:800;color:var(--accent-press)}
 
 /* ---------- Dialogs (bottom sheets on phones) ---------- */
-dialog{border:0;padding:0;background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:92dvh;border-radius:18px 18px 0 0;margin:auto auto 0}
+dialog{border:0;padding:0;background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:92vh;max-height:92dvh;border-radius:18px 18px 0 0;margin:auto auto 0}
 dialog[open]{display:flex;flex-direction:column}
 .sheetform{display:flex;flex-direction:column;flex:1;min-height:0;margin:0}
 dialog::backdrop{background:rgb(0 0 0 / .45)}
 dialog:not([open]){display:none}
 /* Fallback when the viewer or browser won't open a modal dialog */
-dialog.as-sheet{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:50;margin:0 auto}
+dialog.as-sheet{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:50;margin:0 auto;max-height:calc(100% - 16px)}
 @media (min-width:640px){dialog.as-sheet{top:50%;bottom:auto;transform:translateY(-50%)}}
 #scrim{position:fixed;inset:0;z-index:45;background:rgb(0 0 0 / .45)}
 #errbar{position:fixed;left:12px;right:12px;top:calc(8px + env(safe-area-inset-top,0px));z-index:60;background:var(--danger);color:#fff;border-radius:14px;padding:12px 14px;font-weight:700;font-size:.92rem;display:flex;gap:10px;align-items:flex-start;box-shadow:0 6px 20px rgb(0 0 0 / .25)}
 #errbar span{flex:1;min-width:0;overflow-wrap:anywhere}
 #errbar button{border:0;background:rgb(255 255 255 / .25);color:#fff;border-radius:8px;padding:4px 10px;font-weight:800}
-@media (min-width:640px){dialog{margin:auto;border-radius:18px;max-height:86dvh}}
+@media (min-width:640px){dialog{margin:auto;border-radius:18px;max-height:86vh;max-height:86dvh}}
 .sheet-head{display:flex;align-items:center;gap:8px;padding:14px 12px 10px 18px;border-bottom:1px solid var(--line)}
 .sheet-head h2{font-size:1.5rem;flex:1;min-width:0}
 .sheet-body{padding:4px 18px 18px;overflow-y:auto;flex:1;min-height:0}
 .sheet-foot{display:flex;gap:10px;align-items:center;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .sheet-foot .spacer{flex:1}
-.pickbar{padding:12px 18px 0}
-.pickbar .chips{margin-top:10px}
+.pickbar{padding:10px 16px 0}
+.pickbar .chips{margin-top:8px;padding-bottom:8px}
+/* The exercise picker gets (almost) the whole screen so the list has room */
+#pickDialog{height:94vh;height:94dvh;max-height:none}
+#pickDialog.as-sheet{top:calc(8px + env(safe-area-inset-top,0px));height:auto;max-height:none}
+@media (min-width:640px){#pickDialog{height:86vh;height:86dvh}}
+#pickDialog .sheet-head{padding:10px 8px 6px 16px;border-bottom:0}
+#pickDialog .sheet-head h2{font-size:1.25rem}
+#pickDialog .sheet-body{padding:0 16px 16px;border-top:1px solid var(--line)}
+#pickDialog .grouph{margin:14px 0 6px;font-size:.85rem}
+#pickDialog .list{padding:0 14px}
+#pickDialog .exrow{padding:11px 0;min-height:48px;align-items:center}
+#pickDialog .sheet-foot{padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 details.howto{background:var(--sunk);border-radius:10px;padding:10px 12px;margin-top:14px}
 details.howto summary{font-weight:600;cursor:pointer}
 details.howto p{margin-top:6px;white-space:pre-wrap}
@@ -1150,7 +1161,7 @@ function renderPicker() {
   $("#pickList").innerHTML = groupedHTML(list, e => {
     const n = state.pickAdded[e.id] || 0;
     return `<li><button class="exrow" data-id="${esc(e.id)}">
-      <span class="grow"><strong>${esc(e.name)}</strong><small>${esc(exSubtitle(e))}</small></span>
+      <span class="grow"><strong>${esc(e.name)}</strong>${lastLog(e.id, tomorrowKey()) ? `<small>${esc(exSubtitle(e))}</small>` : ""}</span>
       ${n ? `<span class="added">✓ Added${n > 1 ? ` ×${n}` : ""}</span>` : ""}
     </button></li>`;
   });
