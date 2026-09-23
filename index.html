@@ -13,7 +13,6 @@
   --bg:#E6E9EC; --surface:#FFFFFF; --sunk:#F2F4F6; --ink:#17212B; --muted:#5A6774; --line:#CDD3D9;
   --tape:#D1246C; --orange:#E2621B; --go:#0E8878; --blue:#2F63C8; --gold:#D89B00; --grey:#8A96A1;
   --violet:#7A4FC4; --leaf:#3B8F3F; --cyan:#1B8FB5;
-  --bar-build:#00897A; --bar-deload:#2F63C8;
   --display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   box-sizing:border-box;
@@ -24,7 +23,6 @@
     --bg:#141A20; --surface:#1D252D; --sunk:#232C35; --ink:#E6EAEE; --muted:#98A4AF; --line:#303A44;
     --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#6D7984;
     --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
-    --bar-build:#1FA893; --bar-deload:#5A8BF5;
     color-scheme:dark;
   }
 }
@@ -32,7 +30,6 @@
   --bg:#141A20; --surface:#1D252D; --sunk:#232C35; --ink:#E6EAEE; --muted:#98A4AF; --line:#303A44;
   --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#6D7984;
   --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
-  --bar-build:#1FA893; --bar-deload:#5A8BF5;
   color-scheme:dark;
 }
 html{height:100%}
@@ -175,28 +172,6 @@ input[type=range]{width:100%;accent-color:var(--tape)}
 .progtag{display:inline-block;font-size:.75rem;font-weight:600;color:var(--muted);background:var(--sunk);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:1px;white-space:nowrap}
 .planline{font-size:.9rem;color:var(--muted);text-align:center;margin-top:10px}
 .planline b{color:var(--ink);font-weight:600}
-.chart{position:relative;display:flex;align-items:flex-end;gap:2px;height:140px;margin-top:52px;border-bottom:1px solid var(--line)}
-.barcol{position:relative;flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;border-radius:4px 4px 0 0}
-.barcol:hover .bar-fill{filter:brightness(1.12)}
-.bar-fill{width:100%;border-radius:4px 4px 0 0;background:var(--bar-build)}
-.barcol.deload .bar-fill{background:var(--bar-deload)}
-.tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:.8rem;line-height:1.3;padding:6px 8px;border-radius:8px;white-space:nowrap;z-index:2;pointer-events:none;text-align:left}
-.barcol.first .tip{left:0;transform:none}
-.barcol.last .tip{left:auto;right:0;transform:none}
-.barcol:hover .tip,.barcol:focus-visible .tip{display:block}
-.axis{display:flex;gap:2px;margin-top:4px}
-.axis span{flex:1;text-align:center;font-size:.72rem;color:var(--muted)}
-.legend{display:flex;gap:16px;font-size:.85rem;color:var(--muted);margin-top:10px;flex-wrap:wrap}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
-details.wkd{background:var(--surface);border-radius:14px;padding:12px 16px}
-details.wkd+details.wkd{margin-top:8px}
-details.wkd summary{cursor:pointer;font-weight:600;display:flex;gap:8px;align-items:center}
-details.wkd summary .muted{font-weight:400;font-size:.9rem}
-.wkday{margin-top:10px}
-.wkday b{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.wkday li{font-size:.92rem;padding:2px 0}
-.wkday li small{color:var(--muted)}
-
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;font-size:.95rem;z-index:20;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.show{opacity:1}
 #toast.has-action.show{pointer-events:auto;display:flex;align-items:center;gap:14px}
@@ -213,6 +188,24 @@ details.wkd summary .muted{font-weight:400;font-size:.9rem}
 .day.drop-target{outline:2px dashed var(--blue);outline-offset:-2px}
 .drop-line{height:3px;background:var(--blue);border-radius:2px;margin:3px 0;list-style:none}
 body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
+
+/* ---------- Sets: target & log ---------- */
+.setsec{margin-top:18px}
+.setsec h3{font-size:1.15rem}
+.setrow{display:grid;grid-template-columns:20px repeat(var(--cols),minmax(0,1fr)) 32px;gap:6px;align-items:center;margin-top:6px}
+.setrow.head{margin-top:10px}
+.setrow.head span{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap;overflow:hidden}
+.setrow input,.setrow select{padding:8px 6px;min-width:0;border-radius:8px}
+.setrow .rm{padding:6px}
+.setn{font-weight:600;color:var(--muted);text-align:center}
+.setsec .ghost{margin-top:10px}
+.lastbox{background:var(--sunk);border-left:4px solid var(--blue);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:.95rem}
+.lastbox small{color:var(--muted)}
+.logged{color:var(--ink)}
+.histlist{margin-top:6px}
+.histlist li{padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}
+.histlist li:first-child{border-top:0}
+.histlist small{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -277,7 +270,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   </div>
 </dialog>
 
-<!-- Edit a scheduled exercise (this day only) -->
+<!-- Target + log for one scheduled exercise (or a plan slot's target) -->
 <dialog id="entryDialog" aria-labelledby="entryTitle">
   <form id="entryForm" novalidate style="display:contents">
     <div class="sheet-head">
@@ -287,20 +280,29 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
     <div class="sheet-body">
       <p class="hint" style="margin-top:12px" id="entryHint"></p>
       <div id="entryHowto"></div>
+      <div id="entryLast"></div>
+      <section class="setsec" id="targetSec">
+        <div class="bar"><h3>Target</h3><button type="button" class="linkish" id="copyLastBtn">Copy last time</button></div>
+        <div id="targetSets" data-cols="[]"></div>
+        <button type="button" class="ghost sm" data-addset="targetSets">+ Set</button>
+      </section>
+      <section class="setsec" id="logSec">
+        <div class="bar"><h3>What I did</h3><button type="button" class="linkish" id="copyTargetBtn">Copy target</button></div>
+        <div id="logSets" data-cols="[]"></div>
+        <button type="button" class="ghost sm" data-addset="logSets">+ Set</button>
+      </section>
+      <p class="hint" id="noFields" style="margin-top:14px">This exercise doesn't track sets, just notes. You can change what it tracks in the Library.</p>
       <div id="entryPlanFields">
-        <label class="field"><span>Each week, progress by</span><select name="prog" id="entryProg"></select></label>
         <label class="field"><span>Day</span><select name="day" id="entryDay"></select></label>
       </div>
-      <fieldset><legend>Plan</legend><div class="grid2" id="entryParams"></div></fieldset>
       <div id="entryCalFields">
-      <label class="field"><span>Date</span><input type="date" name="date"></label>
-      <label class="field"><span>Session notes</span><textarea name="note" placeholder="How did it go? Felt strong, left index a bit sore…"></textarea></label>
+        <label class="field"><span>Session notes</span><textarea name="note" placeholder="How did it go? Felt strong, left index a bit sore…"></textarea></label>
+        <label class="field"><span>Date</span><input type="date" name="date"></label>
       </div>
       <p class="err" id="entryErr"></p>
     </div>
     <div class="sheet-foot">
       <button type="button" class="ghost sm danger" id="entryRemove">Remove</button>
-      <button type="button" class="linkish" id="entryReset">Reset to library</button>
       <span class="spacer"></span>
       <button type="submit" class="primary">Save</button>
     </div>
@@ -317,11 +319,12 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
     <div class="sheet-body">
       <label class="field"><span>Name</span><input type="text" name="name" required maxlength="80" placeholder="e.g. Pinch block lifts"></label>
       <label class="field"><span>Category</span><select name="cat" id="exCat"></select></label>
+      <fieldset><legend>Track per set</legend><div class="chips wrap" id="exFields"></div>
+        <p class="hint">The columns you fill in when you set a target or log it. Load is in pounds, edge in inches.</p></fieldset>
       <fieldset><legend>Goals it trains</legend><div class="chips wrap" id="exGoals"></div></fieldset>
-      <fieldset><legend>Default plan</legend><p class="hint" style="margin:-2px 0 10px">Fill in only what applies. These become the starting numbers each time you schedule it.</p><div class="grid2" id="exParams"></div></fieldset>
-      <label class="field"><span>In plans, progress by</span><select name="prog" id="exProg"></select></label>
       <label class="field"><span>How-to notes</span><textarea name="notes" placeholder="Cues, form tips, progressions"></textarea></label>
       <label class="field"><span>Video link</span><input type="url" name="video" placeholder="https://…" inputmode="url"></label>
+      <fieldset id="exHistory"><legend>History</legend><ul class="histlist" id="exHistoryList"></ul></fieldset>
       <p class="err" id="exErr"></p>
     </div>
     <div class="sheet-foot">
@@ -388,20 +391,26 @@ const CATS = [
 const CAT_COLOR = Object.fromEntries(CATS);
 const catColor = c => CAT_COLOR[c] || "var(--grey)";
 
-const GRIPS = ["Half crimp", "Open hand", "Full crimp", "Three-finger drag", "Pinch", "Sloper", "Jug"];
+// [stored value, short label for the narrow set rows]
+const GRIPS = [["Half crimp", "Half"], ["Open hand", "Open"], ["Full crimp", "Full"], ["Three-finger drag", "3F drag"],
+  ["Pinch", "Pinch"], ["Sloper", "Sloper"], ["Jug", "Jug"]];
 
-// Every exercise and scheduled entry carries a params object `p` with any of these keys.
-const PARAMS = [
-  { k: "sets",     label: "Sets",                 type: "number" },
-  { k: "reps",     label: "Reps",                 type: "number" },
-  { k: "on",       label: "Hang / work (sec)",    type: "number" },
-  { k: "off",      label: "Rest between reps (sec)", type: "number" },
-  { k: "setRest",  label: "Rest between sets (min)", type: "number" },
-  { k: "duration", label: "Duration (min)",       type: "number" },
-  { k: "edge",     label: "Edge (mm)",            type: "number" },
-  { k: "grip",     label: "Grip",                 type: "grip" },
-  { k: "load",     label: "Load",                 type: "text", ph: "+10 kg" },
-];
+// What each set can record. Imperial units: load in pounds (+ added, − assistance), edge in inches.
+// "edge" also brings a grip column with it.
+const FIELDS = [["reps", "Reps"], ["time", "Time (sec)"], ["load", "Load (lb)"], ["edge", "Edge + grip"]];
+const COL_HEAD = { reps: "Reps", time: "Sec", load: "± lb", edge: "Edge in", grip: "Grip" };
+const DEFAULT_FIELDS = ["reps", "load"];
+const CAT_FIELDS = {
+  "Warm-up": [], Climbing: ["reps"], Fingers: ["time", "load", "edge"], Power: ["reps"], Strength: ["reps", "load"],
+  Antagonist: ["reps", "load"], Prehab: ["reps", "load"], Core: ["reps", "time"], Mobility: [],
+};
+const FIELD_OVERRIDES = {
+  "s-limit": [], "s-board": [], "s-dyno": [], "s-arc": [], "s-mileage": [], "s-rice": [],
+  "s-lockoff": ["reps", "time", "load"], "s-oap-neg": ["reps", "time", "load"], "s-oap-lock": ["reps", "time", "load"],
+  "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
+  "s-scappull": ["reps"], "s-fingerext": ["reps"],
+};
+const defaultFields = (id, cat) => [...(FIELD_OVERRIDES[id] ?? CAT_FIELDS[cat] ?? DEFAULT_FIELDS)];
 
 // Training goals. Exercises carry `goals: [...]` so the library can be filtered by what you're training for.
 const GOALS = [
@@ -411,68 +420,67 @@ const GOALS = [
   ["endurance", "Endurance"],
   ["prehab", "Injury-proofing"],
 ];
-const GOAL_LABEL = Object.fromEntries(GOALS);
 
-// Starter library. Built-in ids start with "s-" so they can be restored later.
-// `prog` (optional) is the default way the exercise progresses in a plan.
+// Starter library: names only. Built-in ids start with "s-" so they can be restored later.
 const SEED = [
   // Warm-up
-  { id: "s-warmup", name: "Bouldering warm-up", cat: "Warm-up", goals: ["prehab"], p: { duration: 20 }, notes: "Easy traversing, then 6–10 problems ramping from very easy to about two grades below your max. Add a few progressive hangs before any fingerboarding." },
+  { id: "s-warmup", name: "Bouldering warm-up", cat: "Warm-up", goals: ["prehab"], notes: "Easy traversing, then 6–10 problems ramping from very easy to about two grades below your max. Add a few progressive hangs before any fingerboarding." },
   // Fingers
-  { id: "s-maxhang", name: "Max hangs", cat: "Fingers", goals: ["fingers"], p: { sets: 5, on: 10, setRest: 3, edge: 20, grip: "Half crimp", load: "+5 kg" }, notes: "Hang 10 s with a load you could just about hold for 13 s. Full rest between sets. Stop if form breaks or fingers feel tweaky." },
-  { id: "s-repeaters", name: "Repeaters", cat: "Fingers", goals: ["fingers", "endurance"], p: { sets: 6, reps: 6, on: 7, off: 3, setRest: 3, edge: 20, grip: "Half crimp" }, notes: "7 s hang, 3 s rest, six times = one set. Pick a load where the last rep of the last set is hard but clean." },
-  { id: "s-minedge", name: "Minimum edge hangs", cat: "Fingers", goals: ["fingers"], p: { sets: 5, on: 10, setRest: 3, grip: "Half crimp" }, notes: "Bodyweight only. Use the smallest edge you can hold for 10 s; progress by shrinking the edge a couple of mm at a time." },
-  { id: "s-openhand", name: "Open-hand hangs", cat: "Fingers", goals: ["fingers"], p: { sets: 4, on: 10, setRest: 3, edge: 20, grip: "Open hand" }, notes: "Builds drag strength for slopers and pockets. Keep shoulders engaged." },
-  { id: "s-blocklift", name: "No-hang block lifts", cat: "Fingers", goals: ["fingers"], p: { sets: 5, on: 10, setRest: 2, edge: 20, grip: "Half crimp", load: "30 kg" }, notes: "Lift a loaded block or loading pin off the floor with one hand and hold it for the time. Easy to load in small steps and gentle on shoulders. Load = total weight lifted." },
-  { id: "s-oah", name: "One-arm hangs", cat: "Fingers", goals: ["fingers"], p: { sets: 5, on: 10, setRest: 3, edge: 20, grip: "Half crimp", load: "-10 kg" }, notes: "Hang on one arm with a slight bend in the elbow, assisted by a pulley counterweight (negative load). Alternate arms each set." },
+  { id: "s-maxhang", name: "Max hangs", cat: "Fingers", goals: ["fingers"], notes: "Hang 10 s with a load you could just about hold for 13 s. Full rest between sets. Stop if form breaks or fingers feel tweaky." },
+  { id: "s-repeaters", name: "Repeaters", cat: "Fingers", goals: ["fingers", "endurance"], notes: "7 s hang, 3 s rest, six times = one set. Pick a load where the last rep of the last set is hard but clean." },
+  { id: "s-minedge", name: "Minimum edge hangs", cat: "Fingers", goals: ["fingers"], notes: "Bodyweight only. Use the smallest edge you can hold for 10 s; progress by moving to a smaller edge a little at a time." },
+  { id: "s-openhand", name: "Open-hand hangs", cat: "Fingers", goals: ["fingers"], notes: "Builds drag strength for slopers and pockets. Keep shoulders engaged." },
+  { id: "s-blocklift", name: "No-hang block lifts", cat: "Fingers", goals: ["fingers"], notes: "Lift a loaded block or loading pin off the floor with one hand and hold it for the time. Easy to load in small steps and gentle on shoulders. Load = total weight lifted." },
+  { id: "s-oah", name: "One-arm hangs", cat: "Fingers", goals: ["fingers"], notes: "Hang on one arm with a slight bend in the elbow, assisted by a pulley counterweight (negative load). Alternate arms each set." },
   // Power
-  { id: "s-limit", name: "Limit bouldering", cat: "Climbing", goals: ["power", "fingers"], p: { duration: 60, setRest: 3 }, notes: "3–5 problems at or just above your max. Short attempts with 3+ min rest. Quality over quantity: stop when you stop getting closer." },
-  { id: "s-board", name: "Board session", cat: "Climbing", goals: ["power", "fingers"], p: { duration: 60 }, notes: "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts." },
-  { id: "s-campus", name: "Campus ladders", cat: "Power", goals: ["power"], p: { sets: 5, setRest: 3 }, notes: "1-2-3-4 or 1-3-5 ladders, no feet. Only once you have a solid finger-strength base. Stop at the first sloppy catch." },
-  { id: "s-bumps", name: "Campus bumps", cat: "Power", goals: ["power"], p: { sets: 5, setRest: 3 }, notes: "Start matched, then bump one hand up rung by rung and back down without matching. Precise, snappy catches." },
-  { id: "s-dyno", name: "Dyno practice", cat: "Climbing", goals: ["power"], p: { duration: 20, setRest: 2 }, notes: "Pick 3–4 dynamic or coordination problems. Commit fully on every try and rest between attempts." },
-  { id: "s-explosive", name: "Explosive pull-ups", cat: "Power", goals: ["power", "oap"], p: { sets: 5, reps: 3, setRest: 2.5 }, notes: "Pull as fast as you can to chest or waist height, hands leaving the bar if possible. Full rest; every rep should be fast." },
+  { id: "s-limit", name: "Limit bouldering", cat: "Climbing", goals: ["power", "fingers"], notes: "3–5 problems at or just above your max. Short attempts with 3+ min rest. Quality over quantity: stop when you stop getting closer." },
+  { id: "s-board", name: "Board session", cat: "Climbing", goals: ["power", "fingers"], notes: "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts." },
+  { id: "s-campus", name: "Campus ladders", cat: "Power", goals: ["power"], notes: "1-2-3-4 or 1-3-5 ladders, no feet. Only once you have a solid finger-strength base. Stop at the first sloppy catch." },
+  { id: "s-bumps", name: "Campus bumps", cat: "Power", goals: ["power"], notes: "Start matched, then bump one hand up rung by rung and back down without matching. Precise, snappy catches." },
+  { id: "s-dyno", name: "Dyno practice", cat: "Climbing", goals: ["power"], notes: "Pick 3–4 dynamic or coordination problems. Commit fully on every try and rest between attempts." },
+  { id: "s-explosive", name: "Explosive pull-ups", cat: "Power", goals: ["power", "oap"], notes: "Pull as fast as you can to chest or waist height, hands leaving the bar if possible. Full rest; every rep should be fast." },
   // Power endurance
-  { id: "s-4x4", name: "4x4s", cat: "Climbing", goals: ["endurance", "power"], p: { sets: 4, reps: 4, setRest: 4 }, notes: "Four problems back to back, four times. Pick problems 3–4 grades below your max." },
-  { id: "s-linked", name: "Linked boulder circuits", cat: "Climbing", goals: ["endurance"], p: { sets: 3, setRest: 5 }, notes: "Link 2–3 problems into one 20–30 move circuit with no rest." },
-  { id: "s-emom", name: "EMOM boulders", cat: "Climbing", goals: ["endurance"], p: { sets: 3, duration: 10, setRest: 5 }, notes: "Every minute on the minute, climb one problem about 3 grades below your max and rest for what's left of the minute. 10 minutes per set." },
+  { id: "s-4x4", name: "4x4s", cat: "Climbing", goals: ["endurance", "power"], notes: "Four problems back to back, four times. Pick problems 3–4 grades below your max." },
+  { id: "s-linked", name: "Linked boulder circuits", cat: "Climbing", goals: ["endurance"], notes: "Link 2–3 problems into one 20–30 move circuit with no rest." },
+  { id: "s-emom", name: "EMOM boulders", cat: "Climbing", goals: ["endurance"], notes: "Every minute on the minute, climb one problem about 3 grades below your max and rest for what's left of the minute. 10 minutes per set." },
   // Endurance
-  { id: "s-arc", name: "ARC traversing", cat: "Climbing", goals: ["endurance"], p: { sets: 2, duration: 30, setRest: 10 }, notes: "Continuous easy climbing. A light pump that never builds. Great for recovery days and footwork." },
-  { id: "s-mileage", name: "Easy mileage", cat: "Climbing", goals: ["endurance"], p: { duration: 45 }, notes: "Lots of problems well below your max. Focus on smooth, efficient movement." },
-  { id: "s-updown", name: "Up-down-ups", cat: "Climbing", goals: ["endurance"], p: { sets: 4, reps: 3, setRest: 3 }, notes: "Climb a moderate problem, downclimb it, and climb it again without stepping off. Reps = times up." },
+  { id: "s-arc", name: "ARC traversing", cat: "Climbing", goals: ["endurance"], notes: "Continuous easy climbing. A light pump that never builds. Great for recovery days and footwork." },
+  { id: "s-mileage", name: "Easy mileage", cat: "Climbing", goals: ["endurance"], notes: "Lots of problems well below your max. Focus on smooth, efficient movement." },
+  { id: "s-updown", name: "Up-down-ups", cat: "Climbing", goals: ["endurance"], notes: "Climb a moderate problem, downclimb it, and climb it again without stepping off. Reps = times up." },
   // Strength / one-arm pull-up
-  { id: "s-pullup", name: "Pull-ups", cat: "Strength", goals: ["oap"], p: { sets: 4, reps: 6, setRest: 2 }, notes: "Dead hang to chin over bar. Control the lowering." },
-  { id: "s-wpullup", name: "Weighted pull-ups", cat: "Strength", goals: ["oap", "power"], p: { sets: 5, reps: 3, setRest: 3, load: "+10 kg" }, notes: "Heavy and crisp. Leave 1–2 reps in reserve." },
-  { id: "s-lockoff", name: "Lock-offs", cat: "Strength", goals: ["oap"], p: { sets: 3, reps: 3, on: 5, setRest: 2 }, notes: "Hold at full lock and 90°, 5 s each." },
-  { id: "s-oap-assist", name: "Assisted one-arm pull-ups", cat: "Strength", goals: ["oap"], p: { sets: 5, reps: 3, setRest: 3, load: "-15 kg" }, notes: "Pull on one arm while a pulley counterweight takes some load (negative load = assistance). The plan shrinks the assistance each build week. Full dead hang to chin over bar, no kipping. With bands instead, step down a band when all reps feel solid." },
-  { id: "s-oap-neg", name: "One-arm negatives", cat: "Strength", goals: ["oap"], prog: "on", p: { sets: 4, reps: 3, on: 5, setRest: 3 }, notes: "Get to the top with two arms, let go with one, and lower as slowly as you can. 'Hang / work' is the lowering time to aim for. Stop before elbows complain." },
-  { id: "s-oap-lock", name: "One-arm lock-offs", cat: "Strength", goals: ["oap"], prog: "on", p: { sets: 3, reps: 3, on: 5, setRest: 3 }, notes: "One rep = hold at the top, at 90° and at 120° for the target time each. Use a finger of the other hand on a towel for a little help if needed." },
-  { id: "s-archer", name: "Archer pull-ups", cat: "Strength", goals: ["oap"], p: { sets: 4, reps: 5, setRest: 2 }, notes: "Wide grip; pull toward one hand while the other arm straightens. Reps per side. Make it harder by relying less on the straight arm (open palm, then fingertips)." },
-  { id: "s-typewriter", name: "Typewriter pull-ups", cat: "Strength", goals: ["oap"], p: { sets: 3, reps: 4, setRest: 2 }, notes: "Pull to the top, then slide side to side over each hand while staying high. One rep = there and back." },
-  { id: "s-deadlift", name: "Deadlift", cat: "Strength", goals: [], p: { sets: 3, reps: 5, setRest: 3 }, notes: "Brace hard, bar close to the body. Builds posterior chain for heel hooks and body tension." },
-  { id: "s-squat", name: "Back squat", cat: "Strength", goals: [], p: { sets: 3, reps: 5, setRest: 3 }, notes: "" },
+  { id: "s-pullup", name: "Pull-ups", cat: "Strength", goals: ["oap"], notes: "Dead hang to chin over bar. Control the lowering." },
+  { id: "s-wpullup", name: "Weighted pull-ups", cat: "Strength", goals: ["oap", "power"], notes: "Heavy and crisp. Leave 1–2 reps in reserve." },
+  { id: "s-lockoff", name: "Lock-offs", cat: "Strength", goals: ["oap"], notes: "Hold at full lock and 90°, 5 s each." },
+  { id: "s-oap-assist", name: "Assisted one-arm pull-ups", cat: "Strength", goals: ["oap"], notes: "Pull on one arm while a pulley counterweight takes some load (negative load = assistance). The plan shrinks the assistance each build week. Full dead hang to chin over bar, no kipping. With bands instead, step down a band when all reps feel solid." },
+  { id: "s-oap-neg", name: "One-arm negatives", cat: "Strength", goals: ["oap"], notes: "Get to the top with two arms, let go with one, and lower as slowly as you can. 'Hang / work' is the lowering time to aim for. Stop before elbows complain." },
+  { id: "s-oap-lock", name: "One-arm lock-offs", cat: "Strength", goals: ["oap"], notes: "One rep = hold at the top, at 90° and at 120° for the target time each. Use a finger of the other hand on a towel for a little help if needed." },
+  { id: "s-archer", name: "Archer pull-ups", cat: "Strength", goals: ["oap"], notes: "Wide grip; pull toward one hand while the other arm straightens. Reps per side. Make it harder by relying less on the straight arm (open palm, then fingertips)." },
+  { id: "s-typewriter", name: "Typewriter pull-ups", cat: "Strength", goals: ["oap"], notes: "Pull to the top, then slide side to side over each hand while staying high. One rep = there and back." },
+  { id: "s-deadlift", name: "Deadlift", cat: "Strength", goals: [], notes: "Brace hard, bar close to the body. Builds posterior chain for heel hooks and body tension." },
+  { id: "s-squat", name: "Back squat", cat: "Strength", goals: [], notes: "" },
   // Antagonist
-  { id: "s-pushup", name: "Push-ups", cat: "Antagonist", goals: ["prehab"], p: { sets: 3, reps: 15, setRest: 1.5 }, notes: "Balances all the pulling. Keep a straight body line." },
-  { id: "s-ohp", name: "Overhead press", cat: "Antagonist", goals: ["prehab"], p: { sets: 3, reps: 8, setRest: 2 }, notes: "" },
-  { id: "s-wrist", name: "Reverse wrist curls", cat: "Antagonist", goals: ["prehab"], p: { sets: 3, reps: 15, setRest: 1 }, notes: "Light dumbbell. Helps keep elbows healthy." },
-  { id: "s-extrot", name: "Band external rotations", cat: "Antagonist", goals: ["prehab"], p: { sets: 3, reps: 15, setRest: 1 }, notes: "Elbow tucked to your side. A shoulder-health staple." },
+  { id: "s-pushup", name: "Push-ups", cat: "Antagonist", goals: ["prehab"], notes: "Balances all the pulling. Keep a straight body line." },
+  { id: "s-ohp", name: "Overhead press", cat: "Antagonist", goals: ["prehab"], notes: "" },
+  { id: "s-wrist", name: "Reverse wrist curls", cat: "Antagonist", goals: ["prehab"], notes: "Light dumbbell. Helps keep elbows healthy." },
+  { id: "s-extrot", name: "Band external rotations", cat: "Antagonist", goals: ["prehab"], notes: "Elbow tucked to your side. A shoulder-health staple." },
   // Prehab
-  { id: "s-fingerext", name: "Finger extensions (band)", cat: "Prehab", goals: ["prehab", "fingers"], p: { sets: 3, reps: 25, setRest: 1 }, notes: "Rubber band around the fingertips; open the hand fully against it. Balances all the gripping." },
-  { id: "s-rice", name: "Rice bucket", cat: "Prehab", goals: ["prehab"], prog: "hold", p: { duration: 5 }, notes: "Grip, open, twist and roll your hands in a bucket of rice. A good forearm warm-up or cool-down." },
-  { id: "s-pronsup", name: "Pronator / supinator rotations", cat: "Prehab", goals: ["prehab"], p: { sets: 3, reps: 12, setRest: 1 }, notes: "Hold a hammer (or a dumbbell by one end) and slowly rotate palm down, then palm up. Strengthens the forearm for elbow health." },
-  { id: "s-eccwrist", name: "Eccentric wrist flexor curls", cat: "Prehab", goals: ["prehab"], p: { sets: 3, reps: 12, setRest: 1 }, notes: "Palm up; lower the dumbbell slowly over 3–4 s and use the other hand to help it back up. Classic golfer's-elbow prevention." },
-  { id: "s-facepull", name: "Face pulls", cat: "Prehab", goals: ["prehab", "oap"], p: { sets: 3, reps: 15, setRest: 1 }, notes: "Band or cable at face height. Pull to your forehead with elbows high and rotate your hands back. Balances heavy pulling." },
-  { id: "s-ytw", name: "Y-T-W raises", cat: "Prehab", goals: ["prehab"], p: { sets: 2, reps: 10, setRest: 1 }, notes: "Lying face down or bent over, raise light weights in Y, T and W shapes. Slow and controlled." },
-  { id: "s-scappull", name: "One-arm scap pulls", cat: "Prehab", goals: ["prehab", "oap"], p: { sets: 3, reps: 8, setRest: 1.5 }, notes: "Dead hang on one arm, then pull the shoulder blade down and back without bending the elbow. Builds the shoulder stability one-arm pulling needs." },
+  { id: "s-fingerext", name: "Finger extensions (band)", cat: "Prehab", goals: ["prehab", "fingers"], notes: "Rubber band around the fingertips; open the hand fully against it. Balances all the gripping." },
+  { id: "s-rice", name: "Rice bucket", cat: "Prehab", goals: ["prehab"], notes: "Grip, open, twist and roll your hands in a bucket of rice. A good forearm warm-up or cool-down." },
+  { id: "s-pronsup", name: "Pronator / supinator rotations", cat: "Prehab", goals: ["prehab"], notes: "Hold a hammer (or a dumbbell by one end) and slowly rotate palm down, then palm up. Strengthens the forearm for elbow health." },
+  { id: "s-eccwrist", name: "Eccentric wrist flexor curls", cat: "Prehab", goals: ["prehab"], notes: "Palm up; lower the dumbbell slowly over 3–4 s and use the other hand to help it back up. Classic golfer's-elbow prevention." },
+  { id: "s-facepull", name: "Face pulls", cat: "Prehab", goals: ["prehab", "oap"], notes: "Band or cable at face height. Pull to your forehead with elbows high and rotate your hands back. Balances heavy pulling." },
+  { id: "s-ytw", name: "Y-T-W raises", cat: "Prehab", goals: ["prehab"], notes: "Lying face down or bent over, raise light weights in Y, T and W shapes. Slow and controlled." },
+  { id: "s-scappull", name: "One-arm scap pulls", cat: "Prehab", goals: ["prehab", "oap"], notes: "Dead hang on one arm, then pull the shoulder blade down and back without bending the elbow. Builds the shoulder stability one-arm pulling needs." },
   // Core
-  { id: "s-legraise", name: "Hanging leg raises", cat: "Core", goals: ["power"], p: { sets: 3, reps: 8, setRest: 1.5 }, notes: "Toes to bar if you can. No swinging." },
-  { id: "s-lever", name: "Front lever progression", cat: "Core", goals: ["power"], p: { sets: 5, on: 8, setRest: 2 }, notes: "Tuck → advanced tuck → one leg → full. Hold the hardest version you can for the time." },
-  { id: "s-plank", name: "Plank", cat: "Core", goals: [], p: { sets: 3, on: 45, setRest: 1 }, notes: "" },
+  { id: "s-legraise", name: "Hanging leg raises", cat: "Core", goals: ["power"], notes: "Toes to bar if you can. No swinging." },
+  { id: "s-lever", name: "Front lever progression", cat: "Core", goals: ["power"], notes: "Tuck → advanced tuck → one leg → full. Hold the hardest version you can for the time." },
+  { id: "s-plank", name: "Plank", cat: "Core", goals: [], notes: "" },
   // Mobility
-  { id: "s-hips", name: "Hip mobility flow", cat: "Mobility", goals: ["prehab"], p: { duration: 10 }, notes: "90/90 switches, frog stretch, deep squat hold. Helps high steps and drop knees." },
-  { id: "s-shoulder", name: "Shoulder mobility", cat: "Mobility", goals: ["prehab"], p: { duration: 10 }, notes: "Band dislocates, thoracic rotations, wall slides." },
-  { id: "s-stretch", name: "Post-session stretch", cat: "Mobility", goals: ["prehab"], p: { duration: 15 }, notes: "Forearms, lats, hips, hamstrings." },
+  { id: "s-hips", name: "Hip mobility flow", cat: "Mobility", goals: ["prehab"], notes: "90/90 switches, frog stretch, deep squat hold. Helps high steps and drop knees." },
+  { id: "s-shoulder", name: "Shoulder mobility", cat: "Mobility", goals: ["prehab"], notes: "Band dislocates, thoracic rotations, wall slides." },
+  { id: "s-stretch", name: "Post-session stretch", cat: "Mobility", goals: ["prehab"], notes: "Forearms, lats, hips, hamstrings." },
 ];
+SEED.forEach(x => { x.fields = defaultFields(x.id, x.cat); });
 
 // Library version 2 (goals): these built-ins were added, and these were trimmed.
 const V2_ADDED = ["s-blocklift", "s-oah", "s-bumps", "s-dyno", "s-explosive", "s-emom", "s-updown", "s-oap-assist", "s-oap-neg",
@@ -482,86 +490,82 @@ const V2_TRIMMED = ["s-zone2", "s-silent", "s-flash"];
 const V3_CLIMBING = { "s-limit": "Power", "s-board": "Power", "s-dyno": "Power", "s-4x4": "Power endurance",
   "s-linked": "Power endurance", "s-emom": "Power endurance", "s-arc": "Endurance", "s-mileage": "Endurance", "s-updown": "Endurance" };
 
-// Goal starters for the Plan tab: [exercise id, optional week-1 overrides] per day, Monday first.
+// Goal starters for the Plan tab: exercise ids per day, Monday first.
 const STARTERS = [
-  { goal: "oap", name: "One-arm pull-up", weeks: 10, pace: "moderate",
-    blurb: "2 heavy pulling days around 2 climbing days. Assisted one-arms, negatives, lock-offs and heavy weighted pull-ups.",
-    days: [
-      [["s-warmup"], ["s-oap-assist"], ["s-oap-neg"], ["s-scappull"], ["s-facepull"]],
-      [["s-limit"]],
-      [],
-      [["s-warmup"], ["s-wpullup", { load: "+25 kg" }], ["s-oap-lock"], ["s-archer"], ["s-lever"], ["s-ohp"]],
-      [],
-      [["s-board"], ["s-extrot"]],
-      [["s-stretch"]],
-    ] },
-  { goal: "fingers", name: "Finger strength", weeks: 12, pace: "moderate",
+  { name: "One-arm pull-up", weeks: 10,
+    blurb: "2 heavy pulling days around 2 climbing days. Assisted one-arms, negatives, lock-offs and weighted pull-ups.",
+    days: [["s-warmup", "s-oap-assist", "s-oap-neg", "s-scappull", "s-facepull"], ["s-limit"], [],
+      ["s-warmup", "s-wpullup", "s-oap-lock", "s-archer", "s-lever", "s-ohp"], [], ["s-board", "s-extrot"], ["s-stretch"]] },
+  { name: "Finger strength", weeks: 12,
     blurb: "2 finger sessions a week: max hangs then limit bouldering, one-arm hangs then board.",
-    days: [
-      [["s-warmup"], ["s-maxhang"], ["s-limit"], ["s-fingerext"]],
-      [],
-      [["s-mileage"]],
-      [["s-warmup"], ["s-oah"], ["s-board"], ["s-rice"]],
-      [],
-      [["s-warmup"], ["s-blocklift"], ["s-4x4"]],
-      [["s-stretch"]],
-    ] },
-  { goal: "power", name: "Power", weeks: 8, pace: "moderate",
+    days: [["s-warmup", "s-maxhang", "s-limit", "s-fingerext"], [], ["s-mileage"],
+      ["s-warmup", "s-oah", "s-board", "s-rice"], [], ["s-warmup", "s-blocklift", "s-4x4"], ["s-stretch"]] },
+  { name: "Power", weeks: 8,
     blurb: "3 short, high-quality sessions: campus, limit bouldering, dynos and explosive pulling.",
-    days: [
-      [["s-warmup"], ["s-campus"], ["s-limit"], ["s-explosive"]],
-      [],
-      [["s-warmup"], ["s-dyno"], ["s-legraise"], ["s-facepull"]],
-      [],
-      [["s-warmup"], ["s-bumps"], ["s-board"], ["s-lever"]],
-      [],
-      [["s-stretch"]],
-    ] },
-  { goal: "endurance", name: "Endurance", weeks: 8, pace: "moderate",
+    days: [["s-warmup", "s-campus", "s-limit", "s-explosive"], [], ["s-warmup", "s-dyno", "s-legraise", "s-facepull"], [],
+      ["s-warmup", "s-bumps", "s-board", "s-lever"], [], ["s-stretch"]] },
+  { name: "Endurance", weeks: 8,
     blurb: "Power endurance (4x4s, EMOMs) plus aerobic base (ARC, mileage) to stay on longer.",
-    days: [
-      [["s-warmup"], ["s-4x4"], ["s-extrot"]],
-      [],
-      [["s-arc"], ["s-repeaters"]],
-      [],
-      [["s-warmup"], ["s-emom"], ["s-linked"]],
-      [["s-mileage"], ["s-updown"]],
-      [["s-stretch"]],
-    ] },
-  { goal: "prehab", name: "Injury-proofing", weeks: 6, pace: "conservative",
+    days: [["s-warmup", "s-4x4", "s-extrot"], [], ["s-arc", "s-repeaters"], [], ["s-warmup", "s-emom", "s-linked"],
+      ["s-mileage", "s-updown"], ["s-stretch"]] },
+  { name: "Injury-proofing", weeks: 6,
     blurb: "Short fingers, elbow and shoulder sessions to add alongside your normal climbing.",
-    days: [
-      [],
-      [["s-fingerext"], ["s-rice"], ["s-pronsup"], ["s-eccwrist"], ["s-wrist"]],
-      [],
-      [["s-facepull"], ["s-ytw"], ["s-extrot"], ["s-pushup"], ["s-shoulder"]],
-      [],
-      [],
-      [["s-hips"], ["s-stretch"]],
-    ] },
+    days: [[], ["s-fingerext", "s-rice", "s-pronsup", "s-eccwrist", "s-wrist"], [],
+      ["s-facepull", "s-ytw", "s-extrot", "s-pushup", "s-shoulder"], [], [], ["s-hips", "s-stretch"]] },
 ];
 
 /* =========================================================
    Storage
-   db = { v, exercises: [...], plan: { "YYYY-MM-DD": [entry, ...] }, theme }
-   entry = { id, ex, name, cat, p, done, note }
+   db = { v, exercises, plan: { "YYYY-MM-DD": [entry, ...] }, plans, theme }
+   exercise = { id, name, cat, goals, fields, notes, video }
+   entry    = { id, ex, name, cat, fields, target: [set], log: [set], done, note, plan?, pk? }
+   set      = { reps?, time?, load? (lb), edge? (in), grip? }
    ========================================================= */
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 3, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
+const freshDb = () => ({ v: 4, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
-// Brings older saves up to date. Your own exercises and calendar are never touched.
+// --- v4 helpers: old saves had preset numbers in kg / mm ---
+function toLb(load) {
+  const m = String(load ?? "").replace("−", "-").match(/([+-]?)\s*(\d+(?:[.,]\d+)?)\s*(kg|lbs?)?/i);
+  if (!m) return undefined;
+  const v = Number(m[2].replace(",", ".")) * (m[1] === "-" ? -1 : 1);
+  return /lb/i.test(m[3] || "") ? v : Math.round(v * 2.20462 * 2) / 2;
+}
+function pToSets(p) {
+  if (!p) return [];
+  const s = {};
+  if (p.reps) s.reps = p.reps;
+  if (p.on) s.time = p.on;
+  const lb = toLb(p.load);
+  if (lb !== undefined) s.load = lb;
+  if (p.edge) s.edge = Math.round(p.edge / 25.4 * 100) / 100;
+  if (p.grip) s.grip = p.grip;
+  if (!Object.keys(s).length) return [];
+  return Array.from({ length: Math.min(p.sets || 1, 20) }, () => ({ ...s }));
+}
+function fieldsFromP(p) {
+  const f = [];
+  if (p?.reps) f.push("reps");
+  if (p?.on) f.push("time");
+  if (p?.load) f.push("load");
+  if (p?.edge || p?.grip) f.push("edge");
+  return f.length ? f : [...DEFAULT_FIELDS];
+}
+
+// Brings older saves up to date. Your own exercises, notes and calendar history are kept.
 function normalize(d) {
   if (!Array.isArray(d.plans)) d.plans = [];
-  if (!(d.v >= 2)) {
+  d.v = d.v || 1;
+  if (d.v < 2) {
     const have = new Set(d.exercises.map(e => e.id));
     d.exercises = d.exercises.filter(e => !V2_TRIMMED.includes(e.id));
     d.exercises.push(...clone(SEED.filter(x => V2_ADDED.includes(x.id) && !have.has(x.id))));
     for (const e of d.exercises) {
       const seed = SEED.find(x => x.id === e.id);
-      if (seed && !e.goals) { e.goals = [...seed.goals]; if (seed.prog) e.prog = seed.prog; }
+      if (seed && !e.goals) e.goals = [...seed.goals];
     }
     d.v = 2;
   }
@@ -570,7 +574,30 @@ function normalize(d) {
     for (const e of d.exercises) if (V3_CLIMBING[e.id] === e.cat) e.cat = "Climbing";
     d.v = 3;
   }
-  for (const e of d.exercises) if (!Array.isArray(e.goals)) e.goals = [];
+  if (d.v < 4) {
+    // Library becomes names only; planned numbers become targets, converted to lb / inches.
+    for (const e of d.exercises) {
+      const seed = SEED.find(x => x.id === e.id);
+      e.fields = seed ? [...seed.fields] : fieldsFromP(e.p);
+      delete e.p; delete e.prog;
+    }
+    for (const list of Object.values(d.plan)) for (const en of list) {
+      const lib = d.exercises.find(e => e.id === en.ex);
+      en.fields = lib ? [...lib.fields] : fieldsFromP(en.p);
+      en.target = pToSets(en.p); en.log = [];
+      delete en.p; delete en.wk;
+    }
+    for (const pl of d.plans) {
+      delete pl.pace;
+      for (const day of pl.days) for (const s of day) { s.target = pToSets(s.p); delete s.p; delete s.prog; }
+    }
+    d.v = 4;
+  }
+  for (const e of d.exercises) {
+    if (!Array.isArray(e.goals)) e.goals = [];
+    if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
+  }
+  for (const list of Object.values(d.plan)) for (const en of list) { en.target ||= []; en.log ||= []; }
   return d;
 }
 
@@ -608,9 +635,10 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const findEx = id => db.exercises.find(e => e.id === id);
-// Scheduled items keep a copy of the name, but follow library renames while the exercise exists.
+// Scheduled items keep a copy of name/category/fields, but follow the library while the exercise exists.
 const nameOf = item => (findEx(item.ex) || item).name;
 const catOf = item => (findEx(item.ex) || item).cat;
+const fieldsOf = item => (findEx(item.ex) || item).fields || DEFAULT_FIELDS;
 
 // Dates are handled as local "YYYY-MM-DD" keys to avoid timezone surprises.
 const pad = n => String(n).padStart(2, "0");
@@ -619,50 +647,123 @@ const parseKey = k => { const [y, m, d] = k.split("-").map(Number); return new D
 const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
 const fmt = (d, opts) => d.toLocaleDateString(undefined, opts);
+const shortDate = k => fmt(parseKey(k), { weekday: "short", month: "short", day: "numeric" });
+const dayName = i => fmt(addDays(new Date(2024, 0, 1), i), { weekday: "long" }); // 2024-01-01 was a Monday
 
-function summary(p = {}) {
-  const s = [];
-  if (p.sets && p.reps) s.push(`${p.sets} × ${p.reps}`);
-  else if (p.sets) s.push(`${p.sets} ${p.sets == 1 ? "set" : "sets"}`);
-  else if (p.reps) s.push(`${p.reps} reps`);
-  if (p.on && p.off) s.push(`${p.on}s on / ${p.off}s off`);
-  else if (p.on) s.push(`${p.on}s hold`);
-  if (p.duration) s.push(`${p.duration} min`);
-  if (p.setRest) s.push(`${p.setRest} min rest`);
-  const fingers = [p.edge ? `${p.edge}mm` : "", p.grip ? p.grip.toLowerCase() : ""].filter(Boolean).join(" ");
-  if (fingers) s.push(fingers);
-  if (p.load) s.push(p.load);
-  return s.join(" · ");
+/* ---------- Sets ---------- */
+
+const fmtLoad = v => v === 0 ? "BW" : `${v > 0 ? "+" : "−"}${Math.abs(v)} lb`;
+
+function fmtSet(s) {
+  return [
+    s.reps != null ? `${s.reps} rep${s.reps == 1 ? "" : "s"}` : "",
+    s.time != null ? `${s.time}s` : "",
+    s.load != null ? fmtLoad(s.load) : "",
+    s.edge != null ? `${s.edge} in` : "",
+    s.grip ? s.grip.toLowerCase() : "",
+  ].filter(Boolean).join(" ");
 }
 
-function paramFieldsHTML(p = {}) {
-  return PARAMS.map(({ k, label, type, ph }) => {
-    const v = p[k] ?? "";
-    let input;
-    if (type === "grip") {
-      input = `<select name="${k}"><option value="">—</option>${GRIPS.map(g => `<option${g === v ? " selected" : ""}>${g}</option>`).join("")}</select>`;
-    } else if (type === "number") {
-      input = `<input type="number" name="${k}" value="${esc(v)}" min="0" step="any" inputmode="decimal">`;
-    } else {
-      input = `<input type="text" name="${k}" value="${esc(v)}" placeholder="${esc(ph || "")}" maxlength="30">`;
-    }
-    return `<label class="field"><span>${label}</span>${input}</label>`;
-  }).join("");
-}
-
-function readParams(root) {
-  const p = {};
-  for (const { k, type } of PARAMS) {
-    const v = root.querySelector(`[name="${k}"]`).value.trim();
-    if (v === "") continue;
-    if (type === "number") {
-      const n = Number(v);
-      if (Number.isFinite(n) && n > 0) p[k] = n;
-    } else {
-      p[k] = v;
-    }
+// Values shared by every set are shown once; identical sets in a row collapse:
+// "2 × +15 lb, +12.5 lb · 10s 0.75 in half crimp".
+function fmtSets(sets) {
+  sets = sets || [];
+  if (sets.length < 2) return sets.length ? fmtSet(sets[0]) : "";
+  const keys = [...new Set(sets.flatMap(Object.keys))];
+  const common = {}, varying = [];
+  for (const k of keys) {
+    if (sets.every(x => x[k] === sets[0][k])) common[k] = sets[0][k]; else varying.push(k);
   }
-  return p;
+  if (!varying.length) return `${sets.length} × ${fmtSet(common)}`;
+  const groups = [];
+  for (const s of sets) {
+    const t = fmtSet(Object.fromEntries(varying.map(k => [k, s[k]]).filter(([, v]) => v != null))) || "—";
+    const g = groups[groups.length - 1];
+    if (g && g.t === t) g.n++; else groups.push({ t, n: 1 });
+  }
+  const rest = fmtSet(common);
+  return groups.map(g => g.n > 1 ? `${g.n} × ${g.t}` : g.t).join(", ") + (rest ? ` · ${rest}` : "");
+}
+
+const columnsFor = fields => fields.flatMap(f => f === "edge" ? ["edge", "grip"] : [f]);
+
+const ICON_X = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+
+function setRowHTML(cols, s, i) {
+  const cells = cols.map(c => {
+    const v = s[c] ?? "";
+    const label = `Set ${i + 1} ${COL_HEAD[c]}`;
+    if (c === "grip") {
+      return `<select data-f="grip" aria-label="${label}"><option value="">—</option>${GRIPS.map(([full, short]) =>
+        `<option value="${full}"${full === v ? " selected" : ""}>${short}</option>`).join("")}</select>`;
+    }
+    // No inputmode on load: iPhones then show a keypad that includes the minus sign.
+    const extra = c === "load" ? "" : c === "edge" ? ` min="0" inputmode="decimal"` : ` min="0" inputmode="numeric"`;
+    return `<input type="number" step="any" data-f="${c}" value="${esc(v)}"${extra} aria-label="${label}">`;
+  }).join("");
+  return `<div class="setrow" style="--cols:${cols.length}"><span class="setn">${i + 1}</span>${cells}
+    <button type="button" class="rm" data-rmset="${i}" aria-label="Remove set ${i + 1}">${ICON_X}</button></div>`;
+}
+
+// A set editor is any element with data-cols='["reps","load"]'.
+function renderSets(box, sets) {
+  const cols = JSON.parse(box.dataset.cols);
+  box.innerHTML = sets.length
+    ? `<div class="setrow head" style="--cols:${cols.length}"><span>#</span>${cols.map(c => `<span>${COL_HEAD[c]}</span>`).join("")}<span></span></div>
+       ${sets.map((s, i) => setRowHTML(cols, s, i)).join("")}`
+    : `<p class="empty">No sets yet.</p>`;
+}
+
+function readSets(box, keepEmpty) {
+  return [...box.querySelectorAll(".setrow:not(.head)")].map(row => {
+    const s = {};
+    row.querySelectorAll("[data-f]").forEach(el => {
+      const v = el.value.trim();
+      if (v === "") return;
+      if (el.dataset.f === "grip") s.grip = v;
+      else if (Number.isFinite(Number(v))) s[el.dataset.f] = Number(v);
+    });
+    return s;
+  }).filter(s => keepEmpty || Object.keys(s).length);
+}
+
+// + Set copies the previous row, so you only change what's different.
+document.addEventListener("click", e => {
+  const add = e.target.closest("[data-addset]");
+  if (add) {
+    const box = document.getElementById(add.dataset.addset);
+    const sets = readSets(box, true);
+    sets.push({ ...(sets[sets.length - 1] || {}) });
+    renderSets(box, sets);
+    const inputs = box.querySelectorAll(".setrow:last-child [data-f]");
+    if (inputs[0]) inputs[0].focus();
+    return;
+  }
+  const rm = e.target.closest("[data-rmset]");
+  if (rm) {
+    const box = rm.closest("[data-cols]");
+    const sets = readSets(box, true);
+    sets.splice(Number(rm.dataset.rmset), 1);
+    renderSets(box, sets);
+  }
+});
+
+// Most recent logged session of an exercise before a given date.
+function lastLog(exId, beforeKey, skipId) {
+  const keys = Object.keys(db.plan).filter(k => k < beforeKey).sort().reverse();
+  for (const k of keys) {
+    const e = db.plan[k].find(x => x.ex === exId && x.id !== skipId && x.log && x.log.length);
+    if (e) return { date: k, entry: e };
+  }
+  return null;
+}
+
+function history(exId) {
+  const out = [];
+  for (const [k, list] of Object.entries(db.plan)) {
+    for (const e of list) if (e.ex === exId && ((e.log && e.log.length) || e.note)) out.push({ date: k, entry: e });
+  }
+  return out.sort((a, b) => b.date.localeCompare(a.date));
 }
 
 let toastTimer;
@@ -694,8 +795,8 @@ const state = {
   libQuery: "", libCat: "All", libGoal: "All",
   pickQuery: "", pickCat: "All", pickGoal: "All", pickTarget: null, pickAdded: {},
   editEntry: null,   // see openEntry
-  planId: null,      // plan open in the builder
   editEx: null,      // exercise id, or null for a new one
+  planId: null,      // plan open in the builder
 };
 
 /* =========================================================
@@ -704,21 +805,29 @@ const state = {
 
 const ICON_L = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`;
 const ICON_R = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
+const HANDLE = name => `<button type="button" class="handle" data-drag aria-label="Drag ${esc(name)} to another day"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>`;
+const RM = (kind, key, id, name) => `<button type="button" class="rm" data-act="remove" data-kind="${kind}" data-key="${key}" data-id="${esc(id)}" aria-label="Remove ${esc(name)}">${ICON_X}</button>`;
 
 function weekDays(start = state.week) {
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 
+function entryLine(e) {
+  if (e.log.length) return `<span class="logged">✓ ${esc(fmtSets(e.log))}</span>`;
+  if (e.target.length) return `Target: ${esc(fmtSets(e.target))}`;
+  return fieldsOf(e).length ? "Tap to set a target or log it" : "Tap to add notes";
+}
+
 function entryHTML(date, e) {
   const name = nameOf(e), cat = catOf(e);
   return `<li class="entry${e.done ? " done" : ""}" data-item="${esc(e.id)}" data-kind="cal" data-from="${date}">
-    <button type="button" class="handle" data-drag aria-label="Drag ${esc(name)} to another day"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
+    ${HANDLE(name)}
     <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="Mark ${esc(name)} done">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
-      <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong><small>${esc(summary(e.p) || cat)}${e.note ? " · 📝" : ""}</small></span>
+      <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong><small>${entryLine(e)}${e.note ? " · 📝" : ""}</small></span>
     </button>
-    <button type="button" class="rm" data-act="remove" data-kind="cal" data-key="${date}" data-id="${esc(e.id)}" aria-label="Remove ${esc(name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    ${RM("cal", date, e.id, name)}
   </li>`;
 }
 
@@ -734,13 +843,14 @@ function renderWeek() {
   const range = `${fmt(state.week, { month: "short", day: "numeric" })} – ${fmt(end, sameMonth ? { day: "numeric" } : { month: "short", day: "numeric" })}`;
   const pct = total ? Math.round((done / total) * 100) : 0;
   const pw = planForWeek(state.week);
-  const planLine = pw ? `<p class="planline"><b>${esc(pw.plan.name)}</b> · Week ${pw.i + 1} of ${pw.plan.weeks} · ${weekInfo(pw.i).deload ? "Deload" : "Build"}</p>` : "";
+  const planLine = pw ? `<p class="planline"><b>${esc(pw.plan.name)}</b> · Week ${pw.i + 1} of ${pw.plan.weeks}</p>` : "";
+  const when = isCurrent ? "This week" : state.week < mondayOf(new Date()) ? "Past week" : "Upcoming";
 
   let html = `<div class="card weekhead">
     <div class="bar">
       <button class="iconbtn" data-act="prev" aria-label="Previous week">${ICON_L}</button>
       <div class="wk"><h2>${range}</h2>
-        <p class="muted">${isCurrent ? "This week" : `<button class="linkish" data-act="today">Back to this week</button>`}</p>
+        <p class="muted">${isCurrent ? when : `${when} · <button class="linkish" data-act="today">Back to this week</button>`}</p>
       </div>
       <button class="iconbtn" data-act="next" aria-label="Next week">${ICON_R}</button>
     </div>
@@ -774,11 +884,7 @@ function getEntry(date, id) {
   return (db.plan[date] || []).find(e => e.id === id);
 }
 
-function removeEntry(date, id) {
-  const list = (db.plan[date] || []).filter(e => e.id !== id);
-  if (list.length) db.plan[date] = list; else delete db.plan[date];
-}
-
+// Next week gets the same exercises. What you logged becomes next week's target.
 function copyWeekForward() {
   const days = weekDays();
   let n = 0, existing = 0;
@@ -792,14 +898,17 @@ function copyWeekForward() {
     const src = db.plan[dkey(d)] || [];
     if (!src.length) continue;
     const tk = dkey(addDays(d, 7));
-    db.plan[tk] = (db.plan[tk] || []).concat(src.map(e => ({ ...clone(e), id: uid(), done: false, note: "" })));
+    db.plan[tk] = (db.plan[tk] || []).concat(src.map(e => ({
+      id: uid(), ex: e.ex, name: e.name, cat: e.cat, fields: clone(e.fields || fieldsOf(e)),
+      target: clone(e.log.length ? e.log : e.target), log: [], done: false, note: "",
+    })));
   }
   save();
   toast(`Copied ${n} exercise${n === 1 ? "" : "s"} to next week`);
 }
 
 function clearWeek() {
-  if (!confirm("Remove everything planned for this week?")) return;
+  if (!confirm("Remove everything on this week, including anything you logged?")) return;
   for (const d of weekDays()) delete db.plan[dkey(d)];
   save();
   renderWeek();
@@ -856,6 +965,13 @@ function renderGoalChips(el, current) {
     `<button type="button" class="chip goal" data-goal="${k}" aria-pressed="${k === current}">${esc(label)}</button>`).join("");
 }
 
+const tomorrowKey = () => dkey(addDays(new Date(), 1));
+
+function exSubtitle(e) {
+  const last = lastLog(e.id, tomorrowKey());
+  return last ? `Last: ${shortDate(last.date)} · ${fmtSets(last.entry.log)}` : "Not logged yet";
+}
+
 /* ---------- Library view ---------- */
 
 function renderLibrary() {
@@ -864,7 +980,7 @@ function renderLibrary() {
     ? `${db.exercises.length} exercises` : `${list.length} of ${db.exercises.length} exercises`;
   $("#libList").innerHTML = groupedHTML(list, e => `<li><button class="exrow" data-id="${esc(e.id)}">
       <span class="grow"><strong>${esc(e.name)}${e.id.startsWith("s-") ? "" : `<span class="tag">Mine</span>`}</strong>
-      <small>${esc(summary(e.p) || "No default plan")}</small></span>
+      <small>${esc(exSubtitle(e))}</small></span>
     </button></li>`);
 }
 
@@ -890,9 +1006,7 @@ function openPicker(target) {
   state.pickAdded = {};
   state.pickQuery = "";
   $("#pickSearch").value = "";
-  $("#pickTitle").textContent = target.kind === "cal"
-    ? `Add to ${fmt(parseKey(target.date), { weekday: "short", month: "short", day: "numeric" })}`
-    : `Add to ${dayName(target.day)}`;
+  $("#pickTitle").textContent = target.kind === "cal" ? `Add to ${shortDate(target.date)}` : `Add to ${dayName(target.day)}`;
   renderGoalChips($("#pickGoals"), state.pickGoal);
   renderChips($("#pickChips"), state.pickCat);
   renderPicker();
@@ -904,7 +1018,7 @@ function renderPicker() {
   $("#pickList").innerHTML = groupedHTML(list, e => {
     const n = state.pickAdded[e.id] || 0;
     return `<li><button class="exrow" data-id="${esc(e.id)}">
-      <span class="grow"><strong>${esc(e.name)}</strong><small>${esc(summary(e.p) || e.cat)}</small></span>
+      <span class="grow"><strong>${esc(e.name)}</strong><small>${esc(exSubtitle(e))}</small></span>
       ${n ? `<span class="added">✓ Added${n > 1 ? ` ×${n}` : ""}</span>` : ""}
     </button></li>`;
   });
@@ -925,12 +1039,12 @@ $("#pickList").addEventListener("click", e => {
   const b = e.target.closest("[data-id]"); if (!b) return;
   const ex = findEx(b.dataset.id); if (!ex) return;
   const t = state.pickTarget;
-  const item = { id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, p: clone(ex.p || {}) };
+  const item = { id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, fields: [...ex.fields], target: [] };
   if (t.kind === "cal") {
-    (db.plan[t.date] ||= []).push({ ...item, done: false, note: "" });
+    (db.plan[t.date] ||= []).push({ ...item, log: [], done: false, note: "" });
   } else {
     const plan = currentPlan(); if (!plan) return;
-    plan.days[t.day].push({ ...item, prog: ex.prog || "auto" });
+    plan.days[t.day].push(item);
     markDirty(plan);
   }
   state.pickAdded[ex.id] = (state.pickAdded[ex.id] || 0) + 1;
@@ -940,9 +1054,9 @@ $("#pickList").addEventListener("click", e => {
 });
 
 /* =========================================================
-   Entry dialog: edit one scheduled exercise, or one slot
-   in a plan's example week. state.editEntry is
-   { kind: "cal", date, id } or { kind: "plan", day, id }.
+   Entry dialog: target + log for one scheduled exercise, or the
+   target for one slot in a plan's example week.
+   state.editEntry is { kind: "cal", date, id } or { kind: "plan", day, id }.
    ========================================================= */
 
 function howtoHTML(ex) {
@@ -959,53 +1073,65 @@ function editedItem() {
   return plan && plan.days[t.day].find(s => s.id === t.id);
 }
 
-// Keep the "Automatic (↑ load)" label honest while the numbers are being edited.
-function refreshAutoLabel() {
-  const item = editedItem(); if (!item || state.editEntry.kind !== "plan") return;
-  const guess = autoProg({ ...item, p: readParams($("#entryParams")) });
-  $("#entryProg").options[0].textContent = `Automatic (${PROG_LABEL[guess]})`;
-}
-$("#entryParams").addEventListener("input", refreshAutoLabel);
-
 function openEntry(target) {
   state.editEntry = target;
   const item = editedItem(); if (!item) return;
   const isPlan = target.kind === "plan";
   const ex = findEx(item.ex);
   const f = $("#entryForm");
+  const cols = columnsFor(fieldsOf(item));
+  const hasSets = cols.length > 0;
+
   $("#entryTitle").textContent = nameOf(item);
   $("#entryHint").textContent = isPlan
-    ? "These are your week 1 numbers. Crux works out every week after this."
-    : "Changes here only affect this day. Your library stays the same.";
+    ? "The target repeats every week of the plan. You log what you actually did from the Week tab."
+    : "Set a target before the session, then log what you actually did.";
   $("#entryHowto").innerHTML = howtoHTML(ex);
-  $("#entryParams").innerHTML = paramFieldsHTML(item.p);
+
+  const last = lastLog(item.ex, isPlan ? tomorrowKey() : target.date, item.id);
+  state.lastSets = last ? last.entry.log : null;
+  $("#entryLast").innerHTML = last
+    ? `<div class="lastbox"><b>Last time</b> · ${shortDate(last.date)}<br>${esc(fmtSets(last.entry.log))}${last.entry.note ? `<br><small>“${esc(last.entry.note)}”</small>` : ""}</div>`
+    : "";
+
+  for (const id of ["targetSets", "logSets"]) $("#" + id).dataset.cols = JSON.stringify(cols);
+  renderSets($("#targetSets"), item.target || []);
+  renderSets($("#logSets"), item.log || []);
+  $("#targetSec").hidden = !hasSets;
+  $("#logSec").hidden = isPlan || !hasSets;
+  $("#copyLastBtn").hidden = !last;
+  $("#noFields").hidden = hasSets;
+
   $("#entryPlanFields").hidden = !isPlan;
   $("#entryCalFields").hidden = isPlan;
   if (isPlan) {
-    $("#entryProg").innerHTML = PROGS.map(([k, label]) => `<option value="${k}">${label}</option>`).join("");
-    $("#entryProg").value = item.prog || "auto";
     $("#entryDay").innerHTML = [0, 1, 2, 3, 4, 5, 6].map(i => `<option value="${i}">${dayName(i)}</option>`).join("");
     $("#entryDay").value = String(target.day);
-    refreshAutoLabel();
   } else {
     f.date.value = target.date;
     f.note.value = item.note || "";
   }
-  $("#entryReset").hidden = !ex;
   $("#entryErr").textContent = "";
   $("#entryDialog").showModal();
 }
+
+$("#copyLastBtn").addEventListener("click", () => {
+  if (state.lastSets) renderSets($("#targetSets"), clone(state.lastSets));
+});
+$("#copyTargetBtn").addEventListener("click", () => {
+  const target = readSets($("#targetSets"));
+  if (target.length) renderSets($("#logSets"), target);
+});
 
 $("#entryForm").addEventListener("submit", ev => {
   ev.preventDefault();
   const t = state.editEntry;
   const item = editedItem(); if (!item) return;
   const f = ev.target;
+  item.target = readSets($("#targetSets"));
 
   if (t.kind === "plan") {
     const plan = currentPlan();
-    item.p = readParams($("#entryParams"));
-    item.prog = f.prog.value;
     const day = Number(f.day.value);
     if (day !== t.day) {
       plan.days[t.day] = plan.days[t.day].filter(s => s.id !== item.id);
@@ -1020,22 +1146,21 @@ $("#entryForm").addEventListener("submit", ev => {
 
   const newDate = f.date.value;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) { $("#entryErr").textContent = "Pick a date."; return; }
-  item.p = readParams($("#entryParams"));
+  const hadLog = item.log.length > 0;
+  item.log = readSets($("#logSets"));
   item.note = f.note.value.trim();
+  if (item.log.length && !hadLog) item.done = true;   // logging it counts as doing it
   if (newDate !== t.date) {
-    removeEntry(t.date, t.id);
+    const i = db.plan[t.date].indexOf(item);
+    db.plan[t.date].splice(i, 1);
+    if (!db.plan[t.date].length) delete db.plan[t.date];
     (db.plan[newDate] ||= []).push(item);
   }
   save();
   $("#entryDialog").close();
   renderWeek();
-  if (newDate !== t.date) toast(`Moved to ${fmt(parseKey(newDate), { weekday: "short", month: "short", day: "numeric" })}`);
-});
-
-$("#entryReset").addEventListener("click", () => {
-  const item = editedItem();
-  const ex = item && findEx(item.ex);
-  if (ex) { $("#entryParams").innerHTML = paramFieldsHTML(ex.p); refreshAutoLabel(); }
+  renderLibrary();
+  if (newDate !== t.date) toast(`Moved to ${shortDate(newDate)}`);
 });
 
 $("#entryRemove").addEventListener("click", () => {
@@ -1060,7 +1185,7 @@ function listFor(kind, key, create) {
 function afterListChange(kind) {
   if (kind === "cal") {
     for (const k of Object.keys(db.plan)) if (!db.plan[k].length) delete db.plan[k];
-    save(); renderWeek();
+    save(); renderWeek(); renderLibrary();
   } else {
     markDirty(currentPlan()); save(); renderPlanBody();
   }
@@ -1111,8 +1236,8 @@ document.addEventListener("pointerdown", ev => {
   document.body.classList.add("is-dragging");
   const line = document.createElement("li");
   line.className = "drop-line";
-  drag = { li, ghost, line, handle, id: li.dataset.item, kind: li.dataset.kind, from: li.dataset.from,
-    offY: ev.clientY - r.top, y: ev.clientY, target: null, index: 0 };
+  drag = { li, ghost, line, id: li.dataset.item, kind: li.dataset.kind, from: li.dataset.from,
+    offY: ev.clientY - r.top, x: ev.clientX, y: ev.clientY, target: null, index: 0 };
   drag.scroller = setInterval(autoScroll, 16);
   updateDrag(ev.clientX, ev.clientY);
 });
@@ -1168,127 +1293,31 @@ function endDrag() {
 }
 
 /* =========================================================
-   Plans: an example week progressed over 4–16 weeks
+   Plans: an example week repeated over 4–16 weeks.
 
-   Cycle: 3 build weeks, then 1 deload week, repeating.
-   "step" is how far along the progression a week is:
-     build weeks in block b are steps 2b, 2b+1, 2b+2
-     the deload week goes back to step 2b with ~40% less volume
-   so each new block starts where the previous one peaked.
-
-   plan = { id, name, weeks, start: "YYYY-MM-DD" (a Monday), pace,
+   plan = { id, name, weeks, start: "YYYY-MM-DD" (a Monday),
             days: [[slot...] x 7], applied, dirty }
-   slot = { id, ex, name, cat, p, prog }
-   Calendar entries made from a plan carry { plan, pk, wk }.
+   slot = { id, ex, name, cat, fields, target }
+   Calendar entries made from a plan carry { plan, pk } so the plan can
+   be updated or removed later without touching anything else.
    ========================================================= */
 
-// Increase per step, by pace. Fractions accumulate and round down,
-// e.g. edge 0.5 = 1 mm smaller every 2 steps.
-const PACES = {
-  conservative: { label: "Conservative", load: 0.5, edge: 0.25, reps: 0.25, sets: 0.2, on: 0.5, duration: 0.025, rate: 0.02,
-    hint: "+0.5 kg per build week, edge 1 mm smaller every 4, +1 rep every 4. For coming back from injury or newer to hangboarding." },
-  moderate: { label: "Moderate", load: 1, edge: 0.5, reps: 0.5, sets: 0.34, on: 1, duration: 0.05, rate: 0.04,
-    hint: "+1 kg per build week, edge 1 mm smaller every 2, +1 rep every 2. A good default for most people." },
-  aggressive: { label: "Aggressive", load: 2, edge: 0.75, reps: 0.75, sets: 0.5, on: 1.5, duration: 0.075, rate: 0.06,
-    hint: "+2 kg per build week, edge 3 mm smaller every 4, +3 reps every 4. Only if you've trained fingers consistently for a year or more." },
-};
-const PROGS = [["auto", "Automatic"], ["load", "Add load"], ["edge", "Smaller edge"], ["reps", "More reps"],
-  ["on", "Longer hang / hold"], ["duration", "Longer duration"], ["sets", "More sets"], ["hold", "Hold steady"]];
-const PROG_LABEL = { load: "↑ load", edge: "↓ edge", reps: "↑ reps", on: "↑ hold", duration: "↑ time", sets: "↑ sets", hold: "steady" };
-const MIN_EDGE = 6;
-
-const dayName = i => fmt(addDays(new Date(2024, 0, 1), i), { weekday: "long" }); // 2024-01-01 was a Monday
 const currentPlan = () => (db.plans || []).find(p => p.id === state.planId);
 const markDirty = plan => { if (plan.applied) plan.dirty = true; };
-
-// "+5 kg", "-10kg", "+10 lb" -> { value, unit }. Anything else isn't progressable.
-function parseLoad(s) {
-  const m = String(s || "").replace("−", "-").match(/^\s*([+-]?)\s*(\d+(?:[.,]\d+)?)\s*(kg|lbs?)?\s*$/i);
-  if (!m) return null;
-  const value = Number(m[2].replace(",", ".")) * (m[1] === "-" ? -1 : 1);
-  return { value, signed: m[1] !== "", unit: (m[3] || "kg").toLowerCase().startsWith("lb") ? "lb" : "kg" };
-}
-// "+6 kg" added / "-9 kg" assistance / "Bodyweight"; unsigned loads (a lifted block) stay unsigned.
-function fmtLoad(v, unit, signed) {
-  if (!signed && v >= 0) return `${v} ${unit}`;
-  return v === 0 ? "Bodyweight" : `${v > 0 ? "+" : "-"}${Math.abs(v)} ${unit}`;
-}
-
-function autoProg(slot) {
-  const p = slot.p || {}, cat = catOf(slot);
-  if (cat === "Warm-up" || cat === "Mobility") return "hold";
-  if (parseLoad(p.load)) return "load";
-  if (p.edge) return "edge";
-  if (p.reps) return "reps";
-  if (p.on) return "on";
-  const lib = findEx(slot.ex);
-  if (p.duration && (cat === "Endurance" || cat === "Cardio" || (lib && (lib.goals || []).includes("endurance")))) return "duration";
-  if (p.sets) return "sets";
-  return "hold";
-}
-
-// The choice actually used: a manual pick falls back to "hold" if the exercise lacks that number.
-function effectiveProg(slot) {
-  const m = slot.prog && slot.prog !== "auto" ? slot.prog : autoProg(slot);
-  const p = slot.p || {};
-  if (m === "load") return parseLoad(p.load) ? m : "hold";
-  if (m === "hold") return m;
-  return p[m] ? m : "hold";
-}
-
-function weekInfo(i) {
-  const block = Math.floor(i / 4), phase = i % 4, deload = phase === 3;
-  return { deload, step: block * 2 + (deload ? 0 : phase) };
-}
-
-function progress(slot, i, pace) {
-  const P = PACES[pace] || PACES.moderate;
-  const { deload, step } = weekInfo(i);
-  const p = clone(slot.p || {});
-  const m = effectiveProg(slot);
-  if (m === "hold") return p;
-  const inc = rate => Math.floor(step * rate + 1e-9);
-  if (m === "load") {
-    const L = parseLoad(p.load);
-    const v = Math.round((L.value + step * P.load * (L.unit === "lb" ? 2 : 1)) * 2) / 2;
-    p.load = fmtLoad(v, L.unit, L.signed);
-  } else if (m === "edge") {
-    p.edge = Math.min(p.edge, Math.max(MIN_EDGE, p.edge - inc(P.edge)));
-  } else if (m === "duration") {
-    p.duration = Math.round(p.duration * (1 + step * P.duration));
-  } else {
-    p[m] += inc(P[m]);
-  }
-  if (deload) {
-    if (p.sets > 1) p.sets = Math.max(1, Math.round(p.sets * 0.6));
-    else if (p.duration) p.duration = Math.round(p.duration * 0.6);
-    else if (p.reps > 1) p.reps = Math.max(1, Math.round(p.reps * 0.6));
-  }
-  return p;
-}
-
-// Rough relative workload for the chart: week 1 = 100.
-function weekScore(i, pace) {
-  const { deload, step } = weekInfo(i);
-  return Math.round(100 * (1 + step * (PACES[pace] || PACES.moderate).rate) * (deload ? 0.6 : 1));
-}
-
 const slotCount = plan => plan.days.reduce((n, d) => n + d.length, 0);
 
 function newPlan(starter) {
   const mon = mondayOf(new Date());
   const plan = {
-    id: "p-" + uid(), name: starter ? starter.name : `Plan ${(db.plans.length || 0) + 1}`, weeks: starter ? starter.weeks : 12,
+    id: "p-" + uid(), name: starter ? starter.name : `Plan ${db.plans.length + 1}`, weeks: starter ? starter.weeks : 8,
     start: dkey(new Date().getDay() === 1 ? mon : addDays(mon, 7)),
-    pace: starter ? starter.pace : "moderate", days: [[], [], [], [], [], [], []], applied: false, dirty: false,
+    days: [[], [], [], [], [], [], []], applied: false, dirty: false,
   };
   if (starter) {
-    starter.days.forEach((items, d) => {
-      for (const [id, over] of items) {
-        // Use your library's version (your numbers); fall back to the built-in if you deleted it.
-        const ex = findEx(id) || SEED.find(x => x.id === id);
-        if (!ex) continue;
-        plan.days[d].push({ id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, p: { ...clone(ex.p || {}), ...(over || {}) }, prog: ex.prog || "auto" });
+    starter.days.forEach((ids, d) => {
+      for (const id of ids) {
+        const ex = findEx(id) || SEED.find(x => x.id === id);   // falls back if you deleted it
+        if (ex) plan.days[d].push({ id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, fields: [...ex.fields], target: [] });
       }
     });
   }
@@ -1297,14 +1326,14 @@ function newPlan(starter) {
   return plan;
 }
 
-// Removes this plan's workouts from the calendar. keepDone leaves checked-off ones as history.
-function stripPlan(plan, keepDone) {
+// Removes this plan's workouts from the calendar. keepLogged leaves ones you did as history.
+function stripPlan(plan, keepLogged) {
   const old = {};
   for (const k of Object.keys(db.plan)) {
     db.plan[k] = db.plan[k].filter(e => {
       if (e.plan !== plan.id) return true;
       old[e.pk] = e;
-      return keepDone && e.done;
+      return keepLogged && (e.done || e.log.length || e.note);
     });
     if (!db.plan[k].length) delete db.plan[k];
   }
@@ -1322,8 +1351,9 @@ function applyPlan(plan) {
         const pk = `${slot.id}:${w}`;
         const prev = old[pk] || {};
         (db.plan[k] ||= []).push({
-          id: uid(), ex: slot.ex, name: slot.name, cat: slot.cat, p: progress(slot, w, plan.pace),
-          done: !!prev.done, note: prev.note || "", plan: plan.id, pk, wk: w + 1,
+          id: uid(), ex: slot.ex, name: slot.name, cat: slot.cat, fields: clone(slot.fields || fieldsOf(slot)),
+          target: clone(slot.target || []), log: prev.log || [], done: !!prev.done, note: prev.note || "",
+          plan: plan.id, pk,
         });
         n++;
       }
@@ -1366,27 +1396,27 @@ function renderPlanTab() {
   const plans = db.plans || [];
   $("#view-plan").innerHTML = `
     <div class="bar">
-      <div><h2>Plans</h2><p class="lede">Build one example week. Crux grows it over 4–16 weeks.</p></div>
+      <div><h2>Plans</h2><p class="lede">Build one week and repeat it for 4–16 weeks.</p></div>
       <button class="primary" data-act="newplan" style="flex:none;white-space:nowrap">+ Blank plan</button>
     </div>
     ${plans.length ? plans.map(p => `
       <button class="card plancard" data-act="openplan" data-id="${esc(p.id)}">
         <span class="bar"><strong>${esc(p.name)}</strong>${statusHTML(p)}</span>
-        <span class="meta" style="display:block">${p.weeks} weeks · ${PACES[p.pace].label} · ${planRange(p)} · ${slotCount(p)} exercises/week</span>
+        <span class="meta" style="display:block">${p.weeks} weeks · ${planRange(p)} · ${slotCount(p)} exercises/week</span>
       </button>`).join("") : `
       <div class="card">
         <h3>How it works</h3>
         <ol class="steps">
-          <li>Pick a length (4–16 weeks), a start week and a pace.</li>
-          <li>Build one example week from your library.</li>
-          <li>Crux runs 3 build weeks then 1 easier deload week, over and over, adding a little load, reps or time as it goes.</li>
-          <li>Preview every week, then add the whole plan to your calendar.</li>
+          <li>Pick a length (4–16 weeks) and a start week.</li>
+          <li>Build one example week from your library. Add targets if you like.</li>
+          <li>Add it to your calendar: the week repeats for the whole plan.</li>
+          <li>Log what you actually do each session on the Week tab.</li>
         </ol>
       </div>`}
     <h3 class="grouph">Start from a goal</h3>
     <div class="card list">${STARTERS.map((st, i) => `
       <button class="goalcard" data-act="starter" data-i="${i}">
-        <strong>${esc(st.name)} <span class="progtag">${st.weeks} wks · ${PACES[st.pace].label}</span></strong>
+        <strong>${esc(st.name)} <span class="progtag">${st.weeks} weeks</span></strong>
         <small>${esc(st.blurb)}</small>
       </button>`).join("")}</div>
     <p class="hint" style="margin-top:8px">Each starter fills in an example week you can then change.</p>`;
@@ -1401,16 +1431,10 @@ function renderBuilder(plan) {
         <input type="range" id="planWeeks" min="4" max="16" step="1" value="${plan.weeks}"></label>
       <label class="field"><span>Start week</span><input type="date" id="planStart" value="${plan.start}"></label>
       <p class="hint" id="planRangeHint">${planRange(plan)}</p>
-      <fieldset><legend>Pace</legend>
-        <div class="seg" id="planPace">${Object.entries(PACES).map(([k, v]) =>
-          `<button type="button" class="chip" data-pace="${k}" aria-pressed="${k === plan.pace}">${v.label}</button>`).join("")}</div>
-        <p class="hint" id="paceHint">${PACES[plan.pace].hint}</p>
-      </fieldset>
     </div>
     <h3 class="grouph">Example week</h3>
-    <p class="hint" style="margin:-4px 0 10px">What a typical week looks like at the start. These numbers are week 1.</p>
+    <p class="hint" style="margin:-4px 0 10px">This week repeats for the whole plan. Tap an exercise to give it a target.</p>
     <div id="planDays" class="stack"></div>
-    <div id="planPreview"></div>
     <div class="card" id="planActions" style="margin-top:16px"></div>`;
   renderPlanBody();
 }
@@ -1425,50 +1449,17 @@ function renderPlanBody() {
         <button class="ghost sm" data-act="planadd" data-day="${d}">+ Add</button></div>
       ${slots.length ? `<ul class="entries">${slots.map(s => { const name = nameOf(s); return `
         <li class="entry" data-item="${esc(s.id)}" data-kind="plan" data-from="${d}">
-          <button type="button" class="handle" data-drag aria-label="Drag ${esc(name)} to another day"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
+          ${HANDLE(name)}
           <button class="entrybtn" data-act="planslot" data-day="${d}" data-id="${esc(s.id)}">
-          <span class="dot" style="--c:${catColor(catOf(s))}"></span>
-          <span><strong>${esc(name)}<span class="progtag">${PROG_LABEL[effectiveProg(s)]}</span></strong>
-          <small>${esc(summary(s.p) || catOf(s))}</small></span>
-        </button>
-          <button type="button" class="rm" data-act="remove" data-kind="plan" data-key="${d}" data-id="${esc(s.id)}" aria-label="Remove ${esc(name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            <span class="dot" style="--c:${catColor(catOf(s))}"></span>
+            <span><strong>${esc(name)}</strong>
+            <small>${s.target && s.target.length ? `Target: ${esc(fmtSets(s.target))}` : "No target"}</small></span>
+          </button>
+          ${RM("plan", d, s.id, name)}
         </li>`; }).join("")}</ul>` : `<p class="empty">Rest day</p>`}
     </section>`).join("");
 
   const n = slotCount(plan);
-  if (!n) {
-    $("#planPreview").innerHTML = "";
-  } else {
-    const scores = Array.from({ length: plan.weeks }, (_, i) => weekScore(i, plan.pace));
-    const max = Math.max(...scores);
-    const start = parseKey(plan.start);
-    const bars = scores.map((sc, i) => {
-      const dl = weekInfo(i).deload;
-      const cls = `barcol${dl ? " deload" : ""}${i < 2 ? " first" : ""}${i >= plan.weeks - 2 ? " last" : ""}`;
-      return `<button class="${cls}" data-act="jumpweek" data-week="${i}" aria-label="Week ${i + 1}, ${dl ? "deload" : "build"}, workload ${sc}">
-        <span class="bar-fill" style="height:${(sc / max) * 100}%"></span>
-        <span class="tip"><b>Week ${i + 1}</b> · ${dl ? "Deload" : "Build"}<br>${fmt(addDays(start, i * 7), { month: "short", day: "numeric" })} · workload ${sc}</span>
-      </button>`;
-    }).join("");
-    const weeksHTML = scores.map((sc, i) => {
-      const dl = weekInfo(i).deload;
-      const days = plan.days.map((slots, d) => slots.length ? `<div class="wkday"><b>${dayName(d).slice(0, 3)}</b><ul>${slots.map(s =>
-        `<li>${esc(nameOf(s))} <small>${esc(summary(progress(s, i, plan.pace)))}</small></li>`).join("")}</ul></div>` : "").join("");
-      return `<details class="wkd" id="wk-${i}"><summary>Week ${i + 1}
-        <span class="muted">${fmt(addDays(start, i * 7), { month: "short", day: "numeric" })} · ${dl ? "Deload" : "Build"}</span></summary>${days}</details>`;
-    }).join("");
-    $("#planPreview").innerHTML = `
-      <h3 class="grouph">Preview</h3>
-      <div class="card">
-        <strong>Estimated weekly workload</strong>
-        <p class="hint" style="margin-top:0">Week 1 = 100. Tap a bar to see that week.</p>
-        <div class="chart">${bars}</div>
-        <div class="axis">${scores.map((_, i) => `<span>${plan.weeks > 12 && i % 2 ? "" : i + 1}</span>`).join("")}</div>
-        <div class="legend"><span><i style="background:var(--bar-build)"></i>Build week</span><span><i style="background:var(--bar-deload)"></i>Deload week (less volume)</span></div>
-      </div>
-      <div style="margin-top:12px">${weeksHTML}</div>`;
-  }
-
   const total = n * plan.weeks;
   let actions;
   if (!plan.applied) {
@@ -1499,14 +1490,10 @@ $("#view-plan").addEventListener("click", ev => {
   else if (act === "openplan") { state.planId = t.dataset.id; renderPlanTab(); window.scrollTo(0, 0); }
   else if (act === "backplans") { state.planId = null; renderPlanTab(); }
   else if (act === "planadd") openPicker({ kind: "plan", day: Number(t.dataset.day) });
-  else if (act === "remove") removeItem("plan", t.dataset.key, t.dataset.id);
   else if (act === "planslot") openEntry({ kind: "plan", day: Number(t.dataset.day), id: t.dataset.id });
-  else if (act === "jumpweek") {
-    const d = $(`#wk-${t.dataset.week}`);
-    if (d) { d.open = true; d.scrollIntoView({ behavior: "smooth", block: "center" }); }
-  }
+  else if (act === "remove") removeItem("plan", t.dataset.key, t.dataset.id);
   else if (act === "applyplan") {
-    if (plan.applied && !confirm("Update your calendar with the changed plan? Any edits you made to this plan's workouts on the calendar will be replaced. Checked-off items and notes are kept.")) return;
+    if (plan.applied && !confirm("Update your calendar with the changed plan? Anything you've logged or checked off is kept.")) return;
     const wasApplied = plan.applied;
     const n = applyPlan(plan);
     renderPlanTab(); renderWeek();
@@ -1514,28 +1501,18 @@ $("#view-plan").addEventListener("click", ev => {
   }
   else if (act === "viewplan") { state.week = parseKey(plan.start); renderWeek(); showTab("week"); }
   else if (act === "unapplyplan") {
-    if (!confirm("Remove this plan's workouts from your calendar? Ones you've checked off stay as history.")) return;
+    if (!confirm("Remove this plan's workouts from your calendar? Anything you've logged stays as history.")) return;
     stripPlan(plan, true);
     plan.applied = false; plan.dirty = false;
     save(); renderPlanTab(); renderWeek();
   }
   else if (act === "deleteplan") {
-    if (!confirm(`Delete "${plan.name}"?${plan.applied ? " Its workouts will be removed from your calendar (checked-off ones stay)." : ""}`)) return;
+    if (!confirm(`Delete "${plan.name}"?${plan.applied ? " Its workouts will be removed from your calendar (anything you logged stays)." : ""}`)) return;
     stripPlan(plan, true);
     db.plans = db.plans.filter(p => p.id !== plan.id);
     state.planId = null;
     save(); renderPlanTab(); renderWeek();
   }
-});
-
-$("#view-plan").addEventListener("click", ev => {
-  const b = ev.target.closest("[data-pace]"); if (!b) return;
-  const plan = currentPlan();
-  plan.pace = b.dataset.pace;
-  markDirty(plan); save();
-  document.querySelectorAll("#planPace .chip").forEach(c => c.setAttribute("aria-pressed", String(c === b)));
-  $("#paceHint").textContent = PACES[plan.pace].hint;
-  renderPlanBody();
 });
 
 $("#view-plan").addEventListener("input", ev => {
@@ -1566,26 +1543,42 @@ $("#view-plan").addEventListener("change", ev => {
 
 $("#exCat").innerHTML = CATS.map(([c]) => `<option>${esc(c)}</option>`).join("");
 
+function toggleChipsHTML(items, on, attr) {
+  return items.map(([k, label]) =>
+    `<button type="button" class="chip goal" data-${attr}="${k}" aria-pressed="${on.includes(k)}">${esc(label)}</button>`).join("");
+}
+
 function openExercise(id) {
   const ex = id ? findEx(id) : null;
   state.editEx = ex ? ex.id : null;
   const f = $("#exForm");
   $("#exTitle").textContent = ex ? "Edit exercise" : "New exercise";
   f.name.value = ex ? ex.name : "";
-  f.cat.value = ex ? ex.cat : (state.libCat !== "All" ? state.libCat : "Fingers");
-  $("#exParams").innerHTML = paramFieldsHTML(ex ? ex.p : {});
-  const goals = ex ? ex.goals || [] : (state.libGoal !== "All" ? [state.libGoal] : []);
-  $("#exGoals").innerHTML = GOALS.map(([k, label]) =>
-    `<button type="button" class="chip goal" data-goal="${k}" aria-pressed="${goals.includes(k)}">${esc(label)}</button>`).join("");
-  $("#exProg").innerHTML = PROGS.map(([k, label]) => `<option value="${k}">${label}</option>`).join("");
-  $("#exProg").value = (ex && ex.prog) || "auto";
+  f.cat.value = ex ? ex.cat : (state.libCat !== "All" ? state.libCat : "Strength");
+  $("#exGoals").innerHTML = toggleChipsHTML(GOALS, ex ? ex.goals || [] : (state.libGoal !== "All" ? [state.libGoal] : []), "goal");
+  $("#exFields").innerHTML = toggleChipsHTML(FIELDS, ex ? ex.fields : defaultFields(null, f.cat.value), "field");
   f.notes.value = ex ? ex.notes || "" : "";
   f.video.value = ex ? ex.video || "" : "";
+  const hist = ex ? history(ex.id) : [];
+  $("#exHistory").hidden = !ex;
+  $("#exHistoryList").innerHTML = hist.length
+    ? hist.slice(0, 20).map(h => `<li><b>${shortDate(h.date)}</b> ${esc(fmtSets(h.entry.log))}${h.entry.note ? ` <small>“${esc(h.entry.note)}”</small>` : ""}</li>`).join("")
+    : `<li class="muted">Nothing logged yet.</li>`;
   $("#exDelete").hidden = !ex;
   $("#exErr").textContent = "";
   $("#exDialog").showModal();
   if (!ex) f.name.focus();
 }
+
+// For a new exercise, picking a category suggests what to track.
+$("#exCat").addEventListener("change", e => {
+  if (!state.editEx) $("#exFields").innerHTML = toggleChipsHTML(FIELDS, defaultFields(null, e.target.value), "field");
+});
+
+$("#exDialog").addEventListener("click", e => {
+  const b = e.target.closest("#exGoals [data-goal], #exFields [data-field]");
+  if (b) b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
+});
 
 $("#exForm").addEventListener("submit", ev => {
   ev.preventDefault();
@@ -1594,28 +1587,23 @@ $("#exForm").addEventListener("submit", ev => {
   const video = f.video.value.trim();
   if (!name) { $("#exErr").textContent = "Give it a name."; f.name.focus(); return; }
   if (video && !/^https?:\/\//i.test(video)) { $("#exErr").textContent = "Video link should start with https://"; f.video.focus(); return; }
-  const goals = [...document.querySelectorAll("#exGoals [aria-pressed=true]")].map(b => b.dataset.goal);
-  const prog = f.prog.value === "auto" ? undefined : f.prog.value;
-  const data = { name, cat: f.cat.value, goals, prog, p: readParams($("#exParams")), notes: f.notes.value.trim(), video };
+  const pressed = sel => [...document.querySelectorAll(sel)].filter(b => b.getAttribute("aria-pressed") === "true");
+  const goals = pressed("#exGoals [data-goal]").map(b => b.dataset.goal);
+  const fields = FIELDS.map(([k]) => k).filter(k => pressed("#exFields [data-field]").some(b => b.dataset.field === k));
+  const data = { name, cat: f.cat.value, goals, fields, notes: f.notes.value.trim(), video };
   if (state.editEx) Object.assign(findEx(state.editEx), data);
   else db.exercises.push({ id: "x-" + uid(), ...data });
   save();
   $("#exDialog").close();
-  renderGoalChips($("#libGoals"), state.libGoal);
   renderChips($("#libChips"), state.libCat);
   renderLibrary();
   renderWeek();
   toast(state.editEx ? "Exercise updated" : `Added ${name} to your library`);
 });
 
-$("#exGoals").addEventListener("click", e => {
-  const b = e.target.closest("[data-goal]");
-  if (b) b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
-});
-
 $("#exDelete").addEventListener("click", () => {
   const ex = findEx(state.editEx); if (!ex) return;
-  if (!confirm(`Delete "${ex.name}" from your library? Anything already scheduled stays on your calendar.`)) return;
+  if (!confirm(`Delete "${ex.name}" from your library? Anything already on your calendar, and its logs, stays.`)) return;
   db.exercises = db.exercises.filter(e => e.id !== ex.id);
   save();
   $("#exDialog").close();
@@ -1664,7 +1652,7 @@ $("#restoreBtn").addEventListener("click", () => {
   const have = new Set(db.exercises.map(e => e.id));
   const missing = SEED.filter(s => !have.has(s.id));
   db.exercises.push(...clone(missing));
-  save(); renderLibrary();
+  save(); renderChips($("#libChips"), state.libCat); renderLibrary();
   toast(missing.length ? `Restored ${missing.length} exercise${missing.length === 1 ? "" : "s"}` : "All starter exercises are already there");
 });
 
