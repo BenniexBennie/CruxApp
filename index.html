@@ -3,32 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#E6E9EC">
-<title>Crux Training</title>
+<meta name="theme-color" content="#1E9E4E">
+<title>Training Plan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#E6E9EC; --surface:#FFFFFF; --sunk:#F2F4F6; --ink:#17212B; --muted:#5A6774; --line:#CDD3D9;
+  --bg:#EEF6EF; --surface:#FFFFFF; --sunk:#F3F8F4; --ink:#11321F; --muted:#557363; --line:#D3E4D7;
+  --accent:#1E9E4E; --accent-press:#157A3B; --accent-soft:#DDF3E3; --on-accent:#FFFFFF;
+  --sun:#FFC93C; --on-sun:#3A2A00; --danger:#E4574B;
   --tape:#D1246C; --orange:#E2621B; --go:#0E8878; --blue:#2F63C8; --gold:#D89B00; --grey:#8A96A1;
   --violet:#7A4FC4; --leaf:#3B8F3F; --cyan:#1B8FB5;
-  --display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
-  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --display:"Fredoka","Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
   box-sizing:border-box;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#141A20; --surface:#1D252D; --sunk:#232C35; --ink:#E6EAEE; --muted:#98A4AF; --line:#303A44;
-    --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#6D7984;
+    --bg:#0E1C14; --surface:#15271C; --sunk:#1C3325; --ink:#E3F2E7; --muted:#93AE9C; --line:#274233;
+    --accent:#4BD67E; --accent-press:#2E9E57; --accent-soft:#1D3D2A; --on-accent:#0B2415;
+    --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
+    --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
     --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#141A20; --surface:#1D252D; --sunk:#232C35; --ink:#E6EAEE; --muted:#98A4AF; --line:#303A44;
-  --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#6D7984;
+  --bg:#0E1C14; --surface:#15271C; --sunk:#1C3325; --ink:#E3F2E7; --muted:#93AE9C; --line:#274233;
+  --accent:#4BD67E; --accent-press:#2E9E57; --accent-soft:#1D3D2A; --on-accent:#0B2415;
+  --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
+  --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
   --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
   color-scheme:dark;
 }
@@ -37,20 +43,24 @@ html{height:100%}
 body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--body);-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
-h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.1;margin:0;letter-spacing:.005em}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.1;margin:0;text-wrap:balance}
 h2{font-size:1.75rem}
-h3{font-size:1.25rem;font-weight:600}
+h3{font-size:1.2rem;font-weight:600}
 p{margin:0}
 ul{list-style:none;margin:0;padding:0}
 [hidden]{display:none!important}
 
 /* ---------- Header & nav ---------- */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:720px;margin:0 auto}
-.top h1{font-size:1.9rem;display:flex;align-items:center;gap:10px}
-.logo{width:22px;height:22px;border-radius:5px 12px 6px 11px;background:var(--tape);transform:rotate(-8deg)}
-#sync{margin-left:auto;font-size:.8rem;color:var(--muted)}
-#sync.bad{color:var(--tape);font-weight:600}
+.top h1{font-size:1.55rem;display:flex;align-items:center;gap:10px;color:var(--ink);white-space:nowrap}
+.logo{width:34px;height:34px;flex:none;transform:rotate(-6deg);transition:transform .3s}
+.top h1:hover .logo{transform:rotate(6deg) scale(1.05)}
+.logo .blob{fill:var(--accent)}
+.logo .peak{fill:var(--on-accent)}
+.logo .sun{fill:var(--sun)}
+#sync{margin-left:auto;font-size:.8rem;font-weight:700;color:var(--accent-press);white-space:nowrap}
+#sync.bad{color:var(--danger);font-weight:700}
 .iconbtn{border:0;background:transparent;padding:8px;border-radius:10px;color:var(--ink);display:grid;place-items:center}
 .iconbtn:hover{background:var(--sunk)}
 .iconbtn svg{width:24px;height:24px}
@@ -58,26 +68,30 @@ ul{list-style:none;margin:0;padding:0}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
 .tabs button{flex:1;max-width:240px;border:0;background:none;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font-weight:600;font-size:.85rem}
 .tabs button svg{width:24px;height:24px}
-.tabs button[aria-current="page"]{color:var(--ink)}
-.tabs button[aria-current="page"] svg{color:var(--tape)}
+.tabs button svg{padding:3px 14px;box-sizing:content-box;border-radius:99px;transition:background .2s}
+.tabs button[aria-current="page"]{color:var(--accent-press)}
+.tabs button[aria-current="page"] svg{color:var(--accent-press);background:var(--accent-soft)}
 
 main{max-width:720px;margin:0 auto;padding:4px 16px calc(110px + env(safe-area-inset-bottom,0px))}
 .stack>*+*{margin-top:12px}
-.card{background:var(--surface);border-radius:14px;padding:16px}
+.card{background:var(--surface);border-radius:20px;padding:16px;box-shadow:0 2px 0 var(--line)}
 .lede{color:var(--muted)}
 .muted{color:var(--muted)}
 .empty{color:var(--muted);padding:6px 0 2px;font-size:.95rem}
-.err{color:var(--tape);min-height:1.5em;font-weight:500;font-size:.95rem}
+.err{color:var(--danger);min-height:1.5em;font-weight:700;font-size:.95rem}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-.primary{background:var(--ink);color:var(--bg);border:0;border-radius:10px;padding:12px 18px;font-weight:600}
+.primary{background:var(--accent);color:var(--on-accent);border:0;border-radius:14px;padding:12px 18px;font-weight:800;box-shadow:0 4px 0 var(--accent-press);transition:transform .08s,box-shadow .08s}
+.primary:active{transform:translateY(3px);box-shadow:0 1px 0 var(--accent-press)}
+.primary:disabled{opacity:.5;cursor:default}
 .primary:hover{opacity:.9}
-.ghost{background:transparent;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:500}
-.ghost:hover{border-color:var(--muted)}
+.ghost{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:500}
+.ghost:hover{border-color:var(--accent)}
 .ghost:disabled{opacity:.45;cursor:default}
 .sm{padding:7px 12px;font-size:.9rem}
-.danger{color:var(--tape);border-color:color-mix(in srgb,var(--tape) 40%,transparent)}
+.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,transparent)}
+.primary.danger{background:var(--danger);color:#fff;box-shadow:0 4px 0 color-mix(in srgb,var(--danger) 70%,#000)}
 .linkish{background:none;border:0;color:var(--muted);text-decoration:underline;padding:4px}
 
 /* ---------- Forms ---------- */
@@ -94,9 +108,9 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.9rem;font-weight:500;white-space:nowrap}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .chips.wrap{flex-wrap:wrap;overflow:visible}
-.chip.toggle[aria-pressed="true"]{background:var(--tape);border-color:var(--tape);color:#fff}
+.chip.toggle[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .startercard{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:12px 0;color:inherit}
 .startercard:first-of-type{border-top:0}
 .startercard strong{font-weight:600}
@@ -110,19 +124,23 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 .wk h2{font-size:1.6rem}
 .wk p{font-size:.9rem;min-height:1.6em}
 .progress{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden;margin:14px 0 10px}
-.progress>div{height:100%;background:var(--go);border-radius:99px;transition:width .25s}
+.progress>div{height:100%;border-radius:99px;transition:width .4s cubic-bezier(.3,1.4,.5,1);background:var(--accent) repeating-linear-gradient(-45deg,transparent 0 8px,rgb(255 255 255 / .22) 8px 16px)}
 .day{scroll-margin-top:72px}
-.day.today{box-shadow:inset 4px 0 0 var(--tape)}
+.day.today{box-shadow:0 0 0 3px var(--sun),0 2px 0 var(--line)}
 .dayhead h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}
 .dayhead h3 small{font-family:var(--body);font-weight:500;font-size:.9rem;color:var(--muted);white-space:nowrap}
 .dayhead .ghost{flex:none;white-space:nowrap}
 .weekstats{flex-wrap:wrap}
 .weekstats>span:first-child{white-space:nowrap}
-.pill{font-family:var(--body);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;background:var(--tape);color:#fff;border-radius:99px;padding:2px 8px;align-self:center}
+.pill{font-family:var(--body);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:var(--sun);color:var(--on-sun);border-radius:99px;padding:2px 9px;align-self:center}
 .entries{margin-top:8px}
 .entry{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding:6px 0}
 .entry:first-child{border-top:0}
-.entry input[type=checkbox]{width:26px;height:26px;flex:none;accent-color:var(--go);margin:0 4px 0 0;cursor:pointer}
+.entry input[type=checkbox]{appearance:none;-webkit-appearance:none;width:28px;height:28px;flex:none;margin:0 4px 0 0;cursor:pointer;border:2.5px solid var(--line);border-radius:9px;background:var(--surface);display:grid;place-items:center;transition:background .15s,border-color .15s}
+.entry input[type=checkbox]:hover{border-color:var(--accent)}
+.entry input[type=checkbox]:checked{background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/18px no-repeat;border-color:var(--accent);animation:pop .3s ease-out}
+@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.entry input[type=checkbox]:checked{animation:none}.primary,.progress>div,.logo{transition:none}}
 .entrybtn{flex:1;min-width:0;display:flex;align-items:flex-start;gap:10px;text-align:left;border:0;background:none;padding:6px 0;border-radius:8px}
 .entrybtn strong{display:block;font-weight:600}
 .entrybtn small{display:block;color:var(--muted);font-size:.88rem;line-height:1.35}
@@ -138,7 +156,7 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 .exrow small{display:block;color:var(--muted);font-size:.88rem;line-height:1.35}
 .exrow .grow{flex:1;min-width:0}
 .tag{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
-.added{flex:none;align-self:center;font-size:.85rem;font-weight:600;color:var(--go)}
+.added{flex:none;align-self:center;font-size:.85rem;font-weight:800;color:var(--accent-press)}
 
 /* ---------- Dialogs (bottom sheets on phones) ---------- */
 dialog{border:0;padding:0;background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:92dvh;border-radius:18px 18px 0 0;margin:auto auto 0}
@@ -156,23 +174,26 @@ dialog::backdrop{background:rgb(0 0 0 / .45)}
 details.howto{background:var(--sunk);border-radius:10px;padding:10px 12px;margin-top:14px}
 details.howto summary{font-weight:600;cursor:pointer}
 details.howto p{margin-top:6px;white-space:pre-wrap}
-details.howto a{color:var(--blue)}
+details.howto a{color:var(--accent-press);font-weight:700}
 
 /* ---------- Plan ---------- */
 .plancard{display:block;width:100%;text-align:left;border:0;color:inherit}
 .plancard strong{font-family:var(--display);font-size:1.35rem;font-weight:700}
 .plancard .meta{color:var(--muted);font-size:.92rem;margin-top:2px}
 .status{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-radius:99px;padding:2px 8px;white-space:nowrap}
-.status.on{background:var(--go);color:#fff}
+.status.on{background:var(--accent);color:var(--on-accent)}
 .status.draft{border:1px solid var(--line);color:var(--muted)}
 .status.dirty{background:var(--gold);color:#17212B}
-input[type=range]{width:100%;accent-color:var(--tape)}
+input[type=range]{width:100%;accent-color:var(--accent)}
 .rangeval{font-family:var(--display);font-size:1.3rem;font-weight:700;color:var(--ink);margin-left:6px}
 .steps{margin:12px 0 0;padding-left:20px;list-style:decimal;color:var(--muted)}
 .steps li+li{margin-top:4px}
 .progtag{display:inline-block;font-size:.75rem;font-weight:600;color:var(--muted);background:var(--sunk);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:1px;white-space:nowrap}
 .planline{font-size:.9rem;color:var(--muted);text-align:center;margin-top:10px}
 .planline b{color:var(--ink);font-weight:600}
+#confirmMsg{font-size:1.05rem;font-weight:600;max-width:46ch}
+dialog.confirm{max-width:440px}
+
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;font-size:.95rem;z-index:20;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.show{opacity:1}
 #toast.has-action.show{pointer-events:auto;display:flex;align-items:center;gap:14px}
@@ -182,12 +203,12 @@ input[type=range]{width:100%;accent-color:var(--tape)}
 .handle{flex:none;border:0;background:none;color:var(--muted);padding:8px 0;margin-left:-6px;width:24px;cursor:grab;touch-action:none;display:grid;place-items:center}
 .handle svg{width:20px;height:20px}
 .rm{flex:none;border:0;background:none;color:var(--muted);padding:8px;border-radius:8px;display:grid;place-items:center}
-.rm:hover{color:var(--tape);background:var(--sunk)}
+.rm:hover{color:var(--danger);background:var(--sunk)}
 .rm svg{width:18px;height:18px}
 .entry.dragging{opacity:.3}
 .drag-ghost{position:fixed;z-index:40;pointer-events:none;list-style:none;display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:6px 12px;box-shadow:0 10px 30px rgb(0 0 0 / .25);transform:rotate(1.5deg)}
-.day.drop-target{outline:2px dashed var(--blue);outline-offset:-2px}
-.drop-line{height:3px;background:var(--blue);border-radius:2px;margin:3px 0;list-style:none}
+.day.drop-target{outline:3px dashed var(--accent);outline-offset:-3px;background:var(--accent-soft)}
+.drop-line{height:4px;background:var(--accent);border-radius:2px;margin:3px 0;list-style:none}
 body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 
 /* ---------- Sets: target & log ---------- */
@@ -197,11 +218,11 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .setrow.head{margin-top:10px}
 .setrow.head span{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap;overflow:hidden}
 .setrow input,.setrow select{padding:8px 6px;min-width:0;border-radius:8px}
-.setrow input.bad{border-color:var(--tape);background:color-mix(in srgb,var(--tape) 10%,var(--sunk))}
+.setrow input.bad{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,var(--sunk))}
 .setrow .rm{padding:6px}
 .setn{font-weight:600;color:var(--muted);text-align:center}
 .setsec .ghost{margin-top:10px}
-.lastbox{background:var(--sunk);border-left:4px solid var(--blue);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:.95rem}
+.lastbox{background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:.95rem}
 .lastbox small{color:var(--muted)}
 .logged{color:var(--ink)}
 .histlist{margin-top:6px}
@@ -213,7 +234,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 <body>
 
 <header class="top">
-  <h1><span class="logo" aria-hidden="true"></span>Crux</h1>
+  <h1><svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><path class="blob" d="M20 2c9 0 17 5 17 16 0 12-8 20-18 20S2 31 3 19C4 8 11 2 20 2z"/><circle class="sun" cx="28" cy="13" r="4"/><path class="peak" d="M8 29l8-12 4 6 3-4 8 10z"/></svg>Training Plan</h1>
   <span id="sync" aria-live="polite"></span>
   <button class="iconbtn" id="settingsBtn" aria-label="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -333,6 +354,18 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       <button type="submit" class="primary">Save</button>
     </div>
   </form>
+</dialog>
+
+<!-- Confirmation (the artifact viewer blocks the browser's own confirm dialog) -->
+<dialog id="confirmDialog" class="confirm" aria-labelledby="confirmMsg">
+  <div class="sheet-body" style="padding-top:20px">
+    <p id="confirmMsg"></p>
+  </div>
+  <div class="sheet-foot">
+    <span class="spacer"></span>
+    <button type="button" class="ghost" id="confirmNo">Cancel</button>
+    <button type="button" class="primary" id="confirmYes">OK</button>
+  </div>
 </dialog>
 
 <!-- Settings -->
@@ -656,7 +689,8 @@ function save() {
     storageOk = false;
   }
   const s = $("#sync");
-  s.textContent = storageOk ? "Saved on this device" : "Not saving: storage blocked";
+  s.textContent = storageOk ? "Saved ✓" : "Not saving";
+  s.title = storageOk ? "Saved in this browser" : "This browser is blocking storage, so changes will be lost when you close it";
   s.classList.toggle("bad", !storageOk);
 }
 
@@ -811,6 +845,22 @@ function history(exId) {
   return out.sort((a, b) => b.date.localeCompare(a.date));
 }
 
+// Resolves true/false. Used instead of the browser's confirm dialog, which the artifact viewer always cancels.
+function askConfirm(message, okLabel = "OK", danger = false) {
+  const d = $("#confirmDialog");
+  $("#confirmMsg").textContent = message;
+  const yes = $("#confirmYes");
+  yes.textContent = okLabel;
+  yes.classList.toggle("danger", danger);
+  return new Promise(resolve => {
+    const done = v => { d.onclose = null; if (d.open) d.close(); resolve(v); };
+    yes.onclick = () => done(true);
+    $("#confirmNo").onclick = () => done(false);
+    d.onclose = () => resolve(false);
+    d.showModal();
+  });
+}
+
 let toastTimer;
 // action (optional) = { label, run }, e.g. Undo.
 function toast(msg, action) {
@@ -930,7 +980,7 @@ function getEntry(date, id) {
 }
 
 // Next week gets the same exercises. What you logged becomes next week's target.
-function copyWeekForward() {
+async function copyWeekForward() {
   const days = weekDays();
   let n = 0, existing = 0;
   for (const d of days) {
@@ -938,7 +988,7 @@ function copyWeekForward() {
     existing += (db.plan[dkey(addDays(d, 7))] || []).length;
   }
   if (!n) return;
-  if (existing && !confirm(`Next week already has ${existing} exercise${existing === 1 ? "" : "s"}. Add this week's ${n} as well?`)) return;
+  if (existing && !(await askConfirm(`Next week already has ${existing} exercise${existing === 1 ? "" : "s"}. Add this week's ${n} as well?`, "Add them"))) return;
   for (const d of days) {
     const src = db.plan[dkey(d)] || [];
     if (!src.length) continue;
@@ -952,8 +1002,8 @@ function copyWeekForward() {
   toast(`Copied ${n} exercise${n === 1 ? "" : "s"} to next week`);
 }
 
-function clearWeek() {
-  if (!confirm("Remove everything on this week, including anything you logged?")) return;
+async function clearWeek() {
+  if (!(await askConfirm("Remove everything on this week, including anything you logged?", "Clear week", true))) return;
   for (const d of weekDays()) delete db.plan[dkey(d)];
   save();
   renderWeek();
@@ -1519,7 +1569,7 @@ function renderPlanBody() {
   $("#planActions").innerHTML = actions;
 }
 
-$("#view-plan").addEventListener("click", ev => {
+$("#view-plan").addEventListener("click", async ev => {
   const t = ev.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act;
   const plan = currentPlan();
@@ -1531,7 +1581,7 @@ $("#view-plan").addEventListener("click", ev => {
   else if (act === "planslot") openEntry({ kind: "plan", day: Number(t.dataset.day), id: t.dataset.id });
   else if (act === "remove") removeItem("plan", t.dataset.key, t.dataset.id);
   else if (act === "applyplan") {
-    if (plan.applied && !confirm("Update your calendar with the changed plan? Anything you've logged or checked off is kept.")) return;
+    if (plan.applied && !(await askConfirm("Update your calendar with the changed plan? Anything you've logged or checked off is kept.", "Update calendar"))) return;
     const wasApplied = plan.applied;
     const n = applyPlan(plan);
     renderPlanTab(); renderWeek();
@@ -1539,13 +1589,13 @@ $("#view-plan").addEventListener("click", ev => {
   }
   else if (act === "viewplan") { state.week = parseKey(plan.start); renderWeek(); showTab("week"); }
   else if (act === "unapplyplan") {
-    if (!confirm("Remove this plan's workouts from your calendar? Anything you've logged stays as history.")) return;
+    if (!(await askConfirm("Remove this plan's workouts from your calendar? Anything you've logged stays as history.", "Remove", true))) return;
     stripPlan(plan, true);
     plan.applied = false; plan.dirty = false;
     save(); renderPlanTab(); renderWeek();
   }
   else if (act === "deleteplan") {
-    if (!confirm(`Delete "${plan.name}"?${plan.applied ? " Its workouts will be removed from your calendar (anything you logged stays)." : ""}`)) return;
+    if (!(await askConfirm(`Delete "${plan.name}"?${plan.applied ? " Its workouts will be removed from your calendar. Anything you logged stays." : ""}`, "Delete plan", true))) return;
     stripPlan(plan, true);
     db.plans = db.plans.filter(p => p.id !== plan.id);
     state.planId = null;
@@ -1639,9 +1689,9 @@ $("#exForm").addEventListener("submit", ev => {
   toast(state.editEx ? "Exercise updated" : `Added ${name} to your library`);
 });
 
-$("#exDelete").addEventListener("click", () => {
+$("#exDelete").addEventListener("click", async () => {
   const ex = findEx(state.editEx); if (!ex) return;
-  if (!confirm(`Delete "${ex.name}" from your library? Anything already on your calendar, and its logs, stays.`)) return;
+  if (!(await askConfirm(`Delete "${ex.name}" from your library? Anything already on your calendar, and its logs, stays.`, "Delete", true))) return;
   db.exercises = db.exercises.filter(e => e.id !== ex.id);
   save();
   $("#exDialog").close();
@@ -1663,7 +1713,7 @@ $("#exportBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `crux-backup-${dkey(new Date())}.json`;
+  a.download = `training-plan-backup-${dkey(new Date())}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
@@ -1675,14 +1725,14 @@ $("#importFile").addEventListener("change", async e => {
   try {
     const d = JSON.parse(await file.text());
     if (!validDb(d)) throw new Error("bad file");
-    if (!confirm("Replace everything in this browser with the backup?")) return;
+    if (!(await askConfirm("Replace everything in this browser with the backup?", "Replace", true))) return;
     db = normalize(d);
     state.planId = null;
     save(); applyTheme(); renderAll();
     $("#settingsDialog").close();
     toast("Backup imported");
   } catch (err) {
-    toast("That file isn't a Crux backup");
+    toast("That file isn't a Training Plan backup");
   }
 });
 
