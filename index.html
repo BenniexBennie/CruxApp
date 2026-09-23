@@ -199,6 +199,20 @@ details.wkd summary .muted{font-weight:400;font-size:.9rem}
 
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;font-size:.95rem;z-index:20;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.show{opacity:1}
+#toast.has-action.show{pointer-events:auto;display:flex;align-items:center;gap:14px}
+#toast button{border:0;background:none;color:var(--bg);font-weight:700;text-decoration:underline;padding:4px 2px}
+
+/* ---------- Drag & remove ---------- */
+.handle{flex:none;border:0;background:none;color:var(--muted);padding:8px 0;margin-left:-6px;width:24px;cursor:grab;touch-action:none;display:grid;place-items:center}
+.handle svg{width:20px;height:20px}
+.rm{flex:none;border:0;background:none;color:var(--muted);padding:8px;border-radius:8px;display:grid;place-items:center}
+.rm:hover{color:var(--tape);background:var(--sunk)}
+.rm svg{width:18px;height:18px}
+.entry.dragging{opacity:.3}
+.drag-ghost{position:fixed;z-index:40;pointer-events:none;list-style:none;display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:6px 12px;box-shadow:0 10px 30px rgb(0 0 0 / .25);transform:rotate(1.5deg)}
+.day.drop-target{outline:2px dashed var(--blue);outline-offset:-2px}
+.drop-line{height:3px;background:var(--blue);border-radius:2px;margin:3px 0;list-style:none}
+body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 </style>
 </head>
 <body>
@@ -358,11 +372,12 @@ details.wkd summary .muted{font-weight:400;font-size:.9rem}
 // Categories, in display order, with the colour token used for their dot.
 const CATS = [
   ["Warm-up", "var(--grey)"],
+  ["Climbing", "var(--blue)"],
   ["Fingers", "var(--tape)"],
   ["Power", "var(--orange)"],
   ["Power endurance", "var(--gold)"],
   ["Endurance", "var(--go)"],
-  ["Technique", "var(--blue)"],
+  ["Technique", "var(--grey)"],
   ["Strength", "var(--ink)"],
   ["Antagonist", "var(--violet)"],
   ["Prehab", "var(--cyan)"],
@@ -411,20 +426,20 @@ const SEED = [
   { id: "s-blocklift", name: "No-hang block lifts", cat: "Fingers", goals: ["fingers"], p: { sets: 5, on: 10, setRest: 2, edge: 20, grip: "Half crimp", load: "30 kg" }, notes: "Lift a loaded block or loading pin off the floor with one hand and hold it for the time. Easy to load in small steps and gentle on shoulders. Load = total weight lifted." },
   { id: "s-oah", name: "One-arm hangs", cat: "Fingers", goals: ["fingers"], p: { sets: 5, on: 10, setRest: 3, edge: 20, grip: "Half crimp", load: "-10 kg" }, notes: "Hang on one arm with a slight bend in the elbow, assisted by a pulley counterweight (negative load). Alternate arms each set." },
   // Power
-  { id: "s-limit", name: "Limit bouldering", cat: "Power", goals: ["power", "fingers"], p: { duration: 60, setRest: 3 }, notes: "3–5 problems at or just above your max. Short attempts with 3+ min rest. Quality over quantity: stop when you stop getting closer." },
-  { id: "s-board", name: "Board session", cat: "Power", goals: ["power", "fingers"], p: { duration: 60 }, notes: "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts." },
+  { id: "s-limit", name: "Limit bouldering", cat: "Climbing", goals: ["power", "fingers"], p: { duration: 60, setRest: 3 }, notes: "3–5 problems at or just above your max. Short attempts with 3+ min rest. Quality over quantity: stop when you stop getting closer." },
+  { id: "s-board", name: "Board session", cat: "Climbing", goals: ["power", "fingers"], p: { duration: 60 }, notes: "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts." },
   { id: "s-campus", name: "Campus ladders", cat: "Power", goals: ["power"], p: { sets: 5, setRest: 3 }, notes: "1-2-3-4 or 1-3-5 ladders, no feet. Only once you have a solid finger-strength base. Stop at the first sloppy catch." },
   { id: "s-bumps", name: "Campus bumps", cat: "Power", goals: ["power"], p: { sets: 5, setRest: 3 }, notes: "Start matched, then bump one hand up rung by rung and back down without matching. Precise, snappy catches." },
-  { id: "s-dyno", name: "Dyno practice", cat: "Power", goals: ["power"], p: { duration: 20, setRest: 2 }, notes: "Pick 3–4 dynamic or coordination problems. Commit fully on every try and rest between attempts." },
+  { id: "s-dyno", name: "Dyno practice", cat: "Climbing", goals: ["power"], p: { duration: 20, setRest: 2 }, notes: "Pick 3–4 dynamic or coordination problems. Commit fully on every try and rest between attempts." },
   { id: "s-explosive", name: "Explosive pull-ups", cat: "Power", goals: ["power", "oap"], p: { sets: 5, reps: 3, setRest: 2.5 }, notes: "Pull as fast as you can to chest or waist height, hands leaving the bar if possible. Full rest; every rep should be fast." },
   // Power endurance
-  { id: "s-4x4", name: "4x4s", cat: "Power endurance", goals: ["endurance", "power"], p: { sets: 4, reps: 4, setRest: 4 }, notes: "Four problems back to back, four times. Pick problems 3–4 grades below your max." },
-  { id: "s-linked", name: "Linked boulder circuits", cat: "Power endurance", goals: ["endurance"], p: { sets: 3, setRest: 5 }, notes: "Link 2–3 problems into one 20–30 move circuit with no rest." },
-  { id: "s-emom", name: "EMOM boulders", cat: "Power endurance", goals: ["endurance"], p: { sets: 3, duration: 10, setRest: 5 }, notes: "Every minute on the minute, climb one problem about 3 grades below your max and rest for what's left of the minute. 10 minutes per set." },
+  { id: "s-4x4", name: "4x4s", cat: "Climbing", goals: ["endurance", "power"], p: { sets: 4, reps: 4, setRest: 4 }, notes: "Four problems back to back, four times. Pick problems 3–4 grades below your max." },
+  { id: "s-linked", name: "Linked boulder circuits", cat: "Climbing", goals: ["endurance"], p: { sets: 3, setRest: 5 }, notes: "Link 2–3 problems into one 20–30 move circuit with no rest." },
+  { id: "s-emom", name: "EMOM boulders", cat: "Climbing", goals: ["endurance"], p: { sets: 3, duration: 10, setRest: 5 }, notes: "Every minute on the minute, climb one problem about 3 grades below your max and rest for what's left of the minute. 10 minutes per set." },
   // Endurance
-  { id: "s-arc", name: "ARC traversing", cat: "Endurance", goals: ["endurance"], p: { sets: 2, duration: 30, setRest: 10 }, notes: "Continuous easy climbing. A light pump that never builds. Great for recovery days and footwork." },
-  { id: "s-mileage", name: "Easy mileage", cat: "Endurance", goals: ["endurance"], p: { duration: 45 }, notes: "Lots of problems well below your max. Focus on smooth, efficient movement." },
-  { id: "s-updown", name: "Up-down-ups", cat: "Endurance", goals: ["endurance"], p: { sets: 4, reps: 3, setRest: 3 }, notes: "Climb a moderate problem, downclimb it, and climb it again without stepping off. Reps = times up." },
+  { id: "s-arc", name: "ARC traversing", cat: "Climbing", goals: ["endurance"], p: { sets: 2, duration: 30, setRest: 10 }, notes: "Continuous easy climbing. A light pump that never builds. Great for recovery days and footwork." },
+  { id: "s-mileage", name: "Easy mileage", cat: "Climbing", goals: ["endurance"], p: { duration: 45 }, notes: "Lots of problems well below your max. Focus on smooth, efficient movement." },
+  { id: "s-updown", name: "Up-down-ups", cat: "Climbing", goals: ["endurance"], p: { sets: 4, reps: 3, setRest: 3 }, notes: "Climb a moderate problem, downclimb it, and climb it again without stepping off. Reps = times up." },
   // Strength / one-arm pull-up
   { id: "s-pullup", name: "Pull-ups", cat: "Strength", goals: ["oap"], p: { sets: 4, reps: 6, setRest: 2 }, notes: "Dead hang to chin over bar. Control the lowering." },
   { id: "s-wpullup", name: "Weighted pull-ups", cat: "Strength", goals: ["oap", "power"], p: { sets: 5, reps: 3, setRest: 3, load: "+10 kg" }, notes: "Heavy and crisp. Leave 1–2 reps in reserve." },
@@ -463,6 +478,9 @@ const SEED = [
 const V2_ADDED = ["s-blocklift", "s-oah", "s-bumps", "s-dyno", "s-explosive", "s-emom", "s-updown", "s-oap-assist", "s-oap-neg",
   "s-oap-lock", "s-archer", "s-typewriter", "s-fingerext", "s-rice", "s-pronsup", "s-eccwrist", "s-facepull", "s-ytw", "s-scappull"];
 const V2_TRIMMED = ["s-zone2", "s-silent", "s-flash"];
+// Library version 3: on-the-wall sessions moved into their own Climbing category (from these).
+const V3_CLIMBING = { "s-limit": "Power", "s-board": "Power", "s-dyno": "Power", "s-4x4": "Power endurance",
+  "s-linked": "Power endurance", "s-emom": "Power endurance", "s-arc": "Endurance", "s-mileage": "Endurance", "s-updown": "Endurance" };
 
 // Goal starters for the Plan tab: [exercise id, optional week-1 overrides] per day, Monday first.
 const STARTERS = [
@@ -531,7 +549,7 @@ const STARTERS = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 2, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
+const freshDb = () => ({ v: 3, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // Brings older saves up to date. Your own exercises and calendar are never touched.
@@ -546,6 +564,11 @@ function normalize(d) {
       if (seed && !e.goals) { e.goals = [...seed.goals]; if (seed.prog) e.prog = seed.prog; }
     }
     d.v = 2;
+  }
+  if (d.v < 3) {
+    // Only move exercises still in their original category, so your own re-categorising sticks.
+    for (const e of d.exercises) if (V3_CLIMBING[e.id] === e.cat) e.cat = "Climbing";
+    d.v = 3;
   }
   for (const e of d.exercises) if (!Array.isArray(e.goals)) e.goals = [];
   return d;
@@ -643,12 +666,15 @@ function readParams(root) {
 }
 
 let toastTimer;
-function toast(msg) {
+// action (optional) = { label, run }, e.g. Undo.
+function toast(msg, action) {
   const t = $("#toast");
-  t.textContent = msg;
+  t.innerHTML = `<span>${esc(msg)}</span>${action ? `<button type="button">${esc(action.label)}</button>` : ""}`;
+  t.classList.toggle("has-action", !!action);
+  if (action) t.querySelector("button").onclick = () => { t.classList.remove("show"); action.run(); };
   t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+  toastTimer = setTimeout(() => t.classList.remove("show"), action ? 5000 : 2600);
 }
 
 function applyTheme() {
@@ -685,12 +711,14 @@ function weekDays(start = state.week) {
 
 function entryHTML(date, e) {
   const name = nameOf(e), cat = catOf(e);
-  return `<li class="entry${e.done ? " done" : ""}">
+  return `<li class="entry${e.done ? " done" : ""}" data-item="${esc(e.id)}" data-kind="cal" data-from="${date}">
+    <button type="button" class="handle" data-drag aria-label="Drag ${esc(name)} to another day"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
     <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="Mark ${esc(name)} done">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
       <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong><small>${esc(summary(e.p) || cat)}${e.note ? " · 📝" : ""}</small></span>
     </button>
+    <button type="button" class="rm" data-act="remove" data-kind="cal" data-key="${date}" data-id="${esc(e.id)}" aria-label="Remove ${esc(name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   </li>`;
 }
 
@@ -731,7 +759,7 @@ function renderWeek() {
     const k = dkey(d);
     const entries = db.plan[k] || [];
     const isToday = k === todayKey;
-    html += `<section class="card day${isToday ? " today" : ""}" id="day-${k}">
+    html += `<section class="card day${isToday ? " today" : ""}" id="day-${k}" data-drop="${k}" data-kind="cal">
       <div class="bar dayhead">
         <h3>${fmt(d, { weekday: "long" })} <small>${fmt(d, { month: "short", day: "numeric" })}</small>${isToday ? `<span class="pill">Today</span>` : ""}</h3>
         <button class="ghost sm" data-act="add" data-date="${k}">+ Add</button>
@@ -788,6 +816,7 @@ $("#view-week").addEventListener("click", ev => {
   else if (act === "clear") clearWeek();
   else if (act === "add") openPicker({ kind: "cal", date });
   else if (act === "entry") openEntry({ kind: "cal", date, id });
+  else if (act === "remove") removeItem("cal", t.dataset.key, id);
   else if (act === "toggle") {
     const e = getEntry(date, id);
     if (e) { e.done = t.checked; save(); renderWeek(); }
@@ -1011,20 +1040,132 @@ $("#entryReset").addEventListener("click", () => {
 
 $("#entryRemove").addEventListener("click", () => {
   const t = state.editEntry;
-  if (t.kind === "plan") {
-    const plan = currentPlan();
-    plan.days[t.day] = plan.days[t.day].filter(s => s.id !== t.id);
-    markDirty(plan);
-    save();
-    $("#entryDialog").close();
-    renderPlanBody();
-    return;
-  }
-  removeEntry(t.date, t.id);
-  save();
   $("#entryDialog").close();
-  renderWeek();
+  removeItem(t.kind, t.kind === "plan" ? String(t.day) : t.date, t.id);
 });
+
+/* =========================================================
+   Move & remove: shared by the Week view and a plan's example week.
+   A "list" is identified by kind + key:
+     { kind: "cal",  key: "YYYY-MM-DD" }  -> db.plan[key]
+     { kind: "plan", key: "0".."6" }      -> currentPlan().days[key]
+   ========================================================= */
+
+function listFor(kind, key, create) {
+  if (kind === "plan") return currentPlan().days[Number(key)];
+  if (create) db.plan[key] ||= [];
+  return db.plan[key] || [];
+}
+
+function afterListChange(kind) {
+  if (kind === "cal") {
+    for (const k of Object.keys(db.plan)) if (!db.plan[k].length) delete db.plan[k];
+    save(); renderWeek();
+  } else {
+    markDirty(currentPlan()); save(); renderPlanBody();
+  }
+}
+
+function moveItem(kind, from, id, to, index) {
+  const src = listFor(kind, from);
+  const i = src.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const [item] = src.splice(i, 1);
+  listFor(kind, to, true).splice(index, 0, item);
+  afterListChange(kind);
+}
+
+// Removes straight away, with Undo in the toast in case it was a mis-tap.
+function removeItem(kind, key, id) {
+  const list = listFor(kind, key);
+  const i = list.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const [item] = list.splice(i, 1);
+  const planId = state.planId;
+  afterListChange(kind);
+  toast(`Removed ${nameOf(item)}`, { label: "Undo", run: () => {
+    if (kind === "plan" && state.planId !== planId) return;
+    listFor(kind, key, true).splice(i, 0, item);
+    afterListChange(kind);
+  } });
+}
+
+/* ---------- Drag and drop (pointer events, so it works with touch too) ----------
+   Grab an item by its ⋮⋮ handle. Items carry data-item/data-kind/data-from;
+   day cards carry data-drop (the key to move into). */
+
+let drag = null;
+
+document.addEventListener("pointerdown", ev => {
+  const handle = ev.target.closest("[data-drag]");
+  if (!handle || ev.button > 0) return;
+  const li = handle.closest("[data-item]");
+  ev.preventDefault();
+  handle.setPointerCapture(ev.pointerId);
+  const r = li.getBoundingClientRect();
+  const ghost = li.cloneNode(true);
+  ghost.classList.add("drag-ghost");
+  Object.assign(ghost.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px" });
+  document.body.appendChild(ghost);
+  li.classList.add("dragging");
+  document.body.classList.add("is-dragging");
+  const line = document.createElement("li");
+  line.className = "drop-line";
+  drag = { li, ghost, line, handle, id: li.dataset.item, kind: li.dataset.kind, from: li.dataset.from,
+    offY: ev.clientY - r.top, y: ev.clientY, target: null, index: 0 };
+  drag.scroller = setInterval(autoScroll, 16);
+  updateDrag(ev.clientX, ev.clientY);
+});
+
+document.addEventListener("pointermove", ev => {
+  if (!drag) return;
+  ev.preventDefault();
+  updateDrag(ev.clientX, ev.clientY);
+}, { passive: false });
+
+document.addEventListener("pointerup", () => {
+  if (!drag) return;
+  const { target, index, kind, from, id } = drag;
+  endDrag();
+  if (target) moveItem(kind, from, id, target.dataset.drop, index);
+});
+document.addEventListener("pointercancel", () => drag && endDrag());
+
+// Near the top or bottom of the screen, scroll so you can drag to far-away days.
+function autoScroll() {
+  if (!drag) return;
+  const edge = 90, y = drag.y;
+  const dy = y < edge ? -(edge - y) / 5 : y > innerHeight - edge - 60 ? (y - (innerHeight - edge - 60)) / 5 : 0;
+  if (dy) { scrollBy(0, dy); updateDrag(drag.x, drag.y); }
+}
+
+function updateDrag(x, y) {
+  drag.x = x; drag.y = y;
+  drag.ghost.style.top = (y - drag.offY) + "px";
+  const el = document.elementFromPoint(x, y);
+  const target = el && el.closest(`[data-drop][data-kind="${drag.kind}"]`);
+  if (drag.target && drag.target !== target) drag.target.classList.remove("drop-target");
+  drag.target = target;
+  if (!target) { drag.line.remove(); return; }
+  target.classList.add("drop-target");
+  // Insert position = number of other items whose middle is above the pointer.
+  const items = [...target.querySelectorAll("[data-item]")].filter(n => n !== drag.li);
+  const index = items.filter(n => { const r = n.getBoundingClientRect(); return r.top + r.height / 2 < y; }).length;
+  drag.index = index;
+  let ul = target.querySelector(".entries");
+  if (!ul) { ul = document.createElement("ul"); ul.className = "entries"; target.appendChild(ul); }
+  ul.insertBefore(drag.line, items[index] || null);
+}
+
+function endDrag() {
+  clearInterval(drag.scroller);
+  drag.ghost.remove();
+  drag.line.remove();
+  drag.li.classList.remove("dragging");
+  if (drag.target) drag.target.classList.remove("drop-target");
+  document.body.classList.remove("is-dragging");
+  drag = null;
+}
 
 /* =========================================================
    Plans: an example week progressed over 4–16 weeks
@@ -1080,7 +1221,8 @@ function autoProg(slot) {
   if (p.edge) return "edge";
   if (p.reps) return "reps";
   if (p.on) return "on";
-  if (p.duration && (cat === "Endurance" || cat === "Cardio")) return "duration";
+  const lib = findEx(slot.ex);
+  if (p.duration && (cat === "Endurance" || cat === "Cardio" || (lib && (lib.goals || []).includes("endurance")))) return "duration";
   if (p.sets) return "sets";
   return "hold";
 }
@@ -1278,15 +1420,19 @@ function renderPlanBody() {
   const plan = currentPlan(); if (!plan || !$("#planDays")) return;
 
   $("#planDays").innerHTML = plan.days.map((slots, d) => `
-    <section class="card day">
+    <section class="card day" data-drop="${d}" data-kind="plan">
       <div class="bar dayhead"><h3>${dayName(d)}</h3>
         <button class="ghost sm" data-act="planadd" data-day="${d}">+ Add</button></div>
-      ${slots.length ? `<ul class="entries">${slots.map(s => `
-        <li class="entry"><button class="entrybtn" data-act="planslot" data-day="${d}" data-id="${esc(s.id)}">
+      ${slots.length ? `<ul class="entries">${slots.map(s => { const name = nameOf(s); return `
+        <li class="entry" data-item="${esc(s.id)}" data-kind="plan" data-from="${d}">
+          <button type="button" class="handle" data-drag aria-label="Drag ${esc(name)} to another day"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
+          <button class="entrybtn" data-act="planslot" data-day="${d}" data-id="${esc(s.id)}">
           <span class="dot" style="--c:${catColor(catOf(s))}"></span>
-          <span><strong>${esc(nameOf(s))}<span class="progtag">${PROG_LABEL[effectiveProg(s)]}</span></strong>
+          <span><strong>${esc(name)}<span class="progtag">${PROG_LABEL[effectiveProg(s)]}</span></strong>
           <small>${esc(summary(s.p) || catOf(s))}</small></span>
-        </button></li>`).join("")}</ul>` : `<p class="empty">Rest day</p>`}
+        </button>
+          <button type="button" class="rm" data-act="remove" data-kind="plan" data-key="${d}" data-id="${esc(s.id)}" aria-label="Remove ${esc(name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </li>`; }).join("")}</ul>` : `<p class="empty">Rest day</p>`}
     </section>`).join("");
 
   const n = slotCount(plan);
@@ -1353,6 +1499,7 @@ $("#view-plan").addEventListener("click", ev => {
   else if (act === "openplan") { state.planId = t.dataset.id; renderPlanTab(); window.scrollTo(0, 0); }
   else if (act === "backplans") { state.planId = null; renderPlanTab(); }
   else if (act === "planadd") openPicker({ kind: "plan", day: Number(t.dataset.day) });
+  else if (act === "remove") removeItem("plan", t.dataset.key, t.dataset.id);
   else if (act === "planslot") openEntry({ kind: "plan", day: Number(t.dataset.day), id: t.dataset.id });
   else if (act === "jumpweek") {
     const d = $(`#wk-${t.dataset.week}`);
