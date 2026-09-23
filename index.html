@@ -96,11 +96,11 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 .chip{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.9rem;font-weight:500;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chips.wrap{flex-wrap:wrap;overflow:visible}
-.chip.goal[aria-pressed="true"]{background:var(--tape);border-color:var(--tape);color:#fff}
-.goalcard{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:12px 0;color:inherit}
-.goalcard:first-of-type{border-top:0}
-.goalcard strong{font-weight:600}
-.goalcard small{color:var(--muted);font-size:.88rem;line-height:1.35}
+.chip.toggle[aria-pressed="true"]{background:var(--tape);border-color:var(--tape);color:#fff}
+.startercard{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:12px 0;color:inherit}
+.startercard:first-of-type{border-top:0}
+.startercard strong{font-weight:600}
+.startercard small{color:var(--muted);font-size:.88rem;line-height:1.35}
 .seg{display:flex;gap:8px}
 .seg .chip{flex:1}
 
@@ -229,8 +229,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       <button class="primary" id="newExBtn">+ New exercise</button>
     </div>
     <div class="field"><input type="search" id="libSearch" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises"></div>
-    <div class="chips" id="libGoals" role="group" aria-label="Filter by goal" style="margin-top:10px"></div>
-    <div class="chips" id="libChips" role="group" aria-label="Filter by category"></div>
+    <div class="chips" id="libChips" role="group" aria-label="Filter by category" style="margin-top:10px"></div>
     <div id="libList"></div>
   </section>
 </main>
@@ -260,8 +259,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   </div>
   <div class="pickbar">
     <input type="search" id="pickSearch" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises">
-    <div class="chips" id="pickGoals" role="group" aria-label="Filter by goal"></div>
-    <div class="chips" id="pickChips" role="group" aria-label="Filter by category" style="margin-top:0"></div>
+    <div class="chips" id="pickChips" role="group" aria-label="Filter by category"></div>
   </div>
   <div class="sheet-body" id="pickList"></div>
   <div class="sheet-foot">
@@ -321,7 +319,6 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       <label class="field"><span>Category</span><select name="cat" id="exCat"></select></label>
       <fieldset><legend>Track per set</legend><div class="chips wrap" id="exFields"></div>
         <p class="hint">The columns you fill in when you set a target or log it. Load is in pounds, edge size in mm.</p></fieldset>
-      <fieldset><legend>Goals it trains</legend><div class="chips wrap" id="exGoals"></div></fieldset>
       <label class="field"><span>How-to notes</span><textarea name="notes" placeholder="Cues, form tips, progressions"></textarea></label>
       <label class="field"><span>Video link</span><input type="url" name="video" placeholder="https://…" inputmode="url"></label>
       <fieldset id="exHistory"><legend>History</legend><ul class="histlist" id="exHistoryList"></ul></fieldset>
@@ -374,19 +371,13 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 
 // Categories, in display order, with the colour token used for their dot.
 const CATS = [
-  ["Warm-up", "var(--grey)"],
+  ["Warm-up & prehab", "var(--cyan)"],
   ["Climbing", "var(--blue)"],
+  ["Climbing power", "var(--orange)"],
   ["Fingers", "var(--tape)"],
-  ["Power", "var(--orange)"],
-  ["Power endurance", "var(--gold)"],
-  ["Endurance", "var(--go)"],
-  ["Technique", "var(--grey)"],
   ["Strength", "var(--ink)"],
-  ["Antagonist", "var(--violet)"],
-  ["Prehab", "var(--cyan)"],
   ["Core", "var(--muted)"],
   ["Mobility", "var(--leaf)"],
-  ["Cardio", "var(--grey)"],
 ];
 const CAT_COLOR = Object.fromEntries(CATS);
 const catColor = c => CAT_COLOR[c] || "var(--grey)";
@@ -401,88 +392,77 @@ const FIELDS = [["reps", "Reps"], ["time", "Time (sec)"], ["load", "Load (lb)"],
 const COL_HEAD = { reps: "Reps", time: "Sec", load: "± lb", edge: "Edge mm", grip: "Grip" };
 const DEFAULT_FIELDS = ["reps", "load"];
 const CAT_FIELDS = {
-  "Warm-up": [], Climbing: ["reps"], Fingers: ["time", "load", "edge"], Power: ["reps"], Strength: ["reps", "load"],
-  Antagonist: ["reps", "load"], Prehab: ["reps", "load"], Core: ["reps", "time"], Mobility: [],
+  "Warm-up & prehab": ["reps", "load"], Climbing: ["reps"], "Climbing power": ["reps"], Fingers: ["time", "load", "edge"],
+  Strength: ["reps", "load"], Core: ["reps", "time"], Mobility: [],
 };
 const FIELD_OVERRIDES = {
-  "s-limit": [], "s-board": [], "s-dyno": [], "s-arc": [], "s-mileage": [], "s-rice": [],
+  "s-warmup": [], "s-limit": [], "s-board": [], "s-dyno": [], "s-arc": [], "s-mileage": [], "s-rice": [],
   "s-lockoff": ["reps", "time", "load"], "s-oap-neg": ["reps", "time", "load"], "s-oap-lock": ["reps", "time", "load"],
   "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
   "s-scappull": ["reps"], "s-fingerext": ["reps"],
 };
 const defaultFields = (id, cat) => [...(FIELD_OVERRIDES[id] ?? CAT_FIELDS[cat] ?? DEFAULT_FIELDS)];
 
-// Training goals. Exercises carry `goals: [...]` so the library can be filtered by what you're training for.
-const GOALS = [
-  ["oap", "One-arm pull-up"],
-  ["fingers", "Fingers"],
-  ["power", "Power"],
-  ["endurance", "Endurance"],
-  ["prehab", "Injury-proofing"],
-];
 
 // Starter library: names only. Built-in ids start with "s-" so they can be restored later.
 const SEED = [
-  // Warm-up
-  { id: "s-warmup", name: "Bouldering warm-up", cat: "Warm-up", goals: ["prehab"], notes: "Easy traversing, then 6–10 problems ramping from very easy to about two grades below your max. Add a few progressive hangs before any fingerboarding." },
+  // Warm-up & prehab
+  { id: "s-warmup", name: "Bouldering warm-up", cat: "Warm-up & prehab", notes: "Easy traversing, then 6–10 problems ramping from very easy to about two grades below your max. Add a few progressive hangs before any fingerboarding." },
   // Fingers
-  { id: "s-maxhang", name: "Max hangs", cat: "Fingers", goals: ["fingers"], notes: "Hang 10 s with a load you could just about hold for 13 s. Full rest between sets. Stop if form breaks or fingers feel tweaky." },
-  { id: "s-repeaters", name: "Repeaters", cat: "Fingers", goals: ["fingers", "endurance"], notes: "7 s hang, 3 s rest, six times = one set. Pick a load where the last rep of the last set is hard but clean." },
-  { id: "s-minedge", name: "Minimum edge hangs", cat: "Fingers", goals: ["fingers"], notes: "Bodyweight only. Use the smallest edge you can hold for 10 s; progress by moving to a smaller edge a little at a time." },
-  { id: "s-openhand", name: "Open-hand hangs", cat: "Fingers", goals: ["fingers"], notes: "Builds drag strength for slopers and pockets. Keep shoulders engaged." },
-  { id: "s-blocklift", name: "No-hang block lifts", cat: "Fingers", goals: ["fingers"], notes: "Lift a loaded block or loading pin off the floor with one hand and hold it for the time. Easy to load in small steps and gentle on shoulders. Load = total weight lifted." },
-  { id: "s-oah", name: "One-arm hangs", cat: "Fingers", goals: ["fingers"], notes: "Hang on one arm with a slight bend in the elbow, assisted by a pulley counterweight (negative load). Alternate arms each set." },
-  // Power
-  { id: "s-limit", name: "Limit bouldering", cat: "Climbing", goals: ["power", "fingers"], notes: "3–5 problems at or just above your max. Short attempts with 3+ min rest. Quality over quantity: stop when you stop getting closer." },
-  { id: "s-board", name: "Board session", cat: "Climbing", goals: ["power", "fingers"], notes: "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts." },
-  { id: "s-campus", name: "Campus ladders", cat: "Power", goals: ["power"], notes: "1-2-3-4 or 1-3-5 ladders, no feet. Only once you have a solid finger-strength base. Stop at the first sloppy catch." },
-  { id: "s-bumps", name: "Campus bumps", cat: "Power", goals: ["power"], notes: "Start matched, then bump one hand up rung by rung and back down without matching. Precise, snappy catches." },
-  { id: "s-dyno", name: "Dyno practice", cat: "Climbing", goals: ["power"], notes: "Pick 3–4 dynamic or coordination problems. Commit fully on every try and rest between attempts." },
-  { id: "s-explosive", name: "Explosive pull-ups", cat: "Power", goals: ["power", "oap"], notes: "Pull as fast as you can to chest or waist height, hands leaving the bar if possible. Full rest; every rep should be fast." },
-  // Power endurance
-  { id: "s-4x4", name: "4x4s", cat: "Climbing", goals: ["endurance", "power"], notes: "Four problems back to back, four times. Pick problems 3–4 grades below your max." },
-  { id: "s-linked", name: "Linked boulder circuits", cat: "Climbing", goals: ["endurance"], notes: "Link 2–3 problems into one 20–30 move circuit with no rest." },
-  { id: "s-emom", name: "EMOM boulders", cat: "Climbing", goals: ["endurance"], notes: "Every minute on the minute, climb one problem about 3 grades below your max and rest for what's left of the minute. 10 minutes per set." },
-  // Endurance
-  { id: "s-arc", name: "ARC traversing", cat: "Climbing", goals: ["endurance"], notes: "Continuous easy climbing. A light pump that never builds. Great for recovery days and footwork." },
-  { id: "s-mileage", name: "Easy mileage", cat: "Climbing", goals: ["endurance"], notes: "Lots of problems well below your max. Focus on smooth, efficient movement." },
-  { id: "s-updown", name: "Up-down-ups", cat: "Climbing", goals: ["endurance"], notes: "Climb a moderate problem, downclimb it, and climb it again without stepping off. Reps = times up." },
+  { id: "s-maxhang", name: "Max hangs", cat: "Fingers", notes: "Hang 10 s with a load you could just about hold for 13 s. Full rest between sets. Stop if form breaks or fingers feel tweaky." },
+  { id: "s-repeaters", name: "Repeaters", cat: "Fingers", notes: "7 s hang, 3 s rest, six times = one set. Pick a load where the last rep of the last set is hard but clean." },
+  { id: "s-minedge", name: "Minimum edge hangs", cat: "Fingers", notes: "Bodyweight only. Use the smallest edge you can hold for 10 s; progress by moving to a smaller edge a little at a time." },
+  { id: "s-openhand", name: "Open-hand hangs", cat: "Fingers", notes: "Builds drag strength for slopers and pockets. Keep shoulders engaged." },
+  { id: "s-blocklift", name: "No-hang block lifts", cat: "Fingers", notes: "Lift a loaded block or loading pin off the floor with one hand and hold it for the time. Easy to load in small steps and gentle on shoulders. Load = total weight lifted." },
+  { id: "s-oah", name: "One-arm hangs", cat: "Fingers", notes: "Hang on one arm with a slight bend in the elbow, assisted by a pulley counterweight (negative load). Alternate arms each set." },
+  // Climbing power (and on-the-wall sessions)
+  { id: "s-limit", name: "Limit bouldering", cat: "Climbing", notes: "3–5 problems at or just above your max. Short attempts with 3+ min rest. Quality over quantity: stop when you stop getting closer." },
+  { id: "s-board", name: "Board session", cat: "Climbing", notes: "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts." },
+  { id: "s-campus", name: "Campus ladders", cat: "Climbing power", notes: "1-2-3-4 or 1-3-5 ladders, no feet. Only once you have a solid finger-strength base. Stop at the first sloppy catch." },
+  { id: "s-bumps", name: "Campus bumps", cat: "Climbing power", notes: "Start matched, then bump one hand up rung by rung and back down without matching. Precise, snappy catches." },
+  { id: "s-dyno", name: "Dyno practice", cat: "Climbing", notes: "Pick 3–4 dynamic or coordination problems. Commit fully on every try and rest between attempts." },
+  { id: "s-explosive", name: "Explosive pull-ups", cat: "Climbing power", notes: "Pull as fast as you can to chest or waist height, hands leaving the bar if possible. Full rest; every rep should be fast." },
+  { id: "s-4x4", name: "4x4s", cat: "Climbing", notes: "Four problems back to back, four times. Pick problems 3–4 grades below your max." },
+  { id: "s-linked", name: "Linked boulder circuits", cat: "Climbing", notes: "Link 2–3 problems into one 20–30 move circuit with no rest." },
+  { id: "s-emom", name: "EMOM boulders", cat: "Climbing", notes: "Every minute on the minute, climb one problem about 3 grades below your max and rest for what's left of the minute. 10 minutes per set." },
+  { id: "s-arc", name: "ARC traversing", cat: "Climbing", notes: "Continuous easy climbing. A light pump that never builds. Great for recovery days and footwork." },
+  { id: "s-mileage", name: "Easy mileage", cat: "Climbing", notes: "Lots of problems well below your max. Focus on smooth, efficient movement." },
+  { id: "s-updown", name: "Up-down-ups", cat: "Climbing", notes: "Climb a moderate problem, downclimb it, and climb it again without stepping off. Reps = times up." },
   // Strength / one-arm pull-up
-  { id: "s-pullup", name: "Pull-ups", cat: "Strength", goals: ["oap"], notes: "Dead hang to chin over bar. Control the lowering." },
-  { id: "s-wpullup", name: "Weighted pull-ups", cat: "Strength", goals: ["oap", "power"], notes: "Heavy and crisp. Leave 1–2 reps in reserve." },
-  { id: "s-lockoff", name: "Lock-offs", cat: "Strength", goals: ["oap"], notes: "Hold at full lock and 90°, 5 s each." },
-  { id: "s-oap-assist", name: "Assisted one-arm pull-ups", cat: "Strength", goals: ["oap"], notes: "Pull on one arm while a pulley counterweight takes some load (negative load = assistance). The plan shrinks the assistance each build week. Full dead hang to chin over bar, no kipping. With bands instead, step down a band when all reps feel solid." },
-  { id: "s-oap-neg", name: "One-arm negatives", cat: "Strength", goals: ["oap"], notes: "Get to the top with two arms, let go with one, and lower as slowly as you can. 'Hang / work' is the lowering time to aim for. Stop before elbows complain." },
-  { id: "s-oap-lock", name: "One-arm lock-offs", cat: "Strength", goals: ["oap"], notes: "One rep = hold at the top, at 90° and at 120° for the target time each. Use a finger of the other hand on a towel for a little help if needed." },
-  { id: "s-archer", name: "Archer pull-ups", cat: "Strength", goals: ["oap"], notes: "Wide grip; pull toward one hand while the other arm straightens. Reps per side. Make it harder by relying less on the straight arm (open palm, then fingertips)." },
-  { id: "s-typewriter", name: "Typewriter pull-ups", cat: "Strength", goals: ["oap"], notes: "Pull to the top, then slide side to side over each hand while staying high. One rep = there and back." },
-  { id: "s-deadlift", name: "Deadlift", cat: "Strength", goals: [], notes: "Brace hard, bar close to the body. Builds posterior chain for heel hooks and body tension." },
-  { id: "s-squat", name: "Back squat", cat: "Strength", goals: [], notes: "" },
-  // Antagonist
-  { id: "s-pushup", name: "Push-ups", cat: "Antagonist", goals: ["prehab"], notes: "Balances all the pulling. Keep a straight body line." },
-  { id: "s-ohp", name: "Overhead press", cat: "Antagonist", goals: ["prehab"], notes: "" },
-  { id: "s-wrist", name: "Reverse wrist curls", cat: "Antagonist", goals: ["prehab"], notes: "Light dumbbell. Helps keep elbows healthy." },
-  { id: "s-extrot", name: "Band external rotations", cat: "Antagonist", goals: ["prehab"], notes: "Elbow tucked to your side. A shoulder-health staple." },
-  // Prehab
-  { id: "s-fingerext", name: "Finger extensions (band)", cat: "Prehab", goals: ["prehab", "fingers"], notes: "Rubber band around the fingertips; open the hand fully against it. Balances all the gripping." },
-  { id: "s-rice", name: "Rice bucket", cat: "Prehab", goals: ["prehab"], notes: "Grip, open, twist and roll your hands in a bucket of rice. A good forearm warm-up or cool-down." },
-  { id: "s-pronsup", name: "Pronator / supinator rotations", cat: "Prehab", goals: ["prehab"], notes: "Hold a hammer (or a dumbbell by one end) and slowly rotate palm down, then palm up. Strengthens the forearm for elbow health." },
-  { id: "s-eccwrist", name: "Eccentric wrist flexor curls", cat: "Prehab", goals: ["prehab"], notes: "Palm up; lower the dumbbell slowly over 3–4 s and use the other hand to help it back up. Classic golfer's-elbow prevention." },
-  { id: "s-facepull", name: "Face pulls", cat: "Prehab", goals: ["prehab", "oap"], notes: "Band or cable at face height. Pull to your forehead with elbows high and rotate your hands back. Balances heavy pulling." },
-  { id: "s-ytw", name: "Y-T-W raises", cat: "Prehab", goals: ["prehab"], notes: "Lying face down or bent over, raise light weights in Y, T and W shapes. Slow and controlled." },
-  { id: "s-scappull", name: "One-arm scap pulls", cat: "Prehab", goals: ["prehab", "oap"], notes: "Dead hang on one arm, then pull the shoulder blade down and back without bending the elbow. Builds the shoulder stability one-arm pulling needs." },
+  { id: "s-pullup", name: "Pull-ups", cat: "Strength", notes: "Dead hang to chin over bar. Control the lowering." },
+  { id: "s-wpullup", name: "Weighted pull-ups", cat: "Strength", notes: "Heavy and crisp. Leave 1–2 reps in reserve." },
+  { id: "s-lockoff", name: "Lock-offs", cat: "Strength", notes: "Hold at full lock and 90°, 5 s each." },
+  { id: "s-oap-assist", name: "Assisted one-arm pull-ups", cat: "Strength", notes: "Pull on one arm while a pulley counterweight takes some load (negative load = assistance). The plan shrinks the assistance each build week. Full dead hang to chin over bar, no kipping. With bands instead, step down a band when all reps feel solid." },
+  { id: "s-oap-neg", name: "One-arm negatives", cat: "Strength", notes: "Get to the top with two arms, let go with one, and lower as slowly as you can. 'Hang / work' is the lowering time to aim for. Stop before elbows complain." },
+  { id: "s-oap-lock", name: "One-arm lock-offs", cat: "Strength", notes: "One rep = hold at the top, at 90° and at 120° for the target time each. Use a finger of the other hand on a towel for a little help if needed." },
+  { id: "s-archer", name: "Archer pull-ups", cat: "Strength", notes: "Wide grip; pull toward one hand while the other arm straightens. Reps per side. Make it harder by relying less on the straight arm (open palm, then fingertips)." },
+  { id: "s-typewriter", name: "Typewriter pull-ups", cat: "Strength", notes: "Pull to the top, then slide side to side over each hand while staying high. One rep = there and back." },
+  { id: "s-deadlift", name: "Deadlift", cat: "Strength", notes: "Brace hard, bar close to the body. Builds posterior chain for heel hooks and body tension." },
+  { id: "s-squat", name: "Back squat", cat: "Strength", notes: "" },
+  // Antagonists (in Warm-up & prehab)
+  { id: "s-pushup", name: "Push-ups", cat: "Warm-up & prehab", notes: "Balances all the pulling. Keep a straight body line." },
+  { id: "s-ohp", name: "Overhead press", cat: "Warm-up & prehab", notes: "" },
+  { id: "s-wrist", name: "Reverse wrist curls", cat: "Warm-up & prehab", notes: "Light dumbbell. Helps keep elbows healthy." },
+  { id: "s-extrot", name: "Band external rotations", cat: "Warm-up & prehab", notes: "Elbow tucked to your side. A shoulder-health staple." },
+  { id: "s-fingerext", name: "Finger extensions (band)", cat: "Warm-up & prehab", notes: "Rubber band around the fingertips; open the hand fully against it. Balances all the gripping." },
+  { id: "s-rice", name: "Rice bucket", cat: "Warm-up & prehab", notes: "Grip, open, twist and roll your hands in a bucket of rice. A good forearm warm-up or cool-down." },
+  { id: "s-pronsup", name: "Pronator / supinator rotations", cat: "Warm-up & prehab", notes: "Hold a hammer (or a dumbbell by one end) and slowly rotate palm down, then palm up. Strengthens the forearm for elbow health." },
+  { id: "s-eccwrist", name: "Eccentric wrist flexor curls", cat: "Warm-up & prehab", notes: "Palm up; lower the dumbbell slowly over 3–4 s and use the other hand to help it back up. Classic golfer's-elbow prevention." },
+  { id: "s-facepull", name: "Face pulls", cat: "Warm-up & prehab", notes: "Band or cable at face height. Pull to your forehead with elbows high and rotate your hands back. Balances heavy pulling." },
+  { id: "s-ytw", name: "Y-T-W raises", cat: "Warm-up & prehab", notes: "Lying face down or bent over, raise light weights in Y, T and W shapes. Slow and controlled." },
+  { id: "s-scappull", name: "One-arm scap pulls", cat: "Warm-up & prehab", notes: "Dead hang on one arm, then pull the shoulder blade down and back without bending the elbow. Builds the shoulder stability one-arm pulling needs." },
   // Core
-  { id: "s-legraise", name: "Hanging leg raises", cat: "Core", goals: ["power"], notes: "Toes to bar if you can. No swinging." },
-  { id: "s-lever", name: "Front lever progression", cat: "Core", goals: ["power"], notes: "Tuck → advanced tuck → one leg → full. Hold the hardest version you can for the time." },
-  { id: "s-plank", name: "Plank", cat: "Core", goals: [], notes: "" },
+  { id: "s-legraise", name: "Hanging leg raises", cat: "Core", notes: "Toes to bar if you can. No swinging." },
+  { id: "s-lever", name: "Front lever progression", cat: "Core", notes: "Tuck → advanced tuck → one leg → full. Hold the hardest version you can for the time." },
+  { id: "s-plank", name: "Plank", cat: "Core", notes: "" },
   // Mobility
-  { id: "s-hips", name: "Hip mobility flow", cat: "Mobility", goals: ["prehab"], notes: "90/90 switches, frog stretch, deep squat hold. Helps high steps and drop knees." },
-  { id: "s-shoulder", name: "Shoulder mobility", cat: "Mobility", goals: ["prehab"], notes: "Band dislocates, thoracic rotations, wall slides." },
-  { id: "s-stretch", name: "Post-session stretch", cat: "Mobility", goals: ["prehab"], notes: "Forearms, lats, hips, hamstrings." },
+  { id: "s-hips", name: "Hip mobility flow", cat: "Mobility", notes: "90/90 switches, frog stretch, deep squat hold. Helps high steps and drop knees." },
+  { id: "s-shoulder", name: "Shoulder mobility", cat: "Mobility", notes: "Band dislocates, thoracic rotations, wall slides." },
+  { id: "s-stretch", name: "Post-session stretch", cat: "Mobility", notes: "Forearms, lats, hips, hamstrings." },
 ];
 SEED.forEach(x => { x.fields = defaultFields(x.id, x.cat); });
 
-// Library version 2 (goals): these built-ins were added, and these were trimmed.
+// Library version 2: these built-ins were added, and these were trimmed.
 const V2_ADDED = ["s-blocklift", "s-oah", "s-bumps", "s-dyno", "s-explosive", "s-emom", "s-updown", "s-oap-assist", "s-oap-neg",
   "s-oap-lock", "s-archer", "s-typewriter", "s-fingerext", "s-rice", "s-pronsup", "s-eccwrist", "s-facepull", "s-ytw", "s-scappull"];
 const V2_TRIMMED = ["s-zone2", "s-silent", "s-flash"];
@@ -490,7 +470,7 @@ const V2_TRIMMED = ["s-zone2", "s-silent", "s-flash"];
 const V3_CLIMBING = { "s-limit": "Power", "s-board": "Power", "s-dyno": "Power", "s-4x4": "Power endurance",
   "s-linked": "Power endurance", "s-emom": "Power endurance", "s-arc": "Endurance", "s-mileage": "Endurance", "s-updown": "Endurance" };
 
-// Goal starters for the Plan tab: exercise ids per day, Monday first.
+// Starter plans for the Plan tab: exercise ids per day, Monday first.
 const STARTERS = [
   { name: "One-arm pull-up", weeks: 10,
     blurb: "2 heavy pulling days around 2 climbing days. Assisted one-arms, negatives, lock-offs and weighted pull-ups.",
@@ -500,7 +480,7 @@ const STARTERS = [
     blurb: "2 finger sessions a week: max hangs then limit bouldering, one-arm hangs then board.",
     days: [["s-warmup", "s-maxhang", "s-limit", "s-fingerext"], [], ["s-mileage"],
       ["s-warmup", "s-oah", "s-board", "s-rice"], [], ["s-warmup", "s-blocklift", "s-4x4"], ["s-stretch"]] },
-  { name: "Power", weeks: 8,
+  { name: "Climbing power", weeks: 8,
     blurb: "3 short, high-quality sessions: campus, limit bouldering, dynos and explosive pulling.",
     days: [["s-warmup", "s-campus", "s-limit", "s-explosive"], [], ["s-warmup", "s-dyno", "s-legraise", "s-facepull"], [],
       ["s-warmup", "s-bumps", "s-board", "s-lever"], [], ["s-stretch"]] },
@@ -517,14 +497,14 @@ const STARTERS = [
 /* =========================================================
    Storage
    db = { v, exercises, plan: { "YYYY-MM-DD": [entry, ...] }, plans, theme }
-   exercise = { id, name, cat, goals, fields, notes, video }
+   exercise = { id, name, cat, fields, notes, video }
    entry    = { id, ex, name, cat, fields, target: [set], log: [set], done, note, plan?, pk? }
    set      = { reps?, time?, load? (lb), edge? (mm), grip? }
    ========================================================= */
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 5, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
+const freshDb = () => ({ v: 6, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -563,10 +543,6 @@ function normalize(d) {
     const have = new Set(d.exercises.map(e => e.id));
     d.exercises = d.exercises.filter(e => !V2_TRIMMED.includes(e.id));
     d.exercises.push(...clone(SEED.filter(x => V2_ADDED.includes(x.id) && !have.has(x.id))));
-    for (const e of d.exercises) {
-      const seed = SEED.find(x => x.id === e.id);
-      if (seed && !e.goals) e.goals = [...seed.goals];
-    }
     d.v = 2;
   }
   if (d.v < 3) {
@@ -600,8 +576,15 @@ function normalize(d) {
     for (const pl of d.plans) for (const day of pl.days) for (const sl of day) fix(sl.target);
     d.v = 5;
   }
+  if (d.v < 6) {
+    // Goals removed; Warm-up, Prehab and Antagonist merged; Power renamed Climbing power.
+    const recat = c => ({ "Warm-up": "Warm-up & prehab", Prehab: "Warm-up & prehab", Antagonist: "Warm-up & prehab", Power: "Climbing power" }[c] || c);
+    for (const e of d.exercises) { e.cat = recat(e.cat); delete e.goals; }
+    for (const list of Object.values(d.plan)) for (const en of list) en.cat = recat(en.cat);
+    for (const pl of d.plans) for (const day of pl.days) for (const sl of day) sl.cat = recat(sl.cat);
+    d.v = 6;
+  }
   for (const e of d.exercises) {
-    if (!Array.isArray(e.goals)) e.goals = [];
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
   }
   for (const list of Object.values(d.plan)) for (const en of list) { en.target ||= []; en.log ||= []; }
@@ -799,8 +782,8 @@ function applyTheme() {
 const state = {
   tab: "week",
   week: mondayOf(new Date()),
-  libQuery: "", libCat: "All", libGoal: "All",
-  pickQuery: "", pickCat: "All", pickGoal: "All", pickTarget: null, pickAdded: {},
+  libQuery: "", libCat: "All",
+  pickQuery: "", pickCat: "All", pickTarget: null, pickAdded: {},
   editEntry: null,   // see openEntry
   editEx: null,      // exercise id, or null for a new one
   planId: null,      // plan open in the builder
@@ -943,11 +926,10 @@ $("#view-week").addEventListener("click", ev => {
    Exercise lists (library + picker share filtering)
    ========================================================= */
 
-function filterExercises(q, cat, goal = "All") {
+function filterExercises(q, cat) {
   q = q.trim().toLowerCase();
   return db.exercises.filter(e =>
     (cat === "All" || e.cat === cat) &&
-    (goal === "All" || (e.goals || []).includes(goal)) &&
     (!q || e.name.toLowerCase().includes(q) || e.cat.toLowerCase().includes(q) || (e.notes || "").toLowerCase().includes(q)));
 }
 
@@ -967,11 +949,6 @@ function renderChips(el, current) {
     `<button type="button" class="chip" data-cat="${esc(c)}" aria-pressed="${c === current}">${c === "All" ? "All categories" : esc(c)}</button>`).join("");
 }
 
-function renderGoalChips(el, current) {
-  el.innerHTML = [["All", "All goals"], ...GOALS].map(([k, label]) =>
-    `<button type="button" class="chip goal" data-goal="${k}" aria-pressed="${k === current}">${esc(label)}</button>`).join("");
-}
-
 const tomorrowKey = () => dkey(addDays(new Date(), 1));
 
 function exSubtitle(e) {
@@ -982,7 +959,7 @@ function exSubtitle(e) {
 /* ---------- Library view ---------- */
 
 function renderLibrary() {
-  const list = filterExercises(state.libQuery, state.libCat, state.libGoal);
+  const list = filterExercises(state.libQuery, state.libCat);
   $("#libCount").textContent = list.length === db.exercises.length
     ? `${db.exercises.length} exercises` : `${list.length} of ${db.exercises.length} exercises`;
   $("#libList").innerHTML = groupedHTML(list, e => `<li><button class="exrow" data-id="${esc(e.id)}">
@@ -995,10 +972,6 @@ $("#libSearch").addEventListener("input", e => { state.libQuery = e.target.value
 $("#libChips").addEventListener("click", e => {
   const b = e.target.closest("[data-cat]"); if (!b) return;
   state.libCat = b.dataset.cat; renderChips($("#libChips"), state.libCat); renderLibrary();
-});
-$("#libGoals").addEventListener("click", e => {
-  const b = e.target.closest("[data-goal]"); if (!b) return;
-  state.libGoal = b.dataset.goal; renderGoalChips($("#libGoals"), state.libGoal); renderLibrary();
 });
 $("#libList").addEventListener("click", e => {
   const b = e.target.closest("[data-id]"); if (b) openExercise(b.dataset.id);
@@ -1014,14 +987,13 @@ function openPicker(target) {
   state.pickQuery = "";
   $("#pickSearch").value = "";
   $("#pickTitle").textContent = target.kind === "cal" ? `Add to ${shortDate(target.date)}` : `Add to ${dayName(target.day)}`;
-  renderGoalChips($("#pickGoals"), state.pickGoal);
   renderChips($("#pickChips"), state.pickCat);
   renderPicker();
   $("#pickDialog").showModal();
 }
 
 function renderPicker() {
-  const list = filterExercises(state.pickQuery, state.pickCat, state.pickGoal);
+  const list = filterExercises(state.pickQuery, state.pickCat);
   $("#pickList").innerHTML = groupedHTML(list, e => {
     const n = state.pickAdded[e.id] || 0;
     return `<li><button class="exrow" data-id="${esc(e.id)}">
@@ -1037,10 +1009,6 @@ $("#pickSearch").addEventListener("input", e => { state.pickQuery = e.target.val
 $("#pickChips").addEventListener("click", e => {
   const b = e.target.closest("[data-cat]"); if (!b) return;
   state.pickCat = b.dataset.cat; renderChips($("#pickChips"), state.pickCat); renderPicker();
-});
-$("#pickGoals").addEventListener("click", e => {
-  const b = e.target.closest("[data-goal]"); if (!b) return;
-  state.pickGoal = b.dataset.goal; renderGoalChips($("#pickGoals"), state.pickGoal); renderPicker();
 });
 $("#pickList").addEventListener("click", e => {
   const b = e.target.closest("[data-id]"); if (!b) return;
@@ -1420,9 +1388,9 @@ function renderPlanTab() {
           <li>Log what you actually do each session on the Week tab.</li>
         </ol>
       </div>`}
-    <h3 class="grouph">Start from a goal</h3>
+    <h3 class="grouph">Starter plans</h3>
     <div class="card list">${STARTERS.map((st, i) => `
-      <button class="goalcard" data-act="starter" data-i="${i}">
+      <button class="startercard" data-act="starter" data-i="${i}">
         <strong>${esc(st.name)} <span class="progtag">${st.weeks} weeks</span></strong>
         <small>${esc(st.blurb)}</small>
       </button>`).join("")}</div>
@@ -1552,7 +1520,7 @@ $("#exCat").innerHTML = CATS.map(([c]) => `<option>${esc(c)}</option>`).join("")
 
 function toggleChipsHTML(items, on, attr) {
   return items.map(([k, label]) =>
-    `<button type="button" class="chip goal" data-${attr}="${k}" aria-pressed="${on.includes(k)}">${esc(label)}</button>`).join("");
+    `<button type="button" class="chip toggle" data-${attr}="${k}" aria-pressed="${on.includes(k)}">${esc(label)}</button>`).join("");
 }
 
 function openExercise(id) {
@@ -1561,8 +1529,9 @@ function openExercise(id) {
   const f = $("#exForm");
   $("#exTitle").textContent = ex ? "Edit exercise" : "New exercise";
   f.name.value = ex ? ex.name : "";
+  // Keep a category that's no longer in the list (e.g. one of your own) selectable.
+  $("#exCat").innerHTML = [...new Set([...CATS.map(c => c[0]), ...(ex ? [ex.cat] : [])])].map(c => `<option>${esc(c)}</option>`).join("");
   f.cat.value = ex ? ex.cat : (state.libCat !== "All" ? state.libCat : "Strength");
-  $("#exGoals").innerHTML = toggleChipsHTML(GOALS, ex ? ex.goals || [] : (state.libGoal !== "All" ? [state.libGoal] : []), "goal");
   $("#exFields").innerHTML = toggleChipsHTML(FIELDS, ex ? ex.fields : defaultFields(null, f.cat.value), "field");
   f.notes.value = ex ? ex.notes || "" : "";
   f.video.value = ex ? ex.video || "" : "";
@@ -1583,7 +1552,7 @@ $("#exCat").addEventListener("change", e => {
 });
 
 $("#exDialog").addEventListener("click", e => {
-  const b = e.target.closest("#exGoals [data-goal], #exFields [data-field]");
+  const b = e.target.closest("#exFields [data-field]");
   if (b) b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
 });
 
@@ -1595,9 +1564,8 @@ $("#exForm").addEventListener("submit", ev => {
   if (!name) { $("#exErr").textContent = "Give it a name."; f.name.focus(); return; }
   if (video && !/^https?:\/\//i.test(video)) { $("#exErr").textContent = "Video link should start with https://"; f.video.focus(); return; }
   const pressed = sel => [...document.querySelectorAll(sel)].filter(b => b.getAttribute("aria-pressed") === "true");
-  const goals = pressed("#exGoals [data-goal]").map(b => b.dataset.goal);
   const fields = FIELDS.map(([k]) => k).filter(k => pressed("#exFields [data-field]").some(b => b.dataset.field === k));
-  const data = { name, cat: f.cat.value, goals, fields, notes: f.notes.value.trim(), video };
+  const data = { name, cat: f.cat.value, fields, notes: f.notes.value.trim(), video };
   if (state.editEx) Object.assign(findEx(state.editEx), data);
   else db.exercises.push({ id: "x-" + uid(), ...data });
   save();
@@ -1689,7 +1657,6 @@ document.querySelectorAll("dialog").forEach(d => {
 });
 
 function renderAll() {
-  renderGoalChips($("#libGoals"), state.libGoal);
   renderChips($("#libChips"), state.libCat);
   renderLibrary();
   renderWeek();
