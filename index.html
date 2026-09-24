@@ -184,7 +184,11 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 .pickbar .chips{margin-top:8px;padding-bottom:8px}
 /* The exercise picker gets most of the screen so the list has room */
 #pickDialog{height:90vh;height:90dvh}
-@media (min-width:640px){#pickDialog{height:86vh;height:86dvh}}
+/* Same fixed-height build as the picker (the one pop-up that always rendered on iPhone);
+   content-sized pop-ups came out blank in the iPhone Claude app. */
+#entryDialog,#exDialog,#settingsDialog{height:88vh;height:88dvh}
+#confirmDialog{min-height:180px}
+@media (min-width:640px){#pickDialog,#entryDialog,#exDialog,#settingsDialog{height:86vh;height:86dvh}}
 #pickDialog .sheet-head{padding:10px 8px 6px 16px;border-bottom:0}
 #pickDialog .sheet-head h2{font-size:1.25rem}
 #pickDialog .sheet-body{padding:0 16px 16px;border-top:1px solid var(--line)}
@@ -918,10 +922,23 @@ function openSheet(d) {
     d.classList.add("as-sheet");
     showScrim(false);
   }
+  ensureVisible(d);
+}
+
+// Safety net: if a browser still lays a pop-up out with (almost) no height, give it one.
+function ensureVisible(d) {
+  requestAnimationFrame(() => {
+    if (d.hasAttribute("open") && d.getBoundingClientRect().height < 80) {
+      d.style.height = Math.round(innerHeight * 0.85) + "px";
+      d.style.minHeight = "200px";
+    }
+  });
 }
 
 function closeSheet(d) {
   if (!d.hasAttribute("open")) return;
+  d.style.minHeight = "";
+  if (!d.classList.contains("as-float")) d.style.height = "";
   if (d.classList.contains("as-float") || d.classList.contains("as-sheet")) {
     d.removeAttribute("open");
     d.classList.remove("as-float", "as-sheet");
