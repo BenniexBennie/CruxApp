@@ -161,7 +161,8 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 /* ---------- Dialogs (bottom sheets on phones) ---------- */
 dialog{border:0;padding:0;background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:92vh;max-height:92dvh;border-radius:18px 18px 0 0;margin:auto auto 0}
 dialog[open]{display:flex;flex-direction:column}
-.sheetform{display:flex;flex-direction:column;flex:1;min-height:0;margin:0}
+.sheet-head,.sheet-foot,.pickbar{flex:none}
+.sheetform{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin:0}
 dialog::backdrop{background:rgb(0 0 0 / .45)}
 dialog:not([open]){display:none}
 /* Fallback bottom sheet when the browser won't open a modal dialog */
@@ -176,7 +177,7 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 @media (min-width:640px){dialog{margin:auto;border-radius:18px;max-height:86vh;max-height:86dvh}}
 .sheet-head{display:flex;align-items:center;gap:8px;padding:14px 12px 10px 18px;border-bottom:1px solid var(--line)}
 .sheet-head h2{font-size:1.5rem;flex:1;min-width:0}
-.sheet-body{padding:4px 18px 18px;overflow-y:auto;flex:1;min-height:0}
+.sheet-body{padding:4px 18px 18px;overflow-y:auto;flex:1 1 auto;min-height:0}
 .sheet-foot{display:flex;gap:10px;align-items:center;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .sheet-foot .spacer{flex:1}
 .pickbar{padding:10px 16px 0}
@@ -310,8 +311,8 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   </div>
   <div class="sheet-body" id="pickList"></div>
   <div class="sheet-foot">
-    <span class="muted" id="pickCount">Tap an exercise to add it and set its sets and reps.</span><span class="spacer"></span>
-    <button class="ghost" data-close>Close</button>
+    <span class="muted" id="pickCount"></span><span class="spacer"></span>
+    <button class="primary" data-close>Done</button>
   </div>
 </dialog>
 <div id="errbar" role="alert" hidden><span id="errmsg"></span><button type="button" id="errclose">OK</button></div>
@@ -351,7 +352,6 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
     <div class="sheet-foot">
       <button type="button" class="ghost sm danger" id="entryRemove">Remove</button>
       <span class="spacer"></span>
-      <button type="submit" class="ghost sm" id="entryAddAnother" style="white-space:nowrap" hidden>Save &amp; add more</button>
       <button type="submit" class="primary">Save</button>
     </div>
   </form>
@@ -1219,6 +1219,8 @@ function renderPicker() {
       ${n ? `<span class="added">✓ Added${n > 1 ? ` ×${n}` : ""}</span>` : ""}
     </button></li>`;
   });
+  const total = Object.values(state.pickAdded).reduce((a, b) => a + b, 0);
+  $("#pickCount").textContent = total ? `${total} added` : "Tap to add";
 }
 
 $("#pickSearch").addEventListener("input", e => { state.pickQuery = e.target.value; renderPicker(); });
@@ -1238,11 +1240,10 @@ $("#pickList").addEventListener("click", e => {
     plan.days[t.day].push(item);
     markDirty(plan);
   }
+  state.pickAdded[ex.id] = (state.pickAdded[ex.id] || 0) + 1;
   save();
+  renderPicker();
   t.kind === "cal" ? renderWeek() : renderPlanBody();
-  // Straight on to its sets and reps.
-  closeSheet($("#pickDialog"));
-  openEntry(t.kind === "cal" ? { kind: "cal", date: t.date, id: item.id, fresh: true } : { kind: "plan", day: t.day, id: item.id, fresh: true });
 });
 
 /* =========================================================
@@ -1275,12 +1276,9 @@ function openEntry(target) {
   const hasSets = cols.length > 0;
 
   $("#entryTitle").textContent = nameOf(item);
-  const where = isPlan ? dayName(target.day) : fmt(parseKey(target.date), { weekday: "long" });
-  $("#entryHint").textContent = target.fresh
-    ? `Added to ${where}. Set your sets and reps${isPlan ? "." : ", or log them after your session."}`
-    : isPlan
-      ? "The target repeats every week of the plan. You log what you actually did from the Week tab."
-      : "Set a target before the session, then log what you actually did.";
+  $("#entryHint").textContent = isPlan
+    ? "The target repeats every week of the plan. You log what you actually did from the Week tab."
+    : "Set a target before the session, then log what you actually did.";
   $("#entryHowto").innerHTML = howtoHTML(ex);
 
   const last = lastLog(item.ex, isPlan ? tomorrowKey() : target.date, item.id);
@@ -1290,11 +1288,7 @@ function openEntry(target) {
     : "";
 
   for (const id of ["targetSets", "logSets"]) $("#" + id).dataset.cols = JSON.stringify(cols);
-  // Just added: start from last time's sets, or one empty set ready to fill in.
-  const startTarget = target.fresh && hasSets && !(item.target || []).length
-    ? (last ? clone(last.entry.log) : [{}])
-    : item.target || [];
-  renderSets($("#targetSets"), startTarget);
+  renderSets($("#targetSets"), item.target || []);
   renderSets($("#logSets"), item.log || []);
   $("#targetSec").hidden = !hasSets;
   $("#logSec").hidden = isPlan || !hasSets;
@@ -1311,13 +1305,8 @@ function openEntry(target) {
     f.note.value = item.note || "";
   }
   $("#entryErr").textContent = "";
-  $("#entryAddAnother").hidden = !target.fresh;
   openSheet($("#entryDialog"));
-  if (target.fresh && hasSets) setTimeout(() => { const i = $("#targetSets [data-f]"); if (i) i.focus({ preventScroll: true }); }, 60);
 }
-
-// "Save & add another" saves, then reopens the exercise list for the same day.
-$("#entryAddAnother").addEventListener("click", () => { state.addAnother = true; });
 
 $("#copyLastBtn").addEventListener("click", () => {
   if (state.lastSets) renderSets($("#targetSets"), clone(state.lastSets));
@@ -1336,7 +1325,6 @@ $("#entryForm").addEventListener("submit", ev => {
   const log = readSets($("#logSets"));
   const bad = $("#entryForm .bad");
   if (bad) {
-    state.addAnother = false;
     $("#entryErr").textContent = "The highlighted box isn't a number. Use numbers like 5, 12.5, +25 or -15.";
     bad.focus();
     return;
@@ -1354,7 +1342,6 @@ $("#entryForm").addEventListener("submit", ev => {
     save();
     closeSheet($("#entryDialog"));
     renderPlanBody();
-    if (state.addAnother) { state.addAnother = false; openPicker({ kind: "plan", day }); }
     return;
   }
 
@@ -1375,7 +1362,6 @@ $("#entryForm").addEventListener("submit", ev => {
   renderWeek();
   renderLibrary();
   if (newDate !== t.date) toast(`Moved to ${shortDate(newDate)}`);
-  if (state.addAnother) { state.addAnother = false; openPicker({ kind: "cal", date: newDate }); }
 });
 
 $("#entryRemove").addEventListener("click", () => {
