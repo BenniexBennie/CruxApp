@@ -144,6 +144,7 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 .entrybtn{flex:1;min-width:0;display:flex;align-items:flex-start;gap:10px;text-align:left;border:0;background:none;padding:6px 0;border-radius:8px}
 .entrybtn strong{display:block;font-weight:600}
 .entrybtn small{display:block;color:var(--muted);font-size:.88rem;line-height:1.35}
+.notesnip{font-style:italic;color:var(--ink)!important;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .entry.done strong{text-decoration:line-through;text-decoration-color:var(--muted);color:var(--muted)}
 .dot{width:10px;height:10px;border-radius:3px;background:var(--c);flex:none;margin-top:7px}
 
@@ -1037,9 +1038,18 @@ function weekDays(start = state.week) {
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 
+// The first few words of a note, for the week view.
+function noteSnippet(note, words = 7, chars = 48) {
+  const all = note.trim().split(/\s+/);
+  let out = all.slice(0, words).join(" ");
+  if (out.length > chars) out = out.slice(0, chars).replace(/\s+\S*$/, "");
+  return out.length < note.trim().length ? out.replace(/[.,;:!?-]+$/, "") + "…" : out;
+}
+
 function entryLine(e) {
   if (e.log.length) return `<span class="logged">✓ ${esc(fmtSets(e.log))}</span>`;
   if (e.target.length) return `Target: ${esc(fmtSets(e.target))}`;
+  if (!fieldsOf(e).length && e.note) return "";   // notes-only (e.g. a climbing session): the note says it all
   return fieldsOf(e).length ? "Tap to set a target or log it" : "Tap to add notes";
 }
 
@@ -1050,7 +1060,7 @@ function entryHTML(date, e) {
     <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="Mark ${esc(name)} done">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
-      <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong><small>${entryLine(e)}${e.note ? " · 📝" : ""}</small></span>
+      <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
     </button>
     ${RM("cal", date, e.id, name)}
   </li>`;
