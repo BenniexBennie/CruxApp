@@ -426,11 +426,15 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       <button type="button" class="ghost sm" id="restoreBtn">Restore starter exercises</button>
       <p class="hint">Adds back any built-in exercises you deleted. Your own exercises are untouched.</p>
     </fieldset>
+    <p class="hint" style="margin-top:22px">Version <span id="appVersion"></span></p>
   </div>
 </dialog>
 
 <script>
 "use strict";
+
+// Bump on every release. The home-screen app compares this with the live site to update itself.
+const APP_VERSION = "2026.09.24-2";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -1920,6 +1924,27 @@ function renderAll() {
 applyTheme();
 renderAll();
 save();
+$("#appVersion").textContent = APP_VERSION;
+
+/* ---------- Self-update (GitHub Pages / home-screen app) ----------
+   iPhone home-screen apps and GitHub Pages both hold on to an old copy for a while.
+   On open, and whenever you come back to the app, fetch the live page without the
+   cache; if its version differs, load it under a fresh URL (which skips the cache). */
+async function checkForUpdate() {
+  if (!/^https?:$/.test(location.protocol) || !location.hostname.endsWith("github.io")) return;
+  try {
+    const url = location.origin + location.pathname;
+    const res = await fetch(url + "?check=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) return;
+    const m = (await res.text()).match(/const APP_VERSION = "([^"]+)"/);
+    if (!m || m[1] === APP_VERSION) return;
+    const key = "updated-to-" + m[1];
+    try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch (e) {}
+    location.replace(url + "?v=" + encodeURIComponent(m[1]));
+  } catch (e) { /* offline: keep using this copy */ }
+}
+checkForUpdate();
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(); });
 
 // In a stretched frame the bottom tab bar would sit at the very end of the page: put it under the header.
 function placeTabs() {
