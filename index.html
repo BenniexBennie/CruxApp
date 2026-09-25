@@ -62,7 +62,7 @@ ul{list-style:none;margin:0;padding:0}
 .logo .blob{fill:var(--accent)}
 .logo .peak{fill:var(--on-accent)}
 .logo .sun{fill:var(--sun)}
-#sync{margin-left:auto;font-size:.8rem;font-weight:700;color:var(--accent-press);white-space:nowrap}
+#sync{border:0;background:none;padding:4px 6px;border-radius:8px;margin-left:auto;font-size:.8rem;font-weight:700;color:var(--accent-press);white-space:nowrap}
 #sync.bad{color:var(--danger);font-weight:700}
 .iconbtn{border:0;background:transparent;padding:8px;border-radius:10px;color:var(--ink);display:grid;place-items:center}
 .iconbtn:hover{background:var(--sunk)}
@@ -129,6 +129,10 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 .progress{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden;margin:14px 0 10px}
 .progress>div{height:100%;border-radius:99px;transition:width .4s cubic-bezier(.3,1.4,.5,1);background:var(--accent) repeating-linear-gradient(-45deg,transparent 0 8px,rgb(255 255 255 / .22) 8px 16px)}
 .day{scroll-margin-top:72px}
+.day.rest{padding:8px 12px 8px 16px}
+.day.rest h3{font-size:1.05rem;align-items:center}
+.restlbl{color:var(--muted);font-weight:600}
+.iconbtn.sm{padding:6px 8px;font-size:1rem}
 .day.today{box-shadow:0 0 0 3px var(--sun),0 2px 0 var(--line)}
 .dayhead h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}
 .dayhead h3 small{font-family:var(--body);font-weight:500;font-size:.9rem;color:var(--muted);white-space:nowrap}
@@ -303,6 +307,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 
 /* ---------- Sets: target & log ---------- */
 .setsec{margin-top:18px}
+.offpane{display:none!important}
 .setsec h3{font-size:1.15rem}
 .setrow{display:grid;grid-template-columns:20px repeat(var(--cols),minmax(0,1fr)) 32px;gap:6px;align-items:center;margin-top:6px}
 .setrow.head{margin-top:10px}
@@ -325,7 +330,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 
 <header class="top">
   <h1><svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><path class="blob" d="M20 2c9 0 17 5 17 16 0 12-8 20-18 20S2 31 3 19C4 8 11 2 20 2z"/><circle class="sun" cx="28" cy="13" r="4"/><path class="peak" d="M8 29l8-12 4 6 3-4 8 10z"/></svg>Training Plan</h1>
-  <span id="sync" aria-live="polite"></span>
+  <button type="button" id="sync" aria-live="polite"></button>
   <button class="iconbtn" id="settingsBtn" aria-label="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
   </button>
@@ -402,18 +407,22 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       <p class="hint" style="margin-top:12px" id="entryHint"></p>
       <div id="entryHowto"></div>
       <div id="entryLast"></div>
-      <section class="setsec" id="targetSec">
+      <div class="seg" id="entryPanes" role="tablist" style="margin-top:14px">
+        <button type="button" class="chip" data-pane="plan" role="tab">Plan</button>
+        <button type="button" class="chip" data-pane="log" role="tab">Log</button>
+      </div>
+      <section class="setsec" id="targetSec" data-pane="plan">
         <div class="bar"><h3>Target</h3><button type="button" class="linkish" id="copyLastBtn">Copy last time</button></div>
         <div id="targetSets" data-cols="[]"></div>
         <button type="button" class="ghost sm" data-addset="targetSets">+ Set</button>
       </section>
-      <section class="setsec" id="logSec">
+      <section class="setsec" id="logSec" data-pane="log">
         <div class="bar"><h3>What I did</h3><button type="button" class="linkish" id="copyTargetBtn">Copy target</button></div>
         <div id="logSets" data-cols="[]"></div>
         <button type="button" class="ghost sm" data-addset="logSets">+ Set</button>
       </section>
       <p class="hint" id="noFields" style="margin-top:14px">This exercise doesn't track sets, just notes. You can change what it tracks in the Library.</p>
-      <div id="entryCalFields">
+      <div id="entryCalFields" data-pane="log">
         <label class="field" id="climbTimeWrap"><span>Time climbing (min)</span><input type="text" name="climbMins" id="climbMins" inputmode="decimal" autocomplete="off" placeholder="e.g. 90"></label>
         <div class="field" id="gradesWrap"><span>Boulders sent</span>
           <p class="hint" style="margin:-2px 0 4px">Tap a grade for each boulder you send.</p>
@@ -573,7 +582,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.25-9";
+const APP_VERSION = "2026.09.26-1";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -910,10 +919,21 @@ function save() {
   } catch (e) {
     storageOk = false;
   }
+  renderStatus();
+}
+
+// Header status: problems and reminders only (quiet "Saved ✓" otherwise).
+function renderStatus() {
   const s = $("#sync");
-  s.textContent = storageOk ? "Saved ✓" : "Not saving";
-  s.title = storageOk ? "Saved in this browser" : "This browser is blocking storage, so changes will be lost when you close it";
-  s.classList.toggle("bad", !storageOk);
+  const hasData = Object.keys(db.plan).length > 0;
+  const days = db.lastBackup ? Math.round((parseKey(dkey(new Date())) - parseKey(db.lastBackup)) / 864e5) : null;
+  const syncing = typeof syncState !== "undefined" && syncState.token;
+  let text = "Saved ✓", warn = false, title = "Saved in this browser";
+  if (!storageOk) { text = "Not saving"; warn = true; title = "This browser is blocking storage, so changes will be lost when you close it"; }
+  else if (syncing) { text = syncState.label; warn = syncState.warn; title = syncState.title; }
+  else if (hasData && (days == null || days > 14)) { text = "Back up ⚠"; warn = true; title = days == null ? "No backup yet. Tap to back up." : `Last backup ${days} days ago. Tap to back up.`; }
+  s.textContent = text; s.title = title;
+  s.classList.toggle("bad", warn);
 }
 
 /* =========================================================
@@ -1252,7 +1272,7 @@ function entryHTML(date, e) {
   const name = nameOf(e), cat = catOf(e);
   return `<li class="entry${e.done ? " done" : ""}" data-item="${esc(e.id)}" data-kind="cal" data-from="${date}">
     ${HANDLE(name)}
-    <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="Mark ${esc(name)} done">
+    <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="${esc(name)}: done${e.target.length && !hasLog(e) ? " as planned" : ""}">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
       <span><strong>${esc(name)}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.sends ? `<small class="notesnip">🏅 ${esc(noteSnippet(e.sends))}</small>` : ""}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
@@ -1296,6 +1316,19 @@ function renderWeek() {
     const k = dkey(d);
     const entries = db.plan[k] || [];
     const isToday = k === todayKey;
+    if (!entries.length && !db.lift[k]) {
+      // Rest day: one slim row.
+      html += `<section class="card day rest${isToday ? " today" : ""}" id="day-${k}" data-drop="${k}" data-kind="cal">
+        <div class="bar dayhead">
+          <h3>${fmt(d, { weekday: "short" })} <small>${fmt(d, { month: "short", day: "numeric" })}</small>${isToday ? `<span class="pill">Today</span>` : ""}<small class="restlbl">Rest</small></h3>
+          <span class="row" style="flex-wrap:nowrap">
+            <button class="iconbtn sm" data-act="lift" data-date="${k}" aria-label="Add lifting time">⏱</button>
+            <button class="ghost sm" data-act="add" data-date="${k}">+ Add</button>
+          </span>
+        </div>
+      </section>`;
+      continue;
+    }
     html += `<section class="card day${isToday ? " today" : ""}" id="day-${k}" data-drop="${k}" data-kind="cal">
       <div class="bar dayhead">
         <h3>${fmt(d, { weekday: "long" })} <small>${fmt(d, { month: "short", day: "numeric" })}</small>${isToday ? `<span class="pill">Today</span>` : ""}</h3>
@@ -1303,8 +1336,8 @@ function renderWeek() {
       </div>
       ${entries.length ? `<ul class="entries">${entries.map(e => entryHTML(k, e)).join("")}</ul>` : `<p class="empty">Rest day</p>`}
       <div class="dayfoot">
-        <button type="button" class="liftbtn${db.lift[k] ? " has" : ""}" data-act="lift" data-date="${k}">⏱ ${db.lift[k] ? `Lifting ${fmtClimbMins(db.lift[k])}` : "Add lifting time"}</button>
-        ${entries.length ? `<button type="button" class="liftbtn" data-act="savesess" data-date="${k}">☆ Save as session</button>` : ""}
+        <button type="button" class="liftbtn${db.lift[k] ? " has" : ""}" data-act="lift" data-date="${k}">⏱ ${db.lift[k] ? `Lifting ${fmtClimbMins(db.lift[k])}` : "Lifting"}</button>
+        ${entries.length ? `<button type="button" class="liftbtn" data-act="savesess" data-date="${k}">☆ Save session</button>` : ""}
       </div>
     </section>`;
   }
@@ -1360,8 +1393,21 @@ $("#view-week").addEventListener("click", ev => {
   else if (act === "savesess") saveDayAsSession(date);
   else if (act === "remove") removeItem("cal", t.dataset.key, id);
   else if (act === "toggle") {
-    const e = getEntry(date, id);
-    if (e) { e.done = t.checked; save(); renderWeek(); }
+    const e = getEntry(date, id); if (!e) return;
+    if (t.checked) {
+      e.done = true;
+      // Done as planned: the target becomes what you did (Undo in the toast).
+      if (!hasLog(e) && e.target.length) {
+        e.log = clone(e.target); e.autoLog = true;
+        toast(`Logged as planned: ${fmtSets(e.log)}`, { label: "Undo", run: () => {
+          e.log = []; delete e.autoLog; e.done = false; save(); renderWeek(); renderLibrary();
+        } });
+      }
+    } else {
+      e.done = false;
+      if (e.autoLog) { e.log = []; delete e.autoLog; }   // only undo what the tick filled in
+    }
+    save(); renderWeek(); renderLibrary();
   }
 });
 
@@ -1512,7 +1558,7 @@ function openEntry(target) {
   $("#entryTitle").textContent = nameOf(item);
   $("#entryHint").textContent = isPlan
     ? "Used when this session is added to a day, unless you've done the exercise before (then last time's sets are the target)."
-    : "Set a target before the session, then log what you actually did.";
+    : "Plan: your target. Log: what you actually did. Tip: ticking the box on the week logs it exactly as planned.";
   $("#entryHowto").innerHTML = howtoHTML(ex);
 
   const last = lastLog(item.ex, isPlan ? tomorrowKey() : target.date, item.id);
@@ -1549,8 +1595,18 @@ function openEntry(target) {
     f.climbMins.classList.remove("bad");
   }
   $("#entryErr").textContent = "";
+  // Plan tab = target; Log tab = what you did. Future days open on Plan, today and earlier on Log.
+  const bothPanes = !isPlan && hasSets;
+  $("#entryPanes").hidden = !bothPanes;
+  setPane(isPlan ? "plan" : !bothPanes ? "log" : target.date > dkey(new Date()) ? "plan" : "log");
   openSheet($("#entryDialog"));
 }
+
+function setPane(p) {
+  document.querySelectorAll("#entryDialog section[data-pane], #entryDialog div[data-pane]").forEach(el => el.classList.toggle("offpane", el.dataset.pane !== p));
+  document.querySelectorAll("#entryPanes [data-pane]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pane === p)));
+}
+$("#entryPanes").addEventListener("click", e => { const b = e.target.closest("[data-pane]"); if (b) setPane(b.dataset.pane); });
 
 $("#copyLastBtn").addEventListener("click", () => {
   if (state.lastSets) renderSets($("#targetSets"), clone(state.lastSets));
@@ -1569,6 +1625,7 @@ $("#entryForm").addEventListener("submit", ev => {
   const target = readSets($("#targetSets"));
   const log = readSets($("#logSets"));
   const bad = $("#entryForm .bad");
+  if (bad && bad.closest("[data-pane]")) setPane(bad.closest("[data-pane]").dataset.pane);
   if (bad) {
     $("#entryErr").textContent = "The highlighted box isn't a number. Use numbers like 5, 12.5, +25 or -15.";
     bad.focus();
@@ -1596,6 +1653,7 @@ $("#entryForm").addEventListener("submit", ev => {
     }
   }
   const hadLog = !!hasLog(item);
+  if (JSON.stringify(log) !== JSON.stringify(item.log)) delete item.autoLog;   // edited by hand now
   item.log = log;
   if (mins) item.mins = mins; else delete item.mins;
   const sends = $("#sendsWrap").hidden ? "" : f.sends.value.trim();
@@ -1892,7 +1950,7 @@ function renderPlanTab() {
           <button class="ghost sm" data-act="opensess" data-id="${esc(x.id)}">Edit</button>
         </div>
       </div>`).join("")}
-    <p class="hint">Sessions also appear at the top of <b>+ Add</b> on every day. To save a day you've planned or logged, tap <b>☆ Save as session</b> under it on the Week tab.</p>`;
+    <p class="hint">Sessions also appear at the top of <b>+ Add</b> on every day. To save a day you've planned or logged, tap <b>☆ Save session</b> under it on the Week tab.</p>`;
 }
 
 function renderSessEditor() {
@@ -2143,7 +2201,11 @@ $("#themeSeg").addEventListener("click", e => {
   db.theme = b.dataset.theme; save(); applyTheme();
 });
 
+$("#sync").addEventListener("click", () => { applyTheme(); openSheet($("#settingsDialog")); });
+
 $("#exportBtn").addEventListener("click", () => {
+  db.lastBackup = dkey(new Date());
+  save();
   const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
