@@ -15,6 +15,7 @@
   --sun:#FFC93C; --on-sun:#3A2A00; --danger:#E4574B;
   --tape:#D1246C; --orange:#E2621B; --go:#0E8878; --blue:#2F63C8; --gold:#D89B00; --grey:#8A96A1;
   --violet:#7A4FC4; --leaf:#3B8F3F; --cyan:#1B8FB5;
+  --c-climb:#2F63C8; --c-lift:#C2410C; --c-cardio:#00897A;
   --display:"Fredoka","Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
   --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
   box-sizing:border-box;
@@ -27,6 +28,7 @@
     --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
     --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
     --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
+    --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893;
     color-scheme:dark;
   }
 }
@@ -36,6 +38,7 @@
   --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
   --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
   --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
+  --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893;
   color-scheme:dark;
 }
 html{height:100%}
@@ -219,6 +222,50 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .planline b{color:var(--ink);font-weight:600}
 .stretched .tabs{position:static;max-width:720px;margin:0 auto 8px;border:0;border-radius:16px;background:var(--surface)}
 .stretched main{padding-bottom:40px}
+/* ---------- Data ---------- */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{background:var(--surface);border-radius:18px;padding:12px 14px;box-shadow:0 2px 0 var(--line);min-width:0}
+.tile span{display:block;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tile b{display:block;font-family:var(--display);font-size:1.4rem;font-weight:600;line-height:1.15;margin:2px 0;font-variant-numeric:tabular-nums}
+.tile small{color:var(--muted);font-size:.85rem}
+.legend2{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;color:var(--muted);margin:10px 0 4px}
+.legend2 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
+.legend2 b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.chartwrap{position:relative;margin-top:6px}
+.chartwrap svg{display:block;width:100%;height:auto;overflow:visible;font-family:var(--body)}
+.chartwrap .grid{stroke:var(--line);stroke-width:1}
+.chartwrap .ax{fill:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
+.chartwrap .val{fill:var(--ink);font-size:11px;font-weight:800}
+.chartwrap .line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chartwrap .pt{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.chartwrap .hit{fill:transparent;cursor:pointer}
+.chartwrap .hit.on{fill:var(--ink);fill-opacity:.06}
+.ctip{position:absolute;transform:translateY(-100%);background:var(--ink);color:var(--bg);font-size:.8rem;line-height:1.35;padding:6px 9px;border-radius:8px;white-space:pre;pointer-events:none;z-index:3}
+.tableview{margin-top:10px;font-size:.9rem}
+.tableview summary{cursor:pointer;color:var(--muted);font-weight:700}
+table.dt{width:100%;border-collapse:collapse;margin-top:6px;font-variant-numeric:tabular-nums}
+table.dt th,table.dt td{text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}
+table.dt th:first-child,table.dt td:first-child{text-align:left}
+.gradegrid{overflow-x:auto;margin-top:8px}
+table.gg{border-collapse:separate;border-spacing:2px;font-variant-numeric:tabular-nums;font-size:.78rem;table-layout:fixed}
+table.gg th:first-child{width:36px}
+table.gg thead th{overflow:visible;width:24px}
+table.gg th{color:var(--muted);font-weight:700;padding:0 2px;white-space:nowrap;font-size:.7rem}
+table.gg thead th{text-align:left}
+table.gg td{min-width:24px;width:24px;height:24px;text-align:center;border-radius:6px;background:var(--sunk);font-weight:800;color:var(--ink)}
+table.gg td.dark{color:var(--on-accent)}
+table.gg .toprow td{background:none;font-weight:700;color:var(--muted)}
+table.gg .toprow th{padding-top:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* lifting time per day, grade buttons */
+.liftbtn{margin-top:10px;border:0;background:var(--sunk);border-radius:99px;padding:5px 12px;font-size:.85rem;font-weight:700;color:var(--muted)}
+.liftbtn.has{background:color-mix(in srgb,var(--c-lift) 16%,var(--surface));color:var(--ink)}
+#liftDialog{min-height:240px}
+.gradebtns{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:6px}
+.gradebtn{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 0;font-weight:800;font-variant-numeric:tabular-nums}
+.gradebtn:active{background:var(--accent-soft);border-color:var(--accent)}
+.gchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:30px;align-items:center}
+.gchip{border:0;border-radius:99px;padding:4px 10px;background:var(--accent);color:var(--on-accent);font-weight:800;font-size:.85rem}
 #confirmMsg{font-size:1.05rem;font-weight:600;max-width:46ch}
 dialog.confirm{max-width:440px}
 
@@ -275,6 +322,8 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   <section id="view-plan" class="stack" hidden aria-label="Plan builder"></section>
 
 
+  <section id="view-data" class="stack" hidden aria-label="Data"></section>
+
   <section id="view-library" hidden aria-label="Exercise library">
     <div class="bar">
       <div><h2>Library</h2><p class="lede" id="libCount"></p></div>
@@ -294,6 +343,10 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   <button data-tab="plan">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h4v-6H3zM10 20h4V9h-4zM17 20h4V4h-4z"/></svg>
     Plan
+  </button>
+  <button data-tab="data">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-7"/></svg>
+    Data
   </button>
   <button data-tab="library">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
@@ -350,6 +403,11 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       </div>
       <div id="entryCalFields">
         <label class="field" id="climbTimeWrap"><span>Time climbing (min)</span><input type="text" name="climbMins" id="climbMins" inputmode="decimal" autocomplete="off" placeholder="e.g. 90"></label>
+        <div class="field" id="gradesWrap"><span>Boulders sent</span>
+          <p class="hint" style="margin:-2px 0 4px">Tap a grade for each boulder you send.</p>
+          <div class="gradebtns" id="gradeBtns"></div>
+          <div class="gchips" id="gradeChips"></div>
+        </div>
         <label class="field" id="sendsWrap"><span>Notable boulders sent</span><textarea name="sends" id="sends" rows="2" placeholder="e.g. Pink V5 in the cave, Moonboard 6B+ benchmark"></textarea></label>
         <label class="field"><span>Session notes</span><textarea name="note" placeholder="How did it go? Felt strong, left index a bit sore…"></textarea></label>
         <label class="field"><span>Date</span><input type="date" name="date"></label>
@@ -385,6 +443,26 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       <button type="button" class="ghost sm danger" id="exDelete">Delete</button>
       <span class="spacer"></span>
       <button type="button" class="ghost" data-close>Cancel</button>
+      <button type="submit" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Lifting time for one day -->
+<dialog id="liftDialog" aria-labelledby="liftTitle">
+  <form id="liftForm" class="sheetform" novalidate>
+    <div class="sheet-head">
+      <h2 id="liftTitle">Lifting time</h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <label class="field"><span>How long did you lift? (min)</span><input type="text" id="liftMins" inputmode="decimal" autocomplete="off" placeholder="e.g. 50"></label>
+      <p class="hint">Counts toward your training time on the Data tab.</p>
+      <p class="err" id="liftErr"></p>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="ghost sm danger" id="liftClear">Clear</button>
+      <span class="spacer"></span>
       <button type="submit" class="primary">Save</button>
     </div>
   </form>
@@ -436,7 +514,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.25-3";
+const APP_VERSION = "2026.09.25-4";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -627,7 +705,7 @@ const STARTERS = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 9, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
+const freshDb = () => ({ v: 9, exercises: clone(SEED), plan: {}, plans: [], lift: {}, theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -661,6 +739,7 @@ function fieldsFromP(p) {
 // Brings older saves up to date. Your own exercises, notes and calendar history are kept.
 function normalize(d) {
   if (!Array.isArray(d.plans)) d.plans = [];
+  if (!d.lift || typeof d.lift !== "object") d.lift = {};   // lifting minutes per day
   d.v = d.v || 1;
   if (d.v < 2) {
     const have = new Set(d.exercises.map(e => e.id));
@@ -908,10 +987,10 @@ document.addEventListener("click", e => {
 const tracksClimbTime = item => catOf(item) === "Climbing" || item.ex === "s-warmup";
 // Limit bouldering and board sessions also record notable sends.
 const tracksSends = item => item.ex === "s-limit" || item.ex === "s-board";
-const hasLog = e => (e.log && e.log.length) || e.mins || e.sends;
+const hasLog = e => (e.log && e.log.length) || e.mins || e.sends || (e.grades && e.grades.length);
 const fmtClimbMins = m => m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${Math.round(m % 60)} min` : ""}` : `${m} min`;
 // What was done in a session: sets, then time climbing.
-const logSummary = e => [fmtSets(e.log), e.mins ? `⏱ ${fmtClimbMins(e.mins)} climbing` : "", e.sends ? `🏅 ${e.sends}` : ""].filter(Boolean).join(" · ");
+const logSummary = e => [fmtSets(e.log), e.mins ? `⏱ ${fmtClimbMins(e.mins)} climbing` : "", e.grades && e.grades.length ? `Sent ${fmtGrades(e.grades)}` : "", e.sends ? `🏅 ${e.sends}` : ""].filter(Boolean).join(" · ");
 
 function lastLog(exId, beforeKey, skipId) {
   const keys = Object.keys(db.plan).filter(k => k < beforeKey).sort().reverse();
@@ -1065,6 +1144,7 @@ const state = {
   editEntry: null,   // see openEntry
   editEx: null,      // exercise id, or null for a new one
   planId: null,      // plan open in the builder
+  dataWeeks: 8, progEx: null, liftDate: null, editGrades: [],
 };
 
 /* =========================================================
@@ -1089,7 +1169,7 @@ function noteSnippet(note, words = 7, chars = 48) {
 }
 
 function entryLine(e) {
-  const done = [fmtSets(e.log), e.mins ? `⏱ ${fmtClimbMins(e.mins)} climbing` : ""].filter(Boolean).join(" · ");
+  const done = [fmtSets(e.log), e.mins ? `⏱ ${fmtClimbMins(e.mins)} climbing` : "", e.grades && e.grades.length ? `Sent ${fmtGrades(e.grades)}` : ""].filter(Boolean).join(" · ");
   if (done) return `<span class="logged">✓ ${esc(done)}</span>`;
   if (e.sends) return "";
   if (e.target.length) return `Target: ${esc(fmtSets(e.target))}`;
@@ -1114,8 +1194,8 @@ function renderWeek() {
   const days = weekDays();
   const todayKey = dkey(new Date());
   const isCurrent = dkey(state.week) === dkey(mondayOf(new Date()));
-  let total = 0, done = 0, climbMins = 0;
-  for (const d of days) for (const e of db.plan[dkey(d)] || []) { total++; if (e.done) done++; climbMins += e.mins || 0; }
+  let total = 0, done = 0;
+  for (const d of days) for (const e of db.plan[dkey(d)] || []) { total++; if (e.done) done++; }
 
   const end = days[6];
   const sameMonth = end.getMonth() === state.week.getMonth();
@@ -1136,7 +1216,7 @@ function renderWeek() {
     ${planLine}
     <div class="progress" role="progressbar" aria-label="Week progress" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div style="width:${pct}%"></div></div>
     <div class="bar weekstats">
-      <span class="muted">${total ? `${done} of ${total} done` : "Nothing planned yet"}${climbMins ? ` · ⏱ ${fmtClimbMins(climbMins)} climbing` : ""}</span>
+      <span class="muted">${total ? `${done} of ${total} done` : "Nothing planned yet"}${weekTime(state.week).total ? ` · ⏱ ${fmtClimbMins(Math.round(weekTime(state.week).total))} training` : ""}</span>
       <span class="row">
         <button class="ghost sm" data-act="copy"${total ? "" : " disabled"}>Copy to next week</button>
         ${total ? `<button class="ghost sm danger" data-act="clear">Clear</button>` : ""}
@@ -1154,6 +1234,7 @@ function renderWeek() {
         <button class="ghost sm" data-act="add" data-date="${k}">+ Add</button>
       </div>
       ${entries.length ? `<ul class="entries">${entries.map(e => entryHTML(k, e)).join("")}</ul>` : `<p class="empty">Rest day</p>`}
+      <button type="button" class="liftbtn${db.lift[k] ? " has" : ""}" data-act="lift" data-date="${k}">⏱ ${db.lift[k] ? `Lifting ${fmtClimbMins(db.lift[k])}` : "Add lifting time"}</button>
     </section>`;
   }
   $("#view-week").innerHTML = html;
@@ -1204,6 +1285,7 @@ $("#view-week").addEventListener("click", ev => {
   else if (act === "clear") clearWeek();
   else if (act === "add") openPicker({ kind: "cal", date });
   else if (act === "entry") openEntry({ kind: "cal", date, id });
+  else if (act === "lift") openLift(date);
   else if (act === "remove") removeItem("cal", t.dataset.key, id);
   else if (act === "toggle") {
     const e = getEntry(date, id);
@@ -1376,6 +1458,9 @@ function openEntry(target) {
     $("#noFields").hidden = true;
   }
   $("#sendsWrap").hidden = isPlan || !tracksSends(item);
+  $("#gradesWrap").hidden = isPlan || catOf(item) !== "Climbing";
+  state.editGrades = [...(item.grades || [])];
+  renderGradeChips();
   if (isPlan) {
     $("#entryDay").innerHTML = [0, 1, 2, 3, 4, 5, 6].map(i => `<option value="${i}">${dayName(i)}</option>`).join("");
     $("#entryDay").value = String(target.day);
@@ -1445,8 +1530,9 @@ $("#entryForm").addEventListener("submit", ev => {
   if (mins) item.mins = mins; else delete item.mins;
   const sends = $("#sendsWrap").hidden ? "" : f.sends.value.trim();
   if (sends) item.sends = sends; else if (!$("#sendsWrap").hidden) delete item.sends;
-  item.note = f.note.value.trim();
+  if (!$("#gradesWrap").hidden) { if (state.editGrades.length) item.grades = [...state.editGrades]; else delete item.grades; }
   if (hasLog(item) && !hadLog) item.done = true;   // logging it counts as doing it
+  item.note = f.note.value.trim();
   if (newDate !== t.date) {
     const i = db.plan[t.date].indexOf(item);
     db.plan[t.date].splice(i, 1);
@@ -1651,7 +1737,7 @@ function applyPlan(plan) {
         const prev = old[pk] || {};
         (db.plan[k] ||= []).push({
           id: uid(), ex: slot.ex, name: slot.name, cat: slot.cat, fields: clone(slot.fields || fieldsOf(slot)),
-          target: clone(slot.target || []), log: prev.log || [], ...(prev.mins ? { mins: prev.mins } : {}), ...(prev.sends ? { sends: prev.sends } : {}), done: !!prev.done, note: prev.note || "",
+          target: clone(slot.target || []), log: prev.log || [], ...(prev.mins ? { mins: prev.mins } : {}), ...(prev.sends ? { sends: prev.sends } : {}), ...(prev.grades ? { grades: prev.grades } : {}), done: !!prev.done, note: prev.note || "",
           plan: plan.id, pk,
         });
         n++;
@@ -1956,6 +2042,300 @@ $("#restoreBtn").addEventListener("click", () => {
 });
 
 /* =========================================================
+   Data tab: weekly training time, V grades by week, exercise progress
+   ========================================================= */
+
+const SERIES = [["climb", "Climbing", "var(--c-climb)"], ["lift", "Lifting", "var(--c-lift)"], ["cardio", "Cardio", "var(--c-cardio)"]];
+const wkLabel = d => `${d.getMonth() + 1}/${d.getDate()}`;
+
+function weekStarts(n) {
+  const cur = mondayOf(new Date());
+  return Array.from({ length: n }, (_, i) => addDays(cur, -7 * (n - 1 - i)));
+}
+
+function weekEntries(mon) {
+  const out = [];
+  for (let i = 0; i < 7; i++) for (const e of db.plan[dkey(addDays(mon, i))] || []) out.push(e);
+  return out;
+}
+
+// Minutes per week: climbing time on sessions, lifting time per day, cardio minutes in logged sets.
+function weekTime(mon) {
+  let climb = 0, lift = 0, cardio = 0;
+  for (let i = 0; i < 7; i++) {
+    const k = dkey(addDays(mon, i));
+    lift += db.lift[k] || 0;
+    for (const e of db.plan[k] || []) {
+      climb += e.mins || 0;
+      for (const s of e.log || []) cardio += s.mins || 0;
+    }
+  }
+  return { climb, lift, cardio, total: climb + lift + cardio };
+}
+
+const weekGrades = mon => weekEntries(mon).flatMap(e => e.grades || []);
+
+// "Best set" for an exercise, chosen by what it tracks.
+function progressMetric(ex) {
+  const f = ex.fields || [];
+  if (f.includes("dist")) return { key: "dist", label: "Total miles", agg: "sum" };
+  if (f.includes("load")) return { key: "load", label: "Heaviest set", agg: "max" };
+  if (f.includes("reps")) return { key: "reps", label: "Most reps in a set", agg: "max" };
+  if (f.includes("time")) return { key: "time", label: "Longest hold", agg: "max" };
+  if (f.includes("mins")) return { key: "mins", label: "Total minutes", agg: "sum" };
+  return { key: "climb", label: "Time climbing", agg: "sum" };
+}
+function fmtMetric(v, m) {
+  if (v == null) return "–";
+  const r = Math.round(v * 10) / 10;
+  return { load: fmtLoad(r), reps: `${r} reps`, time: `${r}s`, mins: `${r} min`, dist: `${r} mi`, climb: fmtClimbMins(r) }[m.key];
+}
+function weekValue(exId, mon, m) {
+  let v = null;
+  for (const e of weekEntries(mon)) {
+    if (e.ex !== exId) continue;
+    const vals = m.key === "climb" ? (e.mins ? [e.mins] : []) : (e.log || []).map(s => s[m.key]).filter(x => x != null);
+    for (const x of vals) v = v == null ? x : m.agg === "sum" ? v + x : Math.max(v, x);
+  }
+  return v;
+}
+
+function niceMax(v) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p;
+  return 10 * p;
+}
+const labelEvery = n => n <= 8 ? 1 : n <= 13 ? 2 : 4;
+// Top-rounded bar (4px data end), anchored flat on the baseline.
+function barPath(x, y, w, h, r) {
+  r = Math.min(r, h, w / 2);
+  if (h <= 0) return "";
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+
+function timeChart(weeks, rows) {
+  const W = 340, H = 190, L = 30, R = 8, T = 18, B = 22, pw = W - L - R, ph = H - T - B;
+  const maxH = niceMax(Math.max(...rows.map(r => r.total)) / 60);
+  const y = h => T + ph - (h / maxH) * ph;
+  const n = weeks.length, slot = pw / n, bw = Math.max(5, Math.min(30, slot - 6)), every = labelEvery(n);
+  let s = "";
+  for (const t of [0, maxH / 2, maxH]) {
+    s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${Math.round(t * 10) / 10}h</text>`;
+  }
+  rows.forEach((r, i) => {
+    const x = L + slot * i + (slot - bw) / 2;
+    const segs = SERIES.filter(([k]) => r[k] > 0);
+    let acc = 0;
+    segs.forEach(([k, , c], j) => {
+      const h0 = acc / 60, h1 = (acc + r[k]) / 60;
+      const top = y(h1), bottom = y(h0) - (j ? 2 : 0);   // 2px surface gap between stacked segments
+      const hgt = Math.max(0, bottom - top);
+      s += j === segs.length - 1
+        ? `<path d="${barPath(x, top, bw, hgt, 4)}" fill="${c}"/>`
+        : `<rect x="${x}" y="${top}" width="${bw}" height="${hgt}" fill="${c}"/>`;
+      acc += r[k];
+    });
+    if ((n - 1 - i) % every === 0) s += `<text class="ax" x="${x + bw / 2}" y="${H - 6}" text-anchor="middle">${wkLabel(weeks[i])}</text>`;
+    if (i === n - 1 && r.total) s += `<text class="val" x="${x + bw}" y="${y(r.total / 60) - 6}" text-anchor="end">${fmtClimbMins(Math.round(r.total))}</text>`;
+    const tip = `Week of ${wkLabel(weeks[i])}: ${r.total ? fmtClimbMins(Math.round(r.total)) : "nothing logged"}` +
+      SERIES.filter(([k]) => r[k]).map(([k, label]) => `\n${label} ${fmtClimbMins(Math.round(r[k]))}`).join("");
+    s += `<rect class="hit" x="${L + slot * i}" y="${T}" width="${slot}" height="${ph}" data-tip="${esc(tip)}"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Training time per week">${s}</svg>`;
+}
+
+function lineChart(weeks, vals, m) {
+  const W = 340, H = 170, L = 52, R = 14, T = 18, B = 22, pw = W - L - R, ph = H - T - B;
+  const got = vals.filter(v => v != null);
+  let lo = Math.min(...got), hi = Math.max(...got);
+  const pad = (hi - lo) * 0.2 || Math.abs(hi) * 0.2 || 1;
+  lo -= pad; hi += pad;
+  if (m.key !== "load" && lo < 0) lo = 0;
+  const n = weeks.length, x = i => L + (n === 1 ? pw / 2 : (pw * i) / (n - 1));
+  const y = v => T + ph - ((v - lo) / (hi - lo)) * ph;
+  const every = labelEvery(n);
+  let s = "";
+  const tick = t => (hi - lo) > 6 ? Math.round(t) : Math.round(t * 10) / 10;
+  for (const t of [lo, (lo + hi) / 2, hi].map(tick)) {
+    s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${esc(fmtMetric(t, m))}</text>`;
+  }
+  // Line segments between consecutive logged weeks; a missed week breaks the line.
+  let d = "", pen = false;
+  vals.forEach((v, i) => { if (v == null) { pen = false; return; } d += `${pen ? "L" : "M"}${x(i)},${y(v)}`; pen = true; });
+  s += `<path class="line" d="${d}"/>`;
+  let lastI = -1;
+  vals.forEach((v, i) => {
+    if ((n - 1 - i) % every === 0) s += `<text class="ax" x="${x(i)}" y="${H - 6}" text-anchor="middle">${wkLabel(weeks[i])}</text>`;
+    if (v != null) { s += `<circle class="pt" cx="${x(i)}" cy="${y(v)}" r="4"/>`; lastI = i; }
+    const tip = `Week of ${wkLabel(weeks[i])}: ${v == null ? "not logged" : fmtMetric(v, m)}`;
+    s += `<rect class="hit" x="${x(i) - pw / n / 2}" y="${T}" width="${pw / n}" height="${ph}" data-tip="${esc(tip)}"/>`;
+  });
+  if (lastI >= 0) s += `<text class="val" x="${x(lastI)}" y="${y(vals[lastI]) - 10}" text-anchor="${lastI === n - 1 ? "end" : "middle"}">${esc(fmtMetric(vals[lastI], m))}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(m.label)} per week">${s}</svg>`;
+}
+
+function gradeGrid(weeks) {
+  const per = weeks.map(weekGrades);
+  const all = per.flat();
+  if (!all.length) return `<p class="empty">No grades yet. When you log a climbing session, tap a V-grade button for each boulder you send.</p>`;
+  const hiG = Math.max(...all), loG = Math.min(...all);
+  const counts = per.map(g => g.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {}));
+  const maxC = Math.max(...counts.flatMap(c => Object.values(c)));
+  const every = weeks.length > 6 ? Math.max(2, labelEvery(weeks.length)) : 1;
+  let rows = "";
+  for (let g = hiG; g >= loG; g--) {
+    rows += `<tr><th scope="row">V${g}</th>${counts.map((c, i) => {
+      const n = c[g] || 0, pct = n ? Math.round(25 + 75 * n / maxC) : 0;
+      return `<td class="${pct > 60 ? "dark" : ""}" style="${n ? `background:color-mix(in srgb,var(--accent) ${pct}%,var(--sunk))` : ""}" title="${n} × V${g}, week of ${wkLabel(weeks[i])}">${n || ""}</td>`;
+    }).join("")}</tr>`;
+  }
+  const head = `<tr><th></th>${weeks.map((w, i) => `<th scope="col">${(weeks.length - 1 - i) % every === 0 ? wkLabel(w) : ""}</th>`).join("")}</tr>`;
+  const top = `<tr class="toprow"><th scope="row">Top</th>${per.map(g => `<td>${g.length ? `V${Math.max(...g)}` : ""}</td>`).join("")}</tr>`;
+  const sends = `<tr class="toprow"><th scope="row">Sends</th>${per.map(g => `<td>${g.length || ""}</td>`).join("")}</tr>`;
+  return `<div class="gradegrid"><table class="gg" style="width:${38 + weeks.length * 26}px"><thead>${head}</thead><tbody>${rows}${top}${sends}</tbody></table></div>`;
+}
+
+function renderData() {
+  const n = state.dataWeeks;
+  const weeks = weekStarts(n);
+  const times = weeks.map(weekTime);
+  const thisW = times[n - 1], lastW = times[n - 2] || { total: 0 };
+  const grades = weekGrades(weeks[n - 1]);
+  const diff = thisW.total - lastW.total;
+
+  // Exercises with anything logged, most recently logged first.
+  const lastDate = {};
+  for (const [k, list] of Object.entries(db.plan)) for (const e of list) if (hasLog(e) && (!lastDate[e.ex] || k > lastDate[e.ex])) lastDate[e.ex] = k;
+  const logged = Object.keys(lastDate).map(id => findEx(id)).filter(Boolean).sort((a, b) => lastDate[b.id].localeCompare(lastDate[a.id]));
+  if (!logged.some(e => e.id === state.progEx)) state.progEx = logged[0] ? logged[0].id : null;
+  const ex = state.progEx && findEx(state.progEx);
+  const m = ex && progressMetric(ex);
+  const vals = ex ? weeks.map(w => weekValue(ex.id, w, m)) : [];
+
+  const range = [4, 8, 12, 26].map(k => `<button type="button" class="chip" data-weeks="${k}" aria-pressed="${k === n}">${k} weeks</button>`).join("");
+  $("#view-data").innerHTML = `
+    <div class="bar"><div><h2>Data</h2><p class="lede">Your logged sessions, week by week.</p></div></div>
+    <div class="chips">${range}</div>
+
+    <div class="tiles">
+      <div class="tile"><span>Training this week</span><b>${thisW.total ? fmtClimbMins(Math.round(thisW.total)) : "0 min"}</b>
+        <small>${diff === 0 ? "Same as last week" : `${diff > 0 ? "▲" : "▼"} ${fmtClimbMins(Math.abs(Math.round(diff)))} vs last week`}</small></div>
+      <div class="tile"><span>Top grade this week</span><b>${grades.length ? `V${Math.max(...grades)}` : "–"}</b>
+        <small>${grades.length ? `${grades.length} send${grades.length === 1 ? "" : "s"}` : "No sends logged yet"}</small></div>
+    </div>
+
+    <section class="card">
+      <h3>Training time per week</h3>
+      <p class="hint" style="margin-top:2px">Climbing + lifting + cardio. Tap a bar for the breakdown.</p>
+      <div class="legend2">${SERIES.map(([k, label, c]) => `<span><i style="background:${c}"></i>${label} <b>${fmtClimbMins(Math.round(times.reduce((a, t) => a + t[k], 0)))}</b></span>`).join("")}</div>
+      <div class="chartwrap">${timeChart(weeks, times)}<div class="ctip" hidden></div></div>
+      <details class="tableview"><summary>Show as table</summary>
+        <table class="dt"><thead><tr><th>Week</th>${SERIES.map(([, l]) => `<th>${l}</th>`).join("")}<th>Total</th></tr></thead><tbody>
+        ${times.map((t, i) => `<tr><td>${wkLabel(weeks[i])}</td>${SERIES.map(([k]) => `<td>${t[k] ? fmtClimbMins(Math.round(t[k])) : "–"}</td>`).join("")}<td><b>${t.total ? fmtClimbMins(Math.round(t.total)) : "–"}</b></td></tr>`).reverse().join("")}
+        </tbody></table></details>
+    </section>
+
+    <section class="card">
+      <h3>V grades by week</h3>
+      <p class="hint" style="margin-top:2px">Boulders sent at each grade. Darker = more sends.</p>
+      ${gradeGrid(weeks)}
+    </section>
+
+    <section class="card">
+      <h3>Exercise progress</h3>
+      ${logged.length ? `
+        <label class="field" style="margin-top:8px"><span class="sr">Exercise</span>
+          <select id="progEx">${logged.map(e => `<option value="${esc(e.id)}"${e.id === state.progEx ? " selected" : ""}>${esc(e.name)}</option>`).join("")}</select></label>
+        <p class="hint">${esc(m.label)} each week</p>
+        ${vals.some(v => v != null) ? `<div class="chartwrap">${lineChart(weeks, vals, m)}<div class="ctip" hidden></div></div>`
+          : `<p class="empty">Nothing logged for ${esc(ex.name)} in the last ${n} weeks.</p>`}`
+      : `<p class="empty">Log some sets on the Week tab and your progress shows up here.</p>`}
+    </section>`;
+  const gg = $("#view-data .gradegrid");
+  if (gg) gg.scrollLeft = gg.scrollWidth;   // newest week in view
+}
+
+$("#view-data").addEventListener("click", e => {
+  const b = e.target.closest("[data-weeks]");
+  if (b) { state.dataWeeks = Number(b.dataset.weeks); renderData(); }
+});
+$("#view-data").addEventListener("change", e => {
+  if (e.target.id === "progEx") { state.progEx = e.target.value; renderData(); }
+});
+// Chart tooltips: hover on desktop, tap on phones.
+function showTip(target) {
+  const wrap = target.closest(".chartwrap"); if (!wrap) return;
+  const tip = wrap.querySelector(".ctip"), wr = wrap.getBoundingClientRect(), r = target.getBoundingClientRect();
+  tip.textContent = target.dataset.tip;
+  tip.hidden = false;
+  const left = Math.min(Math.max(0, r.left - wr.left + r.width / 2 - tip.offsetWidth / 2), wr.width - tip.offsetWidth);
+  tip.style.left = left + "px";
+  tip.style.top = Math.max(0, r.top - wr.top - 6) + "px";
+  wrap.querySelectorAll(".hit.on").forEach(h => h.classList.remove("on"));
+  target.classList.add("on");
+}
+$("#view-data").addEventListener("pointerover", e => { const t = e.target.closest("[data-tip]"); if (t) showTip(t); });
+$("#view-data").addEventListener("pointerdown", e => { const t = e.target.closest("[data-tip]"); if (t) showTip(t); });
+$("#view-data").addEventListener("pointerleave", e => {
+  if (e.pointerType === "mouse") document.querySelectorAll("#view-data .ctip").forEach(t => { t.hidden = true; });
+}, true);
+
+/* ---------- Lifting time, once per day ---------- */
+
+function openLift(date) {
+  state.liftDate = date;
+  $("#liftTitle").textContent = `Lifting time · ${shortDate(date)}`;
+  $("#liftMins").value = db.lift[date] || "";
+  $("#liftMins").classList.remove("bad");
+  $("#liftErr").textContent = "";
+  openSheet($("#liftDialog"));
+}
+$("#liftForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const v = $("#liftMins").value.trim();
+  if (v) {
+    const n = parseNum(v);
+    if (!Number.isFinite(n) || n < 0) {
+      $("#liftMins").classList.add("bad");
+      $("#liftErr").textContent = "Enter minutes, like 50.";
+      return;
+    }
+    if (n) db.lift[state.liftDate] = n; else delete db.lift[state.liftDate];
+  } else delete db.lift[state.liftDate];
+  save();
+  closeSheet($("#liftDialog"));
+  renderWeek();
+});
+$("#liftClear").addEventListener("click", () => {
+  delete db.lift[state.liftDate];
+  save();
+  closeSheet($("#liftDialog"));
+  renderWeek();
+});
+
+/* ---------- V-grade buttons in the session editor ---------- */
+
+const fmtGrades = g => {
+  const c = {};
+  for (const v of g) c[v] = (c[v] || 0) + 1;
+  return Object.keys(c).map(Number).sort((a, b) => b - a).map(v => `V${v}${c[v] > 1 ? ` ×${c[v]}` : ""}`).join(", ");
+};
+function renderGradeChips() {
+  const g = state.editGrades;
+  $("#gradeChips").innerHTML = g.length
+    ? g.map((v, i) => `<button type="button" class="gchip" data-rmgrade="${i}" aria-label="Remove V${v}">V${v} ×</button>`).join("")
+    : `<span class="hint">None yet</span>`;
+}
+$("#gradeBtns").innerHTML = Array.from({ length: 13 }, (_, v) => `<button type="button" class="gradebtn" data-grade="${v}">V${v}</button>`).join("");
+$("#gradesWrap").addEventListener("click", e => {
+  const add = e.target.closest("[data-grade]");
+  if (add) { state.editGrades.push(Number(add.dataset.grade)); state.editGrades.sort((a, b) => b - a); renderGradeChips(); }
+  const rm = e.target.closest("[data-rmgrade]");
+  if (rm) { state.editGrades.splice(Number(rm.dataset.rmgrade), 1); renderGradeChips(); }
+});
+
+/* =========================================================
    Tabs, dialogs, boot
    ========================================================= */
 
@@ -1966,6 +2346,8 @@ function showTab(tab) {
   $("#view-plan").hidden = tab !== "plan";
   if (tab === "plan") renderPlanTab();
   $("#view-library").hidden = tab !== "library";
+  $("#view-data").hidden = tab !== "data";
+  if (tab === "data") renderData();
   document.querySelectorAll(".tabs button").forEach(b => {
     if (b.dataset.tab === tab) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
