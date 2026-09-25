@@ -1,0 +1,6 @@
+{
+  "name": "training-plan-tests",
+  "private": true,
+  "scripts": { "test": "node --test --test-concurrency=1 app.test.js" },
+  "devDependencies": { "playwright": "^1.47.0" }
+}

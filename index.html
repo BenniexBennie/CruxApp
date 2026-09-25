@@ -858,10 +858,13 @@ const V12_ADDED = ["s-soccer"];
 
 /* =========================================================
    Storage
-   db = { v, exercises, plan: { "YYYY-MM-DD": [entry, ...] }, plans, theme }
+   db = { v, exercises, plan: { "YYYY-MM-DD": [entry, ...] }, lift: { date: min }, sessions, goals,
+          checkin: { date: {fingers, skin, energy, note} }, projects, theme, updatedAt, lastBackup,
+          plans (old plan builder, only read by migrations) }
    exercise = { id, name, cat, fields, notes, video }
-   entry    = { id, ex, name, cat, fields, target: [set], log: [set], done, note, plan?, pk? }
-   set      = { reps?, time?, load? (lb), edge? (mm), grip? }
+   entry    = { id, ex, name, cat, fields, target: [set], log: [set], done, note,
+                mins?, sends?, grades?, autoLog? (log filled by the tick), pr? }
+   set      = { reps?, time? (s), mins?, dist? (mi), elev? (ft), load? (lb), edge? (mm), grip? }
    ========================================================= */
 
 const STORE = "crux.v1";
@@ -1072,7 +1075,6 @@ const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 
 const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
 const fmt = (d, opts) => d.toLocaleDateString(undefined, opts);
 const shortDate = k => fmt(parseKey(k), { weekday: "short", month: "short", day: "numeric" });
-const dayName = i => fmt(addDays(new Date(2024, 0, 1), i), { weekday: "long" }); // 2024-01-01 was a Monday
 
 /* ---------- Sets ---------- */
 
