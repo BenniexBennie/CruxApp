@@ -573,7 +573,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.25-8";
+const APP_VERSION = "2026.09.25-9";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -624,7 +624,7 @@ const FIELD_OVERRIDES = {
   "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
   "s-scappull": ["reps"], "s-fingerext": ["reps"],
   "s-dips": ["reps"], "s-trxrow": ["reps"],
-  "s-bike": ["mins", "dist", "elev"], "s-run": ["mins", "dist", "elev"], "s-soccer": ["mins"],
+  "s-bike": ["mins", "dist", "elev"], "s-run": ["mins", "dist", "elev"], "s-hike": ["mins", "dist", "elev"], "s-soccer": ["mins"],
   // tracked as they were before Warm-up & prehab and Mobility merged
   "s-pushup": ["reps", "load"], "s-wrist": ["reps", "load"], "s-extrot": ["reps", "load"], "s-pronsup": ["reps", "load"],
   "s-eccwrist": ["reps", "load"], "s-facepull": ["reps", "load"], "s-ytw": ["reps", "load"],
@@ -716,7 +716,7 @@ const SEED = [
   // Cardio
   { id: "s-bike", name: "Bike ride", cat: "Cardio", notes: "Road, mountain or stationary. Easy rides make good active recovery between climbing days." },
   { id: "s-run", name: "Run", cat: "Cardio", notes: "Keep most runs at an easy, conversational pace." },
-  { id: "s-hike", name: "Hike", cat: "Cardio", notes: "Note the trail or elevation gain in your session notes." },
+  { id: "s-hike", name: "Hike", cat: "Cardio", notes: "Note the trail in your session notes." },
   { id: "s-soccer", name: "Soccer", cat: "Cardio", notes: "Log the minutes you played. Note the position or intensity in your session notes." },
 ];
 SEED.forEach(x => { x.fields = defaultFields(x.id, x.cat); });
@@ -752,7 +752,7 @@ const V12_ADDED = ["s-soccer"];
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 12, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], theme: "system" });
+const freshDb = () => ({ v: 13, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -876,6 +876,11 @@ function normalize(d) {
     const have = new Set(d.exercises.map(e => e.id));
     d.exercises.push(...clone(SEED.filter(x => V12_ADDED.includes(x.id) && !have.has(x.id))));
     d.v = 12;
+  }
+  if (d.v < 13) {
+    // Elevation gain on hikes too.
+    for (const e of d.exercises) if (e.id === "s-hike" && !e.fields.includes("elev")) e.fields.push("elev");
+    d.v = 13;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
