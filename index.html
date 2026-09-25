@@ -434,7 +434,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.24-2";
+const APP_VERSION = "2026.09.25-1";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -453,13 +453,13 @@ document.addEventListener("click", e => { if (e.target.id === "errclose") docume
 
 // Categories, in display order, with the colour token used for their dot.
 const CATS = [
-  ["Warm-up & prehab", "var(--cyan)"],
+  ["Warm-up & mobility", "var(--leaf)"],
   ["Climbing", "var(--blue)"],
   ["Climbing power", "var(--orange)"],
   ["Fingers", "var(--tape)"],
   ["Strength", "var(--ink)"],
   ["Core", "var(--muted)"],
-  ["Mobility", "var(--leaf)"],
+  ["Cardio", "var(--gold)"],
 ];
 const CAT_COLOR = Object.fromEntries(CATS);
 const catColor = c => CAT_COLOR[c] || "var(--grey)";
@@ -470,12 +470,14 @@ const GRIPS = [["Half crimp", "Half"], ["Open hand", "Open"], ["Full crimp", "Fu
 
 // What each set can record. Load in pounds (+ added, − assistance); edge in mm, like hangboards are labelled.
 // "edge" also brings a grip column with it.
-const FIELDS = [["reps", "Reps"], ["time", "Time (sec)"], ["load", "Load (lb)"], ["edge", "Edge + grip"]];
-const COL_HEAD = { reps: "Reps", time: "Sec", load: "± lb", edge: "Edge mm", grip: "Grip" };
+// Cardio uses minutes and miles instead.
+const FIELDS = [["reps", "Reps"], ["time", "Time (sec)"], ["mins", "Time (min)"], ["dist", "Distance (mi)"],
+  ["load", "Load (lb)"], ["edge", "Edge + grip"]];
+const COL_HEAD = { reps: "Reps", time: "Sec", mins: "Min", dist: "Miles", load: "± lb", edge: "Edge mm", grip: "Grip" };
 const DEFAULT_FIELDS = ["reps", "load"];
 const CAT_FIELDS = {
-  "Warm-up & prehab": ["reps", "load"], Climbing: ["reps"], "Climbing power": ["reps"], Fingers: ["time", "load", "edge"],
-  Strength: ["reps", "load"], Core: ["reps", "time"], Mobility: ["time"],
+  "Warm-up & mobility": ["reps", "time"], Climbing: ["reps"], "Climbing power": ["reps"], Fingers: ["time", "load", "edge"],
+  Strength: ["reps", "load"], Core: ["reps", "time"], Cardio: ["mins", "dist"],
 };
 const FIELD_OVERRIDES = {
   "s-warmup": [], "s-limit": [], "s-board": [], "s-dyno": [], "s-arc": [], "s-mileage": [], "s-rice": [],
@@ -483,6 +485,11 @@ const FIELD_OVERRIDES = {
   "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
   "s-scappull": ["reps"], "s-fingerext": ["reps"],
   "s-dips": ["reps"],
+  // tracked as they were before Warm-up & prehab and Mobility merged
+  "s-pushup": ["reps", "load"], "s-wrist": ["reps", "load"], "s-extrot": ["reps", "load"], "s-pronsup": ["reps", "load"],
+  "s-eccwrist": ["reps", "load"], "s-facepull": ["reps", "load"], "s-ytw": ["reps", "load"],
+  "s-frog": ["time"], "s-squathold": ["time"], "s-couch": ["time"], "s-pancake": ["time"], "s-lat": ["time"],
+  "s-pec": ["time"], "s-flexor": ["time"], "s-extensor": ["time"],
   "s-9090": ["reps"], "s-cossack": ["reps"], "s-dislocate": ["reps"], "s-openbook": ["reps"], "s-wallslide": ["reps"],
 };
 const defaultFields = (id, cat) => [...(FIELD_OVERRIDES[id] ?? CAT_FIELDS[cat] ?? DEFAULT_FIELDS)];
@@ -490,8 +497,8 @@ const defaultFields = (id, cat) => [...(FIELD_OVERRIDES[id] ?? CAT_FIELDS[cat] ?
 
 // Starter library: names only. Built-in ids start with "s-" so they can be restored later.
 const SEED = [
-  // Warm-up & prehab
-  { id: "s-warmup", name: "Bouldering warm-up", cat: "Warm-up & prehab", notes: "Easy traversing, then 6–10 problems ramping from very easy to about two grades below your max. Add a few progressive hangs before any fingerboarding." },
+  // Warm-up & mobility
+  { id: "s-warmup", name: "Bouldering warm-up", cat: "Warm-up & mobility", notes: "Easy traversing, then 6–10 problems ramping from very easy to about two grades below your max. Add a few progressive hangs before any fingerboarding." },
   // Fingers
   { id: "s-maxhang", name: "Max hangs", cat: "Fingers", notes: "Hang 10 s with a load you could just about hold for 13 s. Full rest between sets. Stop if form breaks or fingers feel tweaky." },
   { id: "s-repeaters", name: "Repeaters", cat: "Fingers", notes: "7 s hang, 3 s rest, six times = one set. Pick a load where the last rep of the last set is hard but clean." },
@@ -530,39 +537,43 @@ const SEED = [
   { id: "s-dips", name: "Dips", cat: "Strength", notes: "Parallel bars, lower until shoulders are just below elbows. Stop short if shoulders complain." },
   { id: "s-wdips", name: "Weighted dips", cat: "Strength", notes: "Dip belt or dumbbell between the feet. Same depth as bodyweight dips; leave a rep in reserve." },
   { id: "s-dbextrot", name: "Dumbbell external rotations", cat: "Strength", notes: "Rotator cuff. Lying on your side, elbow bent 90° and tucked against your ribs, rotate the dumbbell up. Light weight, slow. Reps per side." },
-  // Antagonists (in Warm-up & prehab)
-  { id: "s-pushup", name: "Push-ups", cat: "Warm-up & prehab", notes: "Balances all the pulling. Keep a straight body line." },
+  // Antagonists and prehab (in Warm-up & mobility)
+  { id: "s-pushup", name: "Push-ups", cat: "Warm-up & mobility", notes: "Balances all the pulling. Keep a straight body line." },
   { id: "s-ohp", name: "Overhead press", cat: "Strength", notes: "Balances all the pulling. Strict press, ribs down, no leaning back." },
-  { id: "s-wrist", name: "Reverse wrist curls", cat: "Warm-up & prehab", notes: "Light dumbbell. Helps keep elbows healthy." },
-  { id: "s-extrot", name: "Band external rotations", cat: "Warm-up & prehab", notes: "Elbow tucked to your side. A shoulder-health staple." },
-  { id: "s-fingerext", name: "Finger extensions (band)", cat: "Warm-up & prehab", notes: "Rubber band around the fingertips; open the hand fully against it. Balances all the gripping." },
-  { id: "s-rice", name: "Rice bucket", cat: "Warm-up & prehab", notes: "Grip, open, twist and roll your hands in a bucket of rice. A good forearm warm-up or cool-down." },
-  { id: "s-pronsup", name: "Pronator / supinator rotations", cat: "Warm-up & prehab", notes: "Hold a hammer (or a dumbbell by one end) and slowly rotate palm down, then palm up. Strengthens the forearm for elbow health." },
-  { id: "s-eccwrist", name: "Eccentric wrist flexor curls", cat: "Warm-up & prehab", notes: "Palm up; lower the dumbbell slowly over 3–4 s and use the other hand to help it back up. Classic golfer's-elbow prevention." },
-  { id: "s-facepull", name: "Face pulls", cat: "Warm-up & prehab", notes: "Band or cable at face height. Pull to your forehead with elbows high and rotate your hands back. Balances heavy pulling." },
-  { id: "s-ytw", name: "Y-T-W raises", cat: "Warm-up & prehab", notes: "Lying face down or bent over, raise light weights in Y, T and W shapes. Slow and controlled." },
-  { id: "s-scappull", name: "One-arm scap pulls", cat: "Warm-up & prehab", notes: "Dead hang on one arm, then pull the shoulder blade down and back without bending the elbow. Builds the shoulder stability one-arm pulling needs." },
+  { id: "s-wrist", name: "Reverse wrist curls", cat: "Warm-up & mobility", notes: "Light dumbbell. Helps keep elbows healthy." },
+  { id: "s-extrot", name: "Band external rotations", cat: "Warm-up & mobility", notes: "Elbow tucked to your side. A shoulder-health staple." },
+  { id: "s-fingerext", name: "Finger extensions (band)", cat: "Warm-up & mobility", notes: "Rubber band around the fingertips; open the hand fully against it. Balances all the gripping." },
+  { id: "s-rice", name: "Rice bucket", cat: "Warm-up & mobility", notes: "Grip, open, twist and roll your hands in a bucket of rice. A good forearm warm-up or cool-down." },
+  { id: "s-pronsup", name: "Pronator / supinator rotations", cat: "Warm-up & mobility", notes: "Hold a hammer (or a dumbbell by one end) and slowly rotate palm down, then palm up. Strengthens the forearm for elbow health." },
+  { id: "s-eccwrist", name: "Eccentric wrist flexor curls", cat: "Warm-up & mobility", notes: "Palm up; lower the dumbbell slowly over 3–4 s and use the other hand to help it back up. Classic golfer's-elbow prevention." },
+  { id: "s-facepull", name: "Face pulls", cat: "Warm-up & mobility", notes: "Band or cable at face height. Pull to your forehead with elbows high and rotate your hands back. Balances heavy pulling." },
+  { id: "s-ytw", name: "Y-T-W raises", cat: "Warm-up & mobility", notes: "Lying face down or bent over, raise light weights in Y, T and W shapes. Slow and controlled." },
+  { id: "s-scappull", name: "One-arm scap pulls", cat: "Warm-up & mobility", notes: "Dead hang on one arm, then pull the shoulder blade down and back without bending the elbow. Builds the shoulder stability one-arm pulling needs." },
   // Core
   { id: "s-legraise", name: "Hanging leg raises", cat: "Core", notes: "Toes to bar if you can. No swinging." },
   { id: "s-lever", name: "Front lever progression", cat: "Core", notes: "Tuck → advanced tuck → one leg → full. Hold the hardest version you can for the time." },
   { id: "s-plank", name: "Plank", cat: "Core", notes: "" },
-  // Mobility
+  // Mobility (in Warm-up & mobility)
   // hips
-  { id: "s-9090", name: "90/90 hip switches", cat: "Mobility", notes: "Sit with both knees bent at 90°, one in front and one to the side. Rotate both knees to the other side without using your hands. Reps = switches. Helps drop knees and hip turns." },
-  { id: "s-frog", name: "Frog stretch", cat: "Mobility", notes: "On all fours, knees wide, shins parallel; rock hips back slowly. Opens the hips for frogging and high steps." },
-  { id: "s-squathold", name: "Deep squat hold", cat: "Mobility", notes: "Heels down, chest up, elbows pushing knees out. Hold onto something if needed." },
-  { id: "s-couch", name: "Couch stretch", cat: "Mobility", notes: "Back knee against a wall or couch, front foot forward; squeeze the glute of the back leg. Hip flexors. Time per side." },
-  { id: "s-pancake", name: "Pancake stretch", cat: "Mobility", notes: "Seated with legs wide, hinge forward from the hips with a flat back. Hamstrings and adductors for high steps." },
-  { id: "s-cossack", name: "Cossack squats", cat: "Mobility", notes: "Wide stance, shift into a deep squat on one side with the other leg straight. Reps per side." },
+  { id: "s-9090", name: "90/90 hip switches", cat: "Warm-up & mobility", notes: "Sit with both knees bent at 90°, one in front and one to the side. Rotate both knees to the other side without using your hands. Reps = switches. Helps drop knees and hip turns." },
+  { id: "s-frog", name: "Frog stretch", cat: "Warm-up & mobility", notes: "On all fours, knees wide, shins parallel; rock hips back slowly. Opens the hips for frogging and high steps." },
+  { id: "s-squathold", name: "Deep squat hold", cat: "Warm-up & mobility", notes: "Heels down, chest up, elbows pushing knees out. Hold onto something if needed." },
+  { id: "s-couch", name: "Couch stretch", cat: "Warm-up & mobility", notes: "Back knee against a wall or couch, front foot forward; squeeze the glute of the back leg. Hip flexors. Time per side." },
+  { id: "s-pancake", name: "Pancake stretch", cat: "Warm-up & mobility", notes: "Seated with legs wide, hinge forward from the hips with a flat back. Hamstrings and adductors for high steps." },
+  { id: "s-cossack", name: "Cossack squats", cat: "Warm-up & mobility", notes: "Wide stance, shift into a deep squat on one side with the other leg straight. Reps per side." },
   // shoulders and upper back
-  { id: "s-dislocate", name: "Band shoulder dislocates", cat: "Mobility", notes: "Straight arms, pass a band or stick from front to back overhead and return. Narrow the grip as you loosen up." },
-  { id: "s-openbook", name: "Open book rotations", cat: "Mobility", notes: "Lying on your side, knees bent, open the top arm across to the other side following it with your eyes. Thoracic rotation. Reps per side." },
-  { id: "s-wallslide", name: "Wall slides", cat: "Mobility", notes: "Back and arms flat against a wall, slide arms up overhead and down without losing contact." },
-  { id: "s-lat", name: "Lat stretch", cat: "Mobility", notes: "Hands on a bench or bar, hips back, chest sinking toward the floor. Time per side or both together." },
-  { id: "s-pec", name: "Doorway pec stretch", cat: "Mobility", notes: "Forearm on a door frame at shoulder height, step through gently. Counteracts the hunched climber posture." },
+  { id: "s-dislocate", name: "Band shoulder dislocates", cat: "Warm-up & mobility", notes: "Straight arms, pass a band or stick from front to back overhead and return. Narrow the grip as you loosen up." },
+  { id: "s-openbook", name: "Open book rotations", cat: "Warm-up & mobility", notes: "Lying on your side, knees bent, open the top arm across to the other side following it with your eyes. Thoracic rotation. Reps per side." },
+  { id: "s-wallslide", name: "Wall slides", cat: "Warm-up & mobility", notes: "Back and arms flat against a wall, slide arms up overhead and down without losing contact." },
+  { id: "s-lat", name: "Lat stretch", cat: "Warm-up & mobility", notes: "Hands on a bench or bar, hips back, chest sinking toward the floor. Time per side or both together." },
+  { id: "s-pec", name: "Doorway pec stretch", cat: "Warm-up & mobility", notes: "Forearm on a door frame at shoulder height, step through gently. Counteracts the hunched climber posture." },
   // forearms
-  { id: "s-flexor", name: "Forearm flexor stretch", cat: "Mobility", notes: "Arm straight, palm up, gently pull the fingers back. Great after hard finger sessions." },
-  { id: "s-extensor", name: "Forearm extensor stretch", cat: "Mobility", notes: "Arm straight, palm down, gently fold the wrist and fingers down." },
+  { id: "s-flexor", name: "Forearm flexor stretch", cat: "Warm-up & mobility", notes: "Arm straight, palm up, gently pull the fingers back. Great after hard finger sessions." },
+  { id: "s-extensor", name: "Forearm extensor stretch", cat: "Warm-up & mobility", notes: "Arm straight, palm down, gently fold the wrist and fingers down." },
+  // Cardio
+  { id: "s-bike", name: "Bike ride", cat: "Cardio", notes: "Road, mountain or stationary. Easy rides make good active recovery between climbing days." },
+  { id: "s-run", name: "Run", cat: "Cardio", notes: "Keep most runs at an easy, conversational pace." },
+  { id: "s-hike", name: "Hike", cat: "Cardio", notes: "Note the trail or elevation gain in your session notes." },
 ];
 SEED.forEach(x => { x.fields = defaultFields(x.id, x.cat); });
 
@@ -576,6 +587,9 @@ const V3_CLIMBING = { "s-limit": "Power", "s-board": "Power", "s-dyno": "Power",
 
 // Library version 8: strength exercises added.
 const V8_ADDED = ["s-bench", "s-inclinedb", "s-hammer", "s-pushdown", "s-dips", "s-wdips", "s-dbextrot"];
+
+// Library version 9: cardio added; Warm-up & prehab and Mobility merged.
+const V9_ADDED = ["s-bike", "s-run", "s-hike"];
 
 // Starter plans for the Plan tab: exercise ids per day, Monday first.
 const STARTERS = [
@@ -611,7 +625,7 @@ const STARTERS = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 8, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
+const freshDb = () => ({ v: 9, exercises: clone(SEED), plan: {}, plans: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -698,7 +712,9 @@ function normalize(d) {
     const OLD = ["s-hips", "s-shoulder", "s-stretch"];
     const have = new Set(d.exercises.map(e => e.id));
     d.exercises = d.exercises.filter(e => !OLD.includes(e.id));
-    d.exercises.push(...clone(SEED.filter(x => x.cat === "Mobility" && !have.has(x.id))));
+    const V7_MOBILITY = ["s-9090", "s-frog", "s-squathold", "s-couch", "s-pancake", "s-cossack", "s-dislocate",
+      "s-openbook", "s-wallslide", "s-lat", "s-pec", "s-flexor", "s-extensor"];
+    d.exercises.push(...clone(SEED.filter(x => V7_MOBILITY.includes(x.id) && !have.has(x.id))));
     d.v = 7;
   }
   if (d.v < 8) {
@@ -706,6 +722,15 @@ function normalize(d) {
     const have = new Set(d.exercises.map(e => e.id));
     d.exercises.push(...clone(SEED.filter(x => V8_ADDED.includes(x.id) && !have.has(x.id))));
     d.v = 8;
+  }
+  if (d.v < 9) {
+    const recat = c => (c === "Warm-up & prehab" || c === "Mobility") ? "Warm-up & mobility" : c;
+    for (const e of d.exercises) e.cat = recat(e.cat);
+    for (const list of Object.values(d.plan)) for (const en of list) en.cat = recat(en.cat);
+    for (const pl of d.plans) for (const day of pl.days) for (const sl of day) sl.cat = recat(sl.cat);
+    const have = new Set(d.exercises.map(e => e.id));
+    d.exercises.push(...clone(SEED.filter(x => V9_ADDED.includes(x.id) && !have.has(x.id))));
+    d.v = 9;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
@@ -772,6 +797,8 @@ function fmtSet(s) {
   return [
     s.reps != null ? `${s.reps} rep${s.reps == 1 ? "" : "s"}` : "",
     s.time != null ? `${s.time}s` : "",
+    s.mins != null ? `${s.mins} min` : "",
+    s.dist != null ? `${s.dist} mi` : "",
     s.load != null ? fmtLoad(s.load) : "",
     s.edge != null ? `${s.edge}mm` : "",
     s.grip ? s.grip.toLowerCase() : "",
@@ -832,7 +859,7 @@ function renderSets(box, sets) {
 
 // Accepts "+25", "-15", "−15", "25 lb", "12,5", "20mm", "10s". Returns NaN if it isn't a number.
 function parseNum(v) {
-  const t = v.replace(/[−–]/g, "-").replace(",", ".").replace(/\s*(lbs?|mm|sec|s)$/i, "").replace(/\s+/g, "");
+  const t = v.replace(/[−–]/g, "-").replace(",", ".").replace(/\s*(lbs?|mm|sec|s|mins?|miles?|mi)$/i, "").replace(/\s+/g, "");
   return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(t) ? Number(t) : NaN;
 }
 
