@@ -562,6 +562,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
         <button type="button" class="chip" data-theme="dark">Dark</button>
       </div>
     </fieldset>
+    <fieldset><legend>Sync with GitHub</legend><div id="syncBox"></div></fieldset>
     <fieldset><legend>Backup</legend>
       <p class="hint" style="margin:-2px 0 10px">Your plan is saved in this browser only. Export a backup now and then, or to move it to another device.</p>
       <div class="row">
@@ -582,7 +583,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.26-1";
+const APP_VERSION = "2026.09.26-2";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -912,14 +913,22 @@ function load() {
 let db = load();
 let storageOk = true;
 
-function save() {
+// Write to this browser only.
+function persist() {
   try {
     localStorage.setItem(STORE, JSON.stringify(db));
     storageOk = true;
   } catch (e) {
     storageOk = false;
   }
+}
+
+// A change you made: stamp it (newest change wins when syncing) and sync it.
+function save() {
+  db.updatedAt = Date.now();
+  persist();
   renderStatus();
+  if (typeof schedulePush === "function") schedulePush();
 }
 
 // Header status: problems and reminders only (quiet "Saved ✓" otherwise).
@@ -927,7 +936,7 @@ function renderStatus() {
   const s = $("#sync");
   const hasData = Object.keys(db.plan).length > 0;
   const days = db.lastBackup ? Math.round((parseKey(dkey(new Date())) - parseKey(db.lastBackup)) / 864e5) : null;
-  const syncing = typeof syncState !== "undefined" && syncState.token;
+  const syncing = syncState.token;
   let text = "Saved ✓", warn = false, title = "Saved in this browser";
   if (!storageOk) { text = "Not saving"; warn = true; title = "This browser is blocking storage, so changes will be lost when you close it"; }
   else if (syncing) { text = syncState.label; warn = syncState.warn; title = syncState.title; }
@@ -1091,7 +1100,7 @@ function lastLog(exId, beforeKey, skipId) {
   return null;
 }
 
-function history(exId) {
+function exHistory(exId) {
   const out = [];
   for (const [k, list] of Object.entries(db.plan)) {
     for (const e of list) if (e.ex === exId && (hasLog(e) || e.note)) out.push({ date: k, entry: e });
@@ -1148,6 +1157,8 @@ function ensureVisible(d) {
 }
 
 function closeSheet(d) {
+  const i = sheetStack.indexOf(d);
+  if (i >= 0) sheetStack.splice(i, 1);   // right away: the native "close" event arrives later
   if (!d.hasAttribute("open")) return;
   d.style.minHeight = "";
   if (!d.classList.contains("as-float")) d.style.height = "";
@@ -1169,7 +1180,7 @@ document.querySelectorAll("dialog").forEach(d => d.addEventListener("close", () 
 }));
 
 function closeAllSheets() {
-  while (sheetStack.length) closeSheet(sheetStack[sheetStack.length - 1]);
+  [...sheetStack].reverse().forEach(closeSheet);
 }
 
 const topSheet = () => sheetStack[sheetStack.length - 1];
@@ -1179,9 +1190,10 @@ document.addEventListener("keydown", e => {
 });
 
 // Resolves true/false. Used instead of the browser's confirm dialog, which the artifact viewer always cancels.
-function askConfirm(message, okLabel = "OK", danger = false) {
+function askConfirm(message, okLabel = "OK", danger = false, cancelLabel = "Cancel") {
   const d = $("#confirmDialog");
   $("#confirmMsg").textContent = message;
+  $("#confirmNo").textContent = cancelLabel;
   const yes = $("#confirmYes");
   yes.textContent = okLabel;
   yes.classList.toggle("danger", danger);
@@ -1965,6 +1977,7 @@ function renderSessEditor() {
     <div id="sessItems"></div>
     <div class="row">
       <button class="primary" data-act="sesstoday" data-id="${esc(x.id)}">Add to today</button>
+      <button class="ghost sm" data-act="sharesess">Share</button>
       <span style="flex:1"></span>
       <button class="ghost sm danger" data-act="delsess">Delete session</button>
     </div>`;
@@ -2006,6 +2019,7 @@ $("#view-plan").addEventListener("click", async ev => {
     addSessionToDay(x, dkey(new Date()));
   }
   else if (act === "sessadd") openPicker({ kind: "sess" });
+  else if (act === "sharesess") shareSession(currentSess());
   else if (act === "sessslot") openEntry({ kind: "sess", id });
   else if (act === "remove") removeItem("sess", "items", id);
   else if (act === "delsess") {
@@ -2103,17 +2117,17 @@ $("#goalDelete").addEventListener("click", () => {
 
 /* ---------- Name prompt (the viewer blocks the browser's own prompt) ---------- */
 
-function askName(title, placeholder) {
+function askName(title, placeholder, initial = "") {
   const d = $("#nameDialog");
   $("#nameTitle").textContent = title;
-  $("#nameInput").value = "";
+  $("#nameInput").value = initial;
   $("#nameInput").placeholder = placeholder || "";
   return new Promise(resolve => {
     const done = v => { d.onclose = null; closeSheet(d); resolve(v); };
     $("#nameForm").onsubmit = ev => { ev.preventDefault(); const v = $("#nameInput").value.trim(); if (v) done(v); else $("#nameInput").focus(); };
     d.onclose = () => resolve(null);
     openSheet(d);
-    setTimeout(() => $("#nameInput").focus(), 50);
+    setTimeout(() => { $("#nameInput").focus(); if (initial) $("#nameInput").select(); }, 50);
   });
 }
 
@@ -2140,7 +2154,7 @@ function openExercise(id) {
   $("#exFields").innerHTML = toggleChipsHTML(FIELDS, ex ? ex.fields : defaultFields(null, f.cat.value), "field");
   f.notes.value = ex ? ex.notes || "" : "";
   f.video.value = ex ? ex.video || "" : "";
-  const hist = ex ? history(ex.id) : [];
+  const hist = ex ? exHistory(ex.id) : [];
   $("#exHistory").hidden = !ex;
   $("#exHistoryList").innerHTML = hist.length
     ? hist.slice(0, 20).map(h => `<li><b>${shortDate(h.date)}</b> ${esc(logSummary(h.entry))}${h.entry.note ? ` <small>“${esc(h.entry.note)}”</small>` : ""}</li>`).join("")
@@ -2194,14 +2208,14 @@ $("#exDelete").addEventListener("click", async () => {
    Settings: theme, backup, restore
    ========================================================= */
 
-$("#settingsBtn").addEventListener("click", () => { applyTheme(); openSheet($("#settingsDialog")); });
+$("#settingsBtn").addEventListener("click", () => { applyTheme(); renderSyncSettings(); openSheet($("#settingsDialog")); });
 
 $("#themeSeg").addEventListener("click", e => {
   const b = e.target.closest("[data-theme]"); if (!b) return;
   db.theme = b.dataset.theme; save(); applyTheme();
 });
 
-$("#sync").addEventListener("click", () => { applyTheme(); openSheet($("#settingsDialog")); });
+$("#sync").addEventListener("click", () => { applyTheme(); renderSyncSettings(); openSheet($("#settingsDialog")); });
 
 $("#exportBtn").addEventListener("click", () => {
   db.lastBackup = dkey(new Date());
@@ -2536,6 +2550,204 @@ $("#gradesWrap").addEventListener("click", e => {
 });
 
 /* =========================================================
+   Sync with GitHub: the whole plan is kept in one private gist.
+   The access key and gist id stay on this device (never in backups).
+   Newest change wins: on open we pull if GitHub is newer; after each
+   change we push a couple of seconds later.
+   ========================================================= */
+
+const SYNC_KEY = "trainingplan.sync";
+const GIST_FILE = "training-plan.json";
+const GIST_DESC = "Training Plan sync (used by the Training Plan app)";
+const syncState = { token: null, gistId: null, label: "", warn: false, title: "", lastSync: null, timer: null };
+try { Object.assign(syncState, JSON.parse(localStorage.getItem(SYNC_KEY) || "{}")); } catch (e) {}
+
+function saveSyncCfg() {
+  try { localStorage.setItem(SYNC_KEY, JSON.stringify({ token: syncState.token, gistId: syncState.gistId, lastSync: syncState.lastSync })); } catch (e) {}
+}
+function setSync(label, warn = false, title = "") {
+  syncState.label = label; syncState.warn = warn; syncState.title = title || label;
+  renderStatus(); renderSyncSettings();
+}
+
+async function gh(path, opts = {}) {
+  const res = await fetch("https://api.github.com" + path, {
+    ...opts,
+    headers: { Authorization: `Bearer ${syncState.token}`, Accept: "application/vnd.github+json", ...(opts.body ? { "Content-Type": "application/json" } : {}) },
+  });
+  if (!res.ok) {
+    const err = new Error(res.status === 401 ? "GitHub didn't accept that key. Check it was copied in full and has the gist box ticked."
+      : res.status === 404 ? "Couldn't find the sync file on GitHub." : `GitHub said: error ${res.status}.`);
+    err.status = res.status;
+    throw err;
+  }
+  return res.status === 204 ? null : res.json();
+}
+async function readGist(g) {
+  const f = g.files && g.files[GIST_FILE];
+  if (!f) return null;
+  const text = f.truncated ? await (await fetch(f.raw_url)).text() : f.content;
+  const d = JSON.parse(text);
+  return validDb(d) ? d : null;
+}
+
+function syncFailed(e) {
+  if (e instanceof TypeError || !navigator.onLine) setSync("Offline", true, "Changes are saved on this device and will sync when you're back online.");
+  else setSync("Sync error", true, e.message);
+}
+
+// Replace this device's data with a copy from GitHub.
+function adopt(remote) {
+  db = normalize(remote);
+  ensureSessions();
+  persist();
+  applyTheme();
+  state.sessId = null;
+  renderAll();
+  if (state.tab === "data") renderData();
+}
+
+async function syncPush() {
+  if (!syncState.token) return;
+  clearTimeout(syncState.timer);
+  setSync("Syncing…");
+  const files = { [GIST_FILE]: { content: JSON.stringify(db) } };
+  const create = async () => { syncState.gistId = (await gh("/gists", { method: "POST", body: JSON.stringify({ description: GIST_DESC, public: false, files }) })).id; };
+  try {
+    if (!syncState.gistId) await create();   // first device: make the private sync file
+    else {
+      try { await gh(`/gists/${syncState.gistId}`, { method: "PATCH", body: JSON.stringify({ files }) }); }
+      catch (e) { if (e.status !== 404) throw e; await create(); }   // file was deleted on GitHub
+    }
+    syncState.lastSync = Date.now(); saveSyncCfg();
+    setSync("Synced ✓", false, `Synced with GitHub at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`);
+  } catch (e) { syncFailed(e); }
+}
+function schedulePush() {
+  if (!syncState.token) return;
+  clearTimeout(syncState.timer);
+  setSync("Syncing…");
+  syncState.timer = setTimeout(syncPush, 2000);
+}
+
+async function syncPull() {
+  if (!syncState.token || !syncState.gistId) return;
+  setSync("Syncing…");
+  try {
+    const remote = await readGist(await gh(`/gists/${syncState.gistId}`));
+    if (remote && (remote.updatedAt || 0) > (db.updatedAt || 0)) adopt(remote);
+    else if (!remote || (db.updatedAt || 0) > (remote.updatedAt || 0)) return syncPush();
+    syncState.lastSync = Date.now(); saveSyncCfg();
+    setSync("Synced ✓", false, `Synced with GitHub at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`);
+  } catch (e) { syncFailed(e); }
+}
+
+async function connectSync(token) {
+  syncState.token = token.trim();
+  setSync("Connecting…");
+  try {
+    const user = await gh("/user");
+    // Reuse the sync file if another device already made one.
+    let found = null;
+    for (let page = 1; page <= 5 && !found; page++) {
+      const list = await gh(`/gists?per_page=100&page=${page}`);
+      found = list.find(g => g.files && g.files[GIST_FILE]);
+      if (list.length < 100) break;
+    }
+    let adopted = false;
+    if (found) {
+      syncState.gistId = found.id;
+      const remote = await readGist(await gh(`/gists/${found.id}`));
+      if (remote && Object.keys(remote.plan || {}).length) {
+        const when = remote.updatedAt ? new Date(remote.updatedAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "earlier";
+        const useRemote = await askConfirm(`Your GitHub already has training data (last changed ${when}). Use it on this device? This device's current data will be replaced.`, "Use GitHub data", false, "Keep this device's");
+        if (useRemote) { adopt(remote); adopted = true; }
+      }
+    }
+    saveSyncCfg();
+    if (adopted) { syncState.lastSync = Date.now(); saveSyncCfg(); setSync("Synced ✓"); }
+    else await syncPush();   // creates the sync file on first connect, or updates it with this device's data
+    toast(`Syncing with GitHub as ${user.login}`);
+  } catch (e) {
+    syncState.token = null; syncState.gistId = null; saveSyncCfg();
+    setSync("");
+    $("#syncErr").textContent = e instanceof TypeError ? "Couldn't reach GitHub. Check your connection and try again." : e.message;
+  }
+}
+
+function disconnectSync() {
+  syncState.token = null; syncState.gistId = null; syncState.lastSync = null;
+  saveSyncCfg(); setSync("");
+  toast("This device no longer syncs. Your data is still on GitHub and on this device.");
+}
+
+function renderSyncSettings() {
+  const box = $("#syncBox"); if (!box) return;
+  if (syncState.token) {
+    box.innerHTML = `<p class="hint" style="margin:-2px 0 10px">Syncing to a private file on your GitHub.${syncState.lastSync ? ` Last synced ${new Date(syncState.lastSync).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.` : ""}</p>
+      ${syncState.warn ? `<p class="err">${esc(syncState.title)}</p>` : ""}
+      <div class="row"><button type="button" class="ghost sm" data-sync="now">Sync now</button><button type="button" class="ghost sm danger" data-sync="off">Stop syncing on this device</button></div>`;
+  } else {
+    box.innerHTML = `<p class="hint" style="margin:-2px 0 8px">Keep your training on every device and safe if you lose your phone. It's saved to a private file on your GitHub account.</p>
+      <ol class="steps" style="margin-top:4px">
+        <li>Open <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Training%20Plan" target="_blank" rel="noopener">GitHub → new access key</a> (sign in if asked).</li>
+        <li>Set <b>Expiration</b> to <b>No expiration</b>. Leave only the <b>gist</b> box ticked.</li>
+        <li>Tap <b>Generate token</b> at the bottom, then copy the key (starts with <b>ghp_</b>).</li>
+        <li>Paste it here and tap Connect. Do the same on each device.</li>
+      </ol>
+      <label class="field"><span class="sr">GitHub access key</span><input type="password" id="syncToken" autocomplete="off" placeholder="ghp_…"></label>
+      <p class="err" id="syncErr"></p>
+      <button type="button" class="primary sm" data-sync="connect">Connect</button>`;
+  }
+}
+$("#settingsDialog").addEventListener("click", e => {
+  const b = e.target.closest("[data-sync]"); if (!b) return;
+  if (b.dataset.sync === "connect") {
+    const v = $("#syncToken").value.trim();
+    if (!v) { $("#syncErr").textContent = "Paste your GitHub access key first."; return; }
+    connectSync(v);
+  }
+  else if (b.dataset.sync === "now") syncPull();
+  else if (b.dataset.sync === "off") disconnectSync();
+});
+window.addEventListener("online", () => syncPull());
+
+/* ---------- Share a session as a link ---------- */
+
+const b64url = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64url = s => decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/"))));
+
+async function shareSession(x) {
+  const payload = { n: x.name, i: x.items.map(s => [s.ex, nameOf(s), catOf(s), fieldsOf(s), s.target || []]) };
+  const url = `https://benniexbennie.github.io/CruxApp/#share=${b64url(JSON.stringify(payload))}`;
+  try {
+    if (navigator.share) { await navigator.share({ title: `Training Plan: ${x.name}`, text: `Here's my "${x.name}" session:`, url }); return; }
+  } catch (e) { if (e.name === "AbortError") return; }
+  try { await navigator.clipboard.writeText(url); toast("Link copied. Send it to anyone with the app."); }
+  catch (e) { await askName("Copy this link", "", url); }
+}
+
+// Opening a shared link offers to add the session (and any exercises you don't have).
+async function receiveShare() {
+  const m = location.hash.match(/^#share=([\w-]+)/); if (!m) return;
+  history.replaceState(null, "", location.pathname + location.search);
+  let p; try { p = JSON.parse(unb64url(m[1])); } catch (e) { toast("That shared link is broken."); return; }
+  if (!p || !Array.isArray(p.i)) return;
+  if (!(await askConfirm(`Add the session "${p.n}" (${p.i.length} exercise${p.i.length === 1 ? "" : "s"}) to your Plan?`, "Add session"))) return;
+  const items = p.i.map(([id, name, cat, fields, target]) => {
+    let ex = findEx(id) || db.exercises.find(e => e.name === name);
+    if (!ex) { ex = { id: id && id.startsWith("s-") ? id : "x-" + uid(), name, cat, fields: fields || [...DEFAULT_FIELDS], notes: "", video: "" }; db.exercises.push(ex); }
+    return { ...slotFrom(ex), target: target || [] };
+  });
+  db.sessions.push({ id: "ss-" + uid(), name: p.n, items });
+  save();
+  renderLibrary();
+  showTab("plan");
+  toast(`Added "${p.n}" to your sessions`);
+}
+
+
+/* =========================================================
    Tabs, dialogs, boot
    ========================================================= */
 
@@ -2575,7 +2787,10 @@ function ensureSessions() { if (!Array.isArray(db.sessions)) db.sessions = seedS
 ensureSessions();
 applyTheme();
 renderAll();
-save();
+persist();
+renderStatus();
+syncPull();
+receiveShare();
 $("#appVersion").textContent = APP_VERSION;
 
 /* ---------- Self-update (GitHub Pages / home-screen app) ----------
@@ -2592,11 +2807,11 @@ async function checkForUpdate() {
     if (!m || m[1] === APP_VERSION) return;
     const key = "updated-to-" + m[1];
     try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch (e) {}
-    location.replace(url + "?v=" + encodeURIComponent(m[1]));
+    location.replace(url + "?v=" + encodeURIComponent(m[1]) + location.hash);   // keep a #share link
   } catch (e) { /* offline: keep using this copy */ }
 }
 checkForUpdate();
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { checkForUpdate(); syncPull(); } });
 
 // In a stretched frame the bottom tab bar would sit at the very end of the page: put it under the header.
 function placeTabs() {
