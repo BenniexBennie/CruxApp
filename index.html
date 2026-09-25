@@ -190,9 +190,10 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 #pickDialog{height:90vh;height:90dvh}
 /* Same fixed-height build as the picker (the one pop-up that always rendered on iPhone);
    content-sized pop-ups came out blank in the iPhone Claude app. */
-#entryDialog,#exDialog,#settingsDialog{height:88vh;height:88dvh}
+#entryDialog,#exDialog,#settingsDialog,#goalDialog{height:88vh;height:88dvh}
+#nameDialog{min-height:240px}
 #confirmDialog{min-height:180px}
-@media (min-width:640px){#pickDialog,#entryDialog,#exDialog,#settingsDialog{height:86vh;height:86dvh}}
+@media (min-width:640px){#pickDialog,#entryDialog,#exDialog,#settingsDialog,#goalDialog{height:86vh;height:86dvh}}
 #pickDialog .sheet-head{padding:10px 8px 6px 16px;border-bottom:0}
 #pickDialog .sheet-head h2{font-size:1.25rem}
 #pickDialog .sheet-body{padding:0 16px 16px;border-top:1px solid var(--line)}
@@ -222,6 +223,20 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .planline b{color:var(--ink);font-weight:600}
 .stretched .tabs{position:static;max-width:720px;margin:0 auto 8px;border:0;border-radius:16px;background:var(--surface)}
 .stretched main{padding-bottom:40px}
+/* ---------- Plan: goals & sessions ---------- */
+.goal{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;border:0;color:inherit}
+.goal strong{font-family:var(--display);font-size:1.2rem;font-weight:600}
+.goal small{color:var(--muted);font-size:.85rem}
+.gbar{display:block;height:12px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.gbar span{display:block;height:100%;border-radius:99px;background:var(--accent) repeating-linear-gradient(-45deg,transparent 0 8px,rgb(255 255 255 / .22) 8px 16px);min-width:6px}
+.sesshead{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;border:0;background:none;padding:0;color:inherit}
+.sesshead strong{font-family:var(--display);font-size:1.2rem;font-weight:600}
+.sesshead small{color:var(--muted);font-size:.88rem;line-height:1.35}
+.dayfoot{display:flex;flex-wrap:wrap;gap:8px}
+.sessrow{display:flex;flex-wrap:wrap;gap:8px;padding:12px 0 4px}
+.sessbtn{border:2px solid var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:8px 12px;font-weight:800;text-align:left}
+.sessbtn small{display:block;font-weight:600;color:var(--muted);font-size:.78rem}
+
 /* ---------- Data ---------- */
 .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .tile{background:var(--surface);border-radius:18px;padding:12px 14px;box-shadow:0 2px 0 var(--line);min-width:0}
@@ -319,7 +334,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 <main>
   <section id="view-week" class="stack" aria-label="Week plan"></section>
 
-  <section id="view-plan" class="stack" hidden aria-label="Plan builder"></section>
+  <section id="view-plan" class="stack" hidden aria-label="Goals and sessions"></section>
 
 
   <section id="view-data" class="stack" hidden aria-label="Data"></section>
@@ -341,7 +356,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
     Week
   </button>
   <button data-tab="plan">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h4v-6H3zM10 20h4V9h-4zM17 20h4V4h-4z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
     Plan
   </button>
   <button data-tab="data">
@@ -398,9 +413,6 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
         <button type="button" class="ghost sm" data-addset="logSets">+ Set</button>
       </section>
       <p class="hint" id="noFields" style="margin-top:14px">This exercise doesn't track sets, just notes. You can change what it tracks in the Library.</p>
-      <div id="entryPlanFields">
-        <label class="field"><span>Day</span><select name="day" id="entryDay"></select></label>
-      </div>
       <div id="entryCalFields">
         <label class="field" id="climbTimeWrap"><span>Time climbing (min)</span><input type="text" name="climbMins" id="climbMins" inputmode="decimal" autocomplete="off" placeholder="e.g. 90"></label>
         <div class="field" id="gradesWrap"><span>Boulders sent</span>
@@ -468,6 +480,53 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   </form>
 </dialog>
 
+<!-- Goal editor -->
+<dialog id="goalDialog" aria-labelledby="goalTitle">
+  <form id="goalForm" class="sheetform" novalidate>
+    <div class="sheet-head">
+      <h2 id="goalTitle">New goal</h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <fieldset style="margin-top:12px"><legend>What kind of goal?</legend>
+        <div class="chips wrap" id="goalType">
+          <button type="button" class="chip toggle" data-gtype="grade">Send a grade</button>
+          <button type="button" class="chip toggle" data-gtype="weekly">Weekly training time</button>
+          <button type="button" class="chip toggle" data-gtype="exercise">Exercise target</button>
+        </div>
+      </fieldset>
+      <label class="field" id="goalGradeWrap"><span>Grade to send</span><select id="goalGrade"></select></label>
+      <label class="field" id="goalHoursWrap"><span>Hours of training per week</span><input type="text" id="goalHours" inputmode="decimal" autocomplete="off" placeholder="e.g. 10"></label>
+      <div id="goalExWrap">
+        <label class="field"><span>Exercise</span><select id="goalEx"></select></label>
+        <label class="field"><span id="goalValueLabel">Target</span><input type="text" id="goalValue" autocomplete="off" placeholder="e.g. 45"></label>
+        <p class="hint" id="goalBestHint"></p>
+      </div>
+      <label class="field"><span>By (optional)</span><input type="date" id="goalBy"></label>
+      <p class="err" id="goalErr"></p>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="ghost sm danger" id="goalDelete">Delete</button>
+      <span class="spacer"></span>
+      <button type="submit" class="primary">Save goal</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Name prompt -->
+<dialog id="nameDialog" aria-labelledby="nameTitle">
+  <form id="nameForm" class="sheetform" novalidate>
+    <div class="sheet-head">
+      <h2 id="nameTitle">Name</h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <label class="field"><span>Name</span><input type="text" id="nameInput" maxlength="60" autocomplete="off"></label>
+    </div>
+    <div class="sheet-foot"><span class="spacer"></span><button type="submit" class="primary">Save</button></div>
+  </form>
+</dialog>
+
 <!-- Confirmation (the artifact viewer blocks the browser's own confirm dialog) -->
 <dialog id="confirmDialog" class="confirm" aria-labelledby="confirmMsg">
   <div class="sheet-body" style="padding-top:20px">
@@ -514,7 +573,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.25-6";
+const APP_VERSION = "2026.09.25-7";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -679,30 +738,6 @@ const V10_ADDED = ["s-rdl"];
 // Library version 11: front squat and TRX low row added.
 const V11_ADDED = ["s-frontsquat", "s-trxrow"];
 
-// Starter plans for the Plan tab: exercise ids per day, Monday first.
-const STARTERS = [
-  { name: "One-arm pull-up", weeks: 10,
-    blurb: "2 heavy pulling days around 2 climbing days. Assisted one-arms, negatives, lock-offs and weighted pull-ups.",
-    days: [["s-warmup", "s-oap-assist", "s-oap-neg", "s-scappull", "s-facepull"], ["s-limit"], [],
-      ["s-warmup", "s-wpullup", "s-oap-lock", "s-archer", "s-lever", "s-ohp"], [], ["s-board", "s-extrot"], ["s-flexor", "s-lat", "s-pancake"]] },
-  { name: "Finger strength", weeks: 12,
-    blurb: "2 finger sessions a week: max hangs then limit bouldering, one-arm hangs then board.",
-    days: [["s-warmup", "s-maxhang", "s-limit", "s-fingerext"], [], ["s-mileage"],
-      ["s-warmup", "s-oah", "s-board", "s-rice"], [], ["s-warmup", "s-blocklift", "s-4x4"], ["s-flexor", "s-lat", "s-pancake"]] },
-  { name: "Climbing power", weeks: 8,
-    blurb: "3 short, high-quality sessions: campus, limit bouldering, dynos and explosive pulling.",
-    days: [["s-warmup", "s-campus", "s-limit", "s-explosive"], [], ["s-warmup", "s-dyno", "s-legraise", "s-facepull"], [],
-      ["s-warmup", "s-bumps", "s-board", "s-lever"], [], ["s-flexor", "s-lat", "s-pancake"]] },
-  { name: "Endurance", weeks: 8,
-    blurb: "Power endurance (4x4s, EMOMs) plus aerobic base (ARC, mileage) to stay on longer.",
-    days: [["s-warmup", "s-4x4", "s-extrot"], [], ["s-arc", "s-repeaters"], [], ["s-warmup", "s-emom", "s-linked"],
-      ["s-mileage", "s-updown"], ["s-flexor", "s-lat", "s-pancake"]] },
-  { name: "Injury-proofing", weeks: 6,
-    blurb: "Short fingers, elbow and shoulder sessions to add alongside your normal climbing.",
-    days: [[], ["s-fingerext", "s-rice", "s-pronsup", "s-eccwrist", "s-wrist"], [],
-      ["s-facepull", "s-ytw", "s-extrot", "s-pushup", "s-dislocate", "s-openbook"], [], [], ["s-9090", "s-couch", "s-flexor", "s-extensor"]] },
-];
-
 /* =========================================================
    Storage
    db = { v, exercises, plan: { "YYYY-MM-DD": [entry, ...] }, plans, theme }
@@ -713,7 +748,7 @@ const STARTERS = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 11, exercises: clone(SEED), plan: {}, plans: [], lift: {}, theme: "system" });
+const freshDb = () => ({ v: 11, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -748,6 +783,7 @@ function fieldsFromP(p) {
 function normalize(d) {
   if (!Array.isArray(d.plans)) d.plans = [];
   if (!d.lift || typeof d.lift !== "object") d.lift = {};   // lifting minutes per day
+  if (!Array.isArray(d.goals)) d.goals = [];
   d.v = d.v || 1;
   if (d.v < 2) {
     const have = new Set(d.exercises.map(e => e.id));
@@ -1161,7 +1197,8 @@ const state = {
   pickQuery: "", pickCat: "All", pickTarget: null, pickAdded: {},
   editEntry: null,   // see openEntry
   editEx: null,      // exercise id, or null for a new one
-  planId: null,      // plan open in the builder
+  sessId: null,      // session open in the editor
+  editGoal: null, goalType: "grade",
   dataWeeks: 8, progEx: null, liftDate: null, editGrades: [],
 };
 
@@ -1202,7 +1239,7 @@ function entryHTML(date, e) {
     <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="Mark ${esc(name)} done">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
-      <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.sends ? `<small class="notesnip">🏅 ${esc(noteSnippet(e.sends))}</small>` : ""}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
+      <span><strong>${esc(name)}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.sends ? `<small class="notesnip">🏅 ${esc(noteSnippet(e.sends))}</small>` : ""}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
     </button>
     ${RM("cal", date, e.id, name)}
   </li>`;
@@ -1219,8 +1256,6 @@ function renderWeek() {
   const sameMonth = end.getMonth() === state.week.getMonth();
   const range = `${fmt(state.week, { month: "short", day: "numeric" })} – ${fmt(end, sameMonth ? { day: "numeric" } : { month: "short", day: "numeric" })}`;
   const pct = total ? Math.round((done / total) * 100) : 0;
-  const pw = planForWeek(state.week);
-  const planLine = pw ? `<p class="planline"><b>${esc(pw.plan.name)}</b> · Week ${pw.i + 1} of ${pw.plan.weeks}</p>` : "";
   const when = isCurrent ? "This week" : state.week < mondayOf(new Date()) ? "Past week" : "Upcoming";
 
   let html = `<div class="card weekhead">
@@ -1231,7 +1266,6 @@ function renderWeek() {
       </div>
       <button class="iconbtn" data-act="next" aria-label="Next week">${ICON_R}</button>
     </div>
-    ${planLine}
     <div class="progress" role="progressbar" aria-label="Week progress" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div style="width:${pct}%"></div></div>
     <div class="bar weekstats">
       <span class="muted">${total ? `${done} of ${total} done` : "Nothing planned yet"}${weekTime(state.week).total ? ` · ⏱ ${fmtClimbMins(Math.round(weekTime(state.week).total))} training` : ""}</span>
@@ -1252,7 +1286,10 @@ function renderWeek() {
         <button class="ghost sm" data-act="add" data-date="${k}">+ Add</button>
       </div>
       ${entries.length ? `<ul class="entries">${entries.map(e => entryHTML(k, e)).join("")}</ul>` : `<p class="empty">Rest day</p>`}
-      <button type="button" class="liftbtn${db.lift[k] ? " has" : ""}" data-act="lift" data-date="${k}">⏱ ${db.lift[k] ? `Lifting ${fmtClimbMins(db.lift[k])}` : "Add lifting time"}</button>
+      <div class="dayfoot">
+        <button type="button" class="liftbtn${db.lift[k] ? " has" : ""}" data-act="lift" data-date="${k}">⏱ ${db.lift[k] ? `Lifting ${fmtClimbMins(db.lift[k])}` : "Add lifting time"}</button>
+        ${entries.length ? `<button type="button" class="liftbtn" data-act="savesess" data-date="${k}">☆ Save as session</button>` : ""}
+      </div>
     </section>`;
   }
   $("#view-week").innerHTML = html;
@@ -1304,6 +1341,7 @@ $("#view-week").addEventListener("click", ev => {
   else if (act === "add") openPicker({ kind: "cal", date });
   else if (act === "entry") openEntry({ kind: "cal", date, id });
   else if (act === "lift") openLift(date);
+  else if (act === "savesess") saveDayAsSession(date);
   else if (act === "remove") removeItem("cal", t.dataset.key, id);
   else if (act === "toggle") {
     const e = getEntry(date, id);
@@ -1369,13 +1407,13 @@ $("#newExBtn").addEventListener("click", () => openExercise(null));
 
 /* ---------- Picker (add to a calendar day or a plan's example week) ---------- */
 
-// target = { kind: "cal", date } or { kind: "plan", day }
+// target = { kind: "cal", date } or { kind: "sess" } (the session open in the editor)
 function openPicker(target) {
   state.pickTarget = target;
   state.pickAdded = {};
   state.pickQuery = "";
   $("#pickSearch").value = "";
-  $("#pickTitle").textContent = target.kind === "cal" ? `Add to ${fmt(parseKey(target.date), { weekday: "long", month: "short", day: "numeric" })}` : `Add to ${dayName(target.day)}`;
+  $("#pickTitle").textContent = target.kind === "cal" ? `Add to ${fmt(parseKey(target.date), { weekday: "long", month: "short", day: "numeric" })}` : `Add to ${currentSess().name}`;
   renderChips($("#pickChips"), state.pickCat);
   renderPicker();
   openSheet($("#pickDialog"));
@@ -1383,7 +1421,11 @@ function openPicker(target) {
 
 function renderPicker() {
   const list = filterExercises(state.pickQuery, state.pickCat);
-  $("#pickList").innerHTML = groupedHTML(list, e => {
+  // Saved sessions first: one tap adds the whole workout to the day.
+  const sessions = state.pickTarget.kind === "cal" && !state.pickQuery.trim() && state.pickCat === "All" ? (db.sessions || []).filter(x => x.items.length) : [];
+  const sessHTML = sessions.length ? `<h3 class="grouph">Sessions</h3><div class="sessrow">${sessions.map(x =>
+    `<button class="sessbtn" data-sess="${esc(x.id)}">＋ ${esc(x.name)}<small>${x.items.length} exercise${x.items.length === 1 ? "" : "s"}</small></button>`).join("")}</div>` : "";
+  $("#pickList").innerHTML = sessHTML + groupedHTML(list, e => {
     const n = state.pickAdded[e.id] || 0;
     return `<li><button class="exrow" data-id="${esc(e.id)}">
       <span class="grow"><strong>${esc(e.name)}</strong>${lastLog(e.id, tomorrowKey()) ? `<small>${esc(exSubtitle(e))}</small>` : ""}</span>
@@ -1400,6 +1442,12 @@ $("#pickChips").addEventListener("click", e => {
   state.pickCat = b.dataset.cat; renderChips($("#pickChips"), state.pickCat); renderPicker();
 });
 $("#pickList").addEventListener("click", e => {
+  const sb = e.target.closest("[data-sess]");
+  if (sb) {
+    const x = db.sessions.find(s => s.id === sb.dataset.sess);
+    if (x) { closeSheet($("#pickDialog")); addSessionToDay(x, state.pickTarget.date); }
+    return;
+  }
   const b = e.target.closest("[data-id]"); if (!b) return;
   const ex = findEx(b.dataset.id); if (!ex) return;
   const t = state.pickTarget;
@@ -1407,20 +1455,19 @@ $("#pickList").addEventListener("click", e => {
   if (t.kind === "cal") {
     (db.plan[t.date] ||= []).push({ ...item, log: [], done: false, note: "" });
   } else {
-    const plan = currentPlan(); if (!plan) return;
-    plan.days[t.day].push(item);
-    markDirty(plan);
+    const x = currentSess(); if (!x) return;
+    x.items.push(item);
   }
   state.pickAdded[ex.id] = (state.pickAdded[ex.id] || 0) + 1;
   save();
   renderPicker();
-  t.kind === "cal" ? renderWeek() : renderPlanBody();
+  t.kind === "cal" ? renderWeek() : renderSessBody();
 });
 
 /* =========================================================
    Entry dialog: target + log for one scheduled exercise, or the
    target for one slot in a plan's example week.
-   state.editEntry is { kind: "cal", date, id } or { kind: "plan", day, id }.
+   state.editEntry is { kind: "cal", date, id } or { kind: "sess", id } (a slot in the open session).
    ========================================================= */
 
 function howtoHTML(ex) {
@@ -1433,14 +1480,14 @@ function editedItem() {
   const t = state.editEntry;
   if (!t) return null;
   if (t.kind === "cal") return getEntry(t.date, t.id);
-  const plan = currentPlan();
-  return plan && plan.days[t.day].find(s => s.id === t.id);
+  const x = currentSess();
+  return x && x.items.find(s => s.id === t.id);
 }
 
 function openEntry(target) {
   state.editEntry = target;
   const item = editedItem(); if (!item) return;
-  const isPlan = target.kind === "plan";
+  const isPlan = target.kind === "sess";   // a session slot: target only
   const ex = findEx(item.ex);
   const f = $("#entryForm");
   const cols = columnsFor(fieldsOf(item));
@@ -1448,7 +1495,7 @@ function openEntry(target) {
 
   $("#entryTitle").textContent = nameOf(item);
   $("#entryHint").textContent = isPlan
-    ? "The target repeats every week of the plan. You log what you actually did from the Week tab."
+    ? "Used when this session is added to a day, unless you've done the exercise before (then last time's sets are the target)."
     : "Set a target before the session, then log what you actually did.";
   $("#entryHowto").innerHTML = howtoHTML(ex);
 
@@ -1466,7 +1513,6 @@ function openEntry(target) {
   $("#copyLastBtn").hidden = !last;
   $("#noFields").hidden = hasSets;
 
-  $("#entryPlanFields").hidden = !isPlan;
   $("#entryCalFields").hidden = isPlan;
   $("#climbTimeWrap").hidden = isPlan || !tracksClimbTime(item);
   if (!isPlan && tracksClimbTime(item)) {
@@ -1479,10 +1525,7 @@ function openEntry(target) {
   $("#gradesWrap").hidden = isPlan || catOf(item) !== "Climbing";
   state.editGrades = [...(item.grades || [])];
   renderGradeChips();
-  if (isPlan) {
-    $("#entryDay").innerHTML = [0, 1, 2, 3, 4, 5, 6].map(i => `<option value="${i}">${dayName(i)}</option>`).join("");
-    $("#entryDay").value = String(target.day);
-  } else {
+  if (!isPlan) {
     f.date.value = target.date;
     f.note.value = item.note || "";
     f.climbMins.value = item.mins ?? "";
@@ -1517,17 +1560,10 @@ $("#entryForm").addEventListener("submit", ev => {
   }
   item.target = target;
 
-  if (t.kind === "plan") {
-    const plan = currentPlan();
-    const day = Number(f.day.value);
-    if (day !== t.day) {
-      plan.days[t.day] = plan.days[t.day].filter(s => s.id !== item.id);
-      plan.days[day].push(item);
-    }
-    markDirty(plan);
+  if (t.kind === "sess") {
     save();
     closeSheet($("#entryDialog"));
-    renderPlanBody();
+    renderSessBody();
     return;
   }
 
@@ -1569,18 +1605,18 @@ $("#climbMins").addEventListener("input", e => e.target.classList.remove("bad"))
 $("#entryRemove").addEventListener("click", () => {
   const t = state.editEntry;
   closeSheet($("#entryDialog"));
-  removeItem(t.kind, t.kind === "plan" ? String(t.day) : t.date, t.id);
+  removeItem(t.kind, t.kind === "sess" ? "items" : t.date, t.id);
 });
 
 /* =========================================================
-   Move & remove: shared by the Week view and a plan's example week.
+   Move & remove: shared by the Week view and the session editor.
    A "list" is identified by kind + key:
      { kind: "cal",  key: "YYYY-MM-DD" }  -> db.plan[key]
-     { kind: "plan", key: "0".."6" }      -> currentPlan().days[key]
+     { kind: "sess", key: "items" }       -> currentSess().items
    ========================================================= */
 
 function listFor(kind, key, create) {
-  if (kind === "plan") return currentPlan().days[Number(key)];
+  if (kind === "sess") return currentSess().items;
   if (create) db.plan[key] ||= [];
   return db.plan[key] || [];
 }
@@ -1590,7 +1626,7 @@ function afterListChange(kind) {
     for (const k of Object.keys(db.plan)) if (!db.plan[k].length) delete db.plan[k];
     save(); renderWeek(); renderLibrary();
   } else {
-    markDirty(currentPlan()); save(); renderPlanBody();
+    save(); renderSessBody();
   }
 }
 
@@ -1609,10 +1645,10 @@ function removeItem(kind, key, id) {
   const i = list.findIndex(x => x.id === id);
   if (i < 0) return;
   const [item] = list.splice(i, 1);
-  const planId = state.planId;
+  const sessId = state.sessId;
   afterListChange(kind);
   toast(`Removed ${nameOf(item)}`, { label: "Undo", run: () => {
-    if (kind === "plan" && state.planId !== planId) return;
+    if (kind === "sess" && state.sessId !== sessId) return;
     listFor(kind, key, true).splice(i, 0, item);
     afterListChange(kind);
   } });
@@ -1696,249 +1732,316 @@ function endDrag() {
 }
 
 /* =========================================================
-   Plans: an example week repeated over 4–16 weeks.
-
-   plan = { id, name, weeks, start: "YYYY-MM-DD" (a Monday),
-            days: [[slot...] x 7], applied, dirty }
-   slot = { id, ex, name, cat, fields, target }
-   Calendar entries made from a plan carry { plan, pk } so the plan can
-   be updated or removed later without touching anything else.
+   Plan tab: goals to aim for, and sessions you repeat.
+   session = { id, name, items: [slot] }   slot = { id, ex, name, cat, fields, target }
+   goal    = { id, type: "grade" | "weekly" | "exercise", grade?, hours?, ex?, value?, base?, by?, created }
    ========================================================= */
 
-const currentPlan = () => (db.plans || []).find(p => p.id === state.planId);
-const markDirty = plan => { if (plan.applied) plan.dirty = true; };
-const slotCount = plan => plan.days.reduce((n, d) => n + d.length, 0);
+const currentSess = () => (db.sessions || []).find(x => x.id === state.sessId);
 
-function newPlan(starter) {
-  const mon = mondayOf(new Date());
-  const plan = {
-    id: "p-" + uid(), name: starter ? starter.name : `Plan ${db.plans.length + 1}`, weeks: starter ? starter.weeks : 8,
-    start: dkey(new Date().getDay() === 1 ? mon : addDays(mon, 7)),
-    days: [[], [], [], [], [], [], []], applied: false, dirty: false,
-  };
-  if (starter) {
-    starter.days.forEach((ids, d) => {
-      for (const id of ids) {
-        const ex = findEx(id) || SEED.find(x => x.id === id);   // falls back if you deleted it
-        if (ex) plan.days[d].push({ id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, fields: [...ex.fields], target: [] });
-      }
-    });
+const SEED_SESSIONS = [
+  ["Pull day", ["s-warmup", "s-wpullup", "s-oap-neg", "s-archer", "s-facepull"]],
+  ["Finger day", ["s-warmup", "s-maxhang", "s-limit", "s-fingerext", "s-flexor"]],
+  ["Board night", ["s-warmup", "s-board", "s-4x4", "s-lat"]],
+  ["Legs & push", ["s-frontsquat", "s-rdl", "s-bench", "s-dips", "s-trxrow"]],
+];
+
+const slotFrom = ex => ({ id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, fields: [...(ex.fields || DEFAULT_FIELDS)], target: [] });
+
+function seedSessions(exercises) {
+  return SEED_SESSIONS.map(([name, ids]) => ({
+    id: "ss-" + uid(), name,
+    items: ids.map(id => exercises.find(e => e.id === id) || SEED.find(x => x.id === id)).filter(Boolean).map(slotFrom),
+  }));
+}
+
+// A whole session onto a day. Targets: what you did last time, else the session's own target.
+function addSessionToDay(sess, date) {
+  const list = (db.plan[date] ||= []);
+  for (const s of sess.items) {
+    const last = lastLog(s.ex, date);
+    const target = last && last.entry.log && last.entry.log.length ? clone(last.entry.log) : clone(s.target || []);
+    list.push({ id: uid(), ex: s.ex, name: s.name, cat: s.cat, fields: clone(s.fields || fieldsOf(s)), target, log: [], done: false, note: "" });
   }
-  db.plans.push(plan);
   save();
-  return plan;
+  renderWeek();
+  toast(`Added ${sess.name} to ${shortDate(date)}`);
 }
 
-// Removes this plan's workouts from the calendar. keepLogged leaves ones you did as history.
-function stripPlan(plan, keepLogged) {
-  const old = {};
-  for (const k of Object.keys(db.plan)) {
-    db.plan[k] = db.plan[k].filter(e => {
-      if (e.plan !== plan.id) return true;
-      old[e.pk] = e;
-      return keepLogged && (e.done || hasLog(e) || e.note);
-    });
-    if (!db.plan[k].length) delete db.plan[k];
-  }
-  return old;
-}
-
-function applyPlan(plan) {
-  const old = stripPlan(plan, false);
-  const start = parseKey(plan.start);
-  let n = 0;
-  for (let w = 0; w < plan.weeks; w++) {
-    for (let d = 0; d < 7; d++) {
-      for (const slot of plan.days[d]) {
-        const k = dkey(addDays(start, w * 7 + d));
-        const pk = `${slot.id}:${w}`;
-        const prev = old[pk] || {};
-        (db.plan[k] ||= []).push({
-          id: uid(), ex: slot.ex, name: slot.name, cat: slot.cat, fields: clone(slot.fields || fieldsOf(slot)),
-          target: clone(slot.target || []), log: prev.log || [], ...(prev.mins ? { mins: prev.mins } : {}), ...(prev.sends ? { sends: prev.sends } : {}), ...(prev.grades ? { grades: prev.grades } : {}), done: !!prev.done, note: prev.note || "",
-          plan: plan.id, pk,
-        });
-        n++;
-      }
-    }
-  }
-  plan.applied = true;
-  plan.dirty = false;
+// A planned or logged day becomes a session; what you logged becomes its target.
+async function saveDayAsSession(date) {
+  const entries = db.plan[date] || [];
+  if (!entries.length) return;
+  const name = await askName("Save as session", `${fmt(parseKey(date), { weekday: "long" })} session`);
+  if (!name) return;
+  db.sessions.push({
+    id: "ss-" + uid(), name,
+    items: entries.map(e => ({ id: uid(), ex: e.ex, name: e.name, cat: e.cat, fields: clone(e.fields || fieldsOf(e)),
+      target: clone(e.log && e.log.length ? e.log : e.target || []) })),
+  });
   save();
-  return n;
+  toast(`Saved "${name}". Find it in + Add and on the Plan tab.`);
 }
 
-// Which applied plan (if any) covers a given Monday, and which week of it.
-function planForWeek(monday) {
-  for (const p of db.plans || []) {
-    if (!p.applied) continue;
-    const i = Math.round((monday - parseKey(p.start)) / 864e5 / 7);
-    if (i >= 0 && i < p.weeks) return { plan: p, i };
+/* ---------- Goals ---------- */
+
+function allBestGrade() {
+  let best = null, on = null;
+  for (const [k, list] of Object.entries(db.plan)) for (const e of list) for (const g of e.grades || []) {
+    if (best == null || g > best || (g === best && k < on)) { best = g; on = k; }
   }
-  return null;
+  return best;
+}
+
+// All-time best for an exercise: best single set, or best week for totals (miles, minutes).
+function exBest(exId, m) {
+  if (m.agg === "max") {
+    let v = null;
+    for (const list of Object.values(db.plan)) for (const e of list) if (e.ex === exId)
+      for (const s of e.log || []) if (s[m.key] != null) v = v == null ? s[m.key] : Math.max(v, s[m.key]);
+    return v;
+  }
+  const weeks = {};
+  for (const [k, list] of Object.entries(db.plan)) for (const e of list) {
+    if (e.ex !== exId) continue;
+    const w = dkey(mondayOf(parseKey(k)));
+    const vals = m.key === "climb" ? (e.mins ? [e.mins] : []) : (e.log || []).map(s => s[m.key]).filter(x => x != null);
+    for (const x of vals) weeks[w] = (weeks[w] || 0) + x;
+  }
+  const v = Object.values(weeks);
+  return v.length ? Math.max(...v) : null;
+}
+
+function goalView(g) {
+  if (g.type === "grade") {
+    const best = allBestGrade();
+    return { title: `Send V${g.grade}`, done: best != null && best >= g.grade,
+      pct: best == null ? 0 : Math.min(1, (best + 1) / (g.grade + 1)),
+      label: best == null ? "No grades logged yet" : `Best so far: V${best}` };
+  }
+  if (g.type === "weekly") {
+    const cur = mondayOf(new Date());
+    const mins = weekTime(cur).total, goal = g.hours * 60;
+    let streak = 0;
+    for (let w = 1; w < 60 && weekTime(addDays(cur, -7 * w)).total >= goal; w++) streak++;
+    return { title: `Train ${g.hours} h a week`, done: mins >= goal, weekly: true, pct: Math.min(1, mins / goal),
+      label: `${fmtClimbMins(Math.round(mins))} of ${g.hours} h this week${streak ? ` · hit ${streak} week${streak === 1 ? "" : "s"} in a row before this` : ""}` };
+  }
+  const ex = findEx(g.ex);
+  const name = ex ? ex.name : "Exercise";
+  const m = ex ? progressMetric(ex) : { key: "reps", agg: "max", label: "" };
+  const best = ex ? exBest(ex.id, m) : null, base = g.base ?? 0;
+  const done = best != null && best >= g.value;
+  const pct = done ? 1 : best == null ? 0 : g.value > base ? Math.max(0, Math.min(1, (best - base) / (g.value - base))) : 0;
+  return { title: `${name}: ${fmtMetric(g.value, m)}`, done, pct,
+    label: best == null ? "Not logged yet" : `Best so far: ${fmtMetric(best, m)}${m.agg === "sum" ? " in a week" : ""}` };
+}
+
+function byLabel(g, done) {
+  if (!g.by) return "";
+  const days = Math.round((parseKey(g.by) - parseKey(dkey(new Date()))) / 864e5);
+  if (done) return `by ${shortDate(g.by)}`;
+  return days < 0 ? `was due ${shortDate(g.by)}` : days === 0 ? "due today" : `${days} day${days === 1 ? "" : "s"} left`;
 }
 
 /* ---------- Plan tab ---------- */
 
-function planRange(plan) {
-  const s = parseKey(plan.start), e = addDays(s, plan.weeks * 7 - 1);
-  const o = { month: "short", day: "numeric" };
-  return `${fmt(s, o)} – ${fmt(e, s.getFullYear() === e.getFullYear() ? o : { ...o, year: "numeric" })}`;
-}
-
-function statusHTML(plan) {
-  if (!plan.applied) return `<span class="status draft">Draft</span>`;
-  if (plan.dirty) return `<span class="status dirty">Changed</span>`;
-  return `<span class="status on">On calendar</span>`;
-}
-
 function renderPlanTab() {
-  const plan = currentPlan();
-  if (plan) return renderBuilder(plan);
-  state.planId = null;
-  const plans = db.plans || [];
+  if (currentSess()) return renderSessEditor();
+  state.sessId = null;
+  const goals = db.goals || [], sessions = db.sessions || [];
   $("#view-plan").innerHTML = `
-    <div class="bar">
-      <div><h2>Plans</h2><p class="lede">Build one week and repeat it for 4–16 weeks.</p></div>
-      <button class="primary" data-act="newplan" style="flex:none;white-space:nowrap">+ Blank plan</button>
-    </div>
-    ${plans.length ? plans.map(p => `
-      <button class="card plancard" data-act="openplan" data-id="${esc(p.id)}">
-        <span class="bar"><strong>${esc(p.name)}</strong>${statusHTML(p)}</span>
-        <span class="meta" style="display:block">${p.weeks} weeks · ${planRange(p)} · ${slotCount(p)} exercises/week</span>
-      </button>`).join("") : `
-      <div class="card">
-        <h3>How it works</h3>
-        <ol class="steps">
-          <li>Pick a length (4–16 weeks) and a start week.</li>
-          <li>Build one example week from your library. Add targets if you like.</li>
-          <li>Add it to your calendar: the week repeats for the whole plan.</li>
-          <li>Log what you actually do each session on the Week tab.</li>
-        </ol>
-      </div>`}
-    <h3 class="grouph">Starter plans</h3>
-    <div class="card list">${STARTERS.map((st, i) => `
-      <button class="startercard" data-act="starter" data-i="${i}">
-        <strong>${esc(st.name)} <span class="progtag">${st.weeks} weeks</span></strong>
-        <small>${esc(st.blurb)}</small>
-      </button>`).join("")}</div>
-    <p class="hint" style="margin-top:8px">Each starter fills in an example week you can then change.</p>`;
+    <div><h2>Plan</h2><p class="lede">Goals to aim for and sessions you repeat.</p></div>
+
+    <div class="bar"><h3 class="grouph" style="margin:10px 0 0">Goals</h3><button class="ghost sm" data-act="newgoal">+ Goal</button></div>
+    ${goals.length ? goals.map(g => {
+      const v = goalView(g);
+      return `<button class="card goal" data-act="editgoal" data-id="${esc(g.id)}">
+        <span class="bar"><strong>${esc(v.title)}</strong>${v.done ? `<span class="pill">${v.weekly ? "Hit this week" : "Achieved"} ✓</span>` : ""}</span>
+        <span class="gbar" role="progressbar" aria-valuenow="${Math.round(v.pct * 100)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${Math.round(v.pct * 100)}%"></span></span>
+        <span class="bar"><small>${esc(v.label)}</small><small>${esc(byLabel(g, v.done))}</small></span>
+      </button>`;
+    }).join("") : `<div class="card"><p class="muted">Set a goal and watch it fill in as you log. For example: <b>Send V7</b>, <b>Train 10 h a week</b> or <b>Weighted pull-ups +45 lb</b>.</p>
+      <button class="primary" data-act="newgoal" style="margin-top:12px">Set a goal</button></div>`}
+
+    <div class="bar"><h3 class="grouph" style="margin:14px 0 0">Sessions</h3><button class="ghost sm" data-act="newsess">+ Session</button></div>
+    ${sessions.map(x => `
+      <div class="card sess">
+        <button class="sesshead" data-act="opensess" data-id="${esc(x.id)}">
+          <strong>${esc(x.name)}</strong>
+          <small>${x.items.length ? esc(x.items.map(nameOf).join(", ")) : "No exercises yet"}</small>
+        </button>
+        <div class="row" style="margin-top:10px">
+          <button class="primary sm" data-act="sesstoday" data-id="${esc(x.id)}"${x.items.length ? "" : " disabled"}>Add to today</button>
+          <button class="ghost sm" data-act="opensess" data-id="${esc(x.id)}">Edit</button>
+        </div>
+      </div>`).join("")}
+    <p class="hint">Sessions also appear at the top of <b>+ Add</b> on every day. To save a day you've planned or logged, tap <b>☆ Save as session</b> under it on the Week tab.</p>`;
 }
 
-function renderBuilder(plan) {
+function renderSessEditor() {
+  const x = currentSess();
   $("#view-plan").innerHTML = `
-    <button class="linkish" data-act="backplans">‹ All plans</button>
+    <button class="linkish" data-act="backplan">‹ Plan</button>
     <div class="card">
-      <label class="field" style="margin-top:0"><span>Plan name</span><input type="text" id="planName" maxlength="60" value="${esc(plan.name)}"></label>
-      <label class="field"><span>Length <span class="rangeval" id="planWeeksOut">${plan.weeks} weeks</span></span>
-        <input type="range" id="planWeeks" min="4" max="16" step="1" value="${plan.weeks}"></label>
-      <label class="field"><span>Start week</span><input type="date" id="planStart" value="${plan.start}"></label>
-      <p class="hint" id="planRangeHint">${planRange(plan)}</p>
+      <label class="field" style="margin-top:0"><span>Session name</span><input type="text" id="sessName" maxlength="60" value="${esc(x.name)}"></label>
     </div>
-    <h3 class="grouph">Example week</h3>
-    <p class="hint" style="margin:-4px 0 10px">This week repeats for the whole plan. Tap an exercise to give it a target.</p>
-    <div id="planDays" class="stack"></div>
-    <div class="card" id="planActions" style="margin-top:16px"></div>`;
-  renderPlanBody();
+    <div class="bar"><h3 class="grouph" style="margin:10px 0 0">Exercises</h3><button class="ghost sm" data-act="sessadd">+ Add</button></div>
+    <p class="hint" style="margin:0">Tap an exercise to give it a target. Drag ⋮⋮ to reorder.</p>
+    <div id="sessItems"></div>
+    <div class="row">
+      <button class="primary" data-act="sesstoday" data-id="${esc(x.id)}">Add to today</button>
+      <span style="flex:1"></span>
+      <button class="ghost sm danger" data-act="delsess">Delete session</button>
+    </div>`;
+  renderSessBody();
 }
 
-// Re-renders everything below the setup card (keeps inputs focused while typing).
-function renderPlanBody() {
-  const plan = currentPlan(); if (!plan || !$("#planDays")) return;
-
-  $("#planDays").innerHTML = plan.days.map((slots, d) => `
-    <section class="card day" data-drop="${d}" data-kind="plan">
-      <div class="bar dayhead"><h3>${dayName(d)}</h3>
-        <button class="ghost sm" data-act="planadd" data-day="${d}">+ Add</button></div>
-      ${slots.length ? `<ul class="entries">${slots.map(s => { const name = nameOf(s); return `
-        <li class="entry" data-item="${esc(s.id)}" data-kind="plan" data-from="${d}">
-          ${HANDLE(name)}
-          <button class="entrybtn" data-act="planslot" data-day="${d}" data-id="${esc(s.id)}">
-            <span class="dot" style="--c:${catColor(catOf(s))}"></span>
-            <span><strong>${esc(name)}</strong>
-            <small>${s.target && s.target.length ? `Target: ${esc(fmtSets(s.target))}` : "No target"}</small></span>
-          </button>
-          ${RM("plan", d, s.id, name)}
-        </li>`; }).join("")}</ul>` : `<p class="empty">Rest day</p>`}
-    </section>`).join("");
-
-  const n = slotCount(plan);
-  const total = n * plan.weeks;
-  let actions;
-  if (!plan.applied) {
-    actions = `<p class="muted">${n ? `Adds ${total} workouts to your calendar, ${planRange(plan)}.` : "Add some exercises to the example week first."}</p>
-      <div class="row" style="margin-top:12px">
-        <button class="primary" data-act="applyplan"${n ? "" : " disabled"}>Add to calendar</button>
-        <span style="flex:1"></span>
-        <button class="ghost sm danger" data-act="deleteplan">Delete plan</button>
-      </div>`;
-  } else {
-    actions = `<p class="muted">${plan.dirty ? "You've changed this plan since adding it to your calendar." : `On your calendar, ${planRange(plan)}.`}</p>
-      <div class="row" style="margin-top:12px">
-        ${plan.dirty ? `<button class="primary" data-act="applyplan">Update calendar</button>` : `<button class="primary" data-act="viewplan">View on calendar</button>`}
-        <button class="ghost sm" data-act="unapplyplan">Remove from calendar</button>
-        <span style="flex:1"></span>
-        <button class="ghost sm danger" data-act="deleteplan">Delete plan</button>
-      </div>`;
-  }
-  $("#planActions").innerHTML = actions;
+// The exercise list inside the session editor (re-rendered alone so the name box keeps focus).
+function renderSessBody() {
+  const x = currentSess(); if (!x || !$("#sessItems")) return;
+  $("#sessItems").innerHTML = `<section class="card day" data-drop="items" data-kind="sess">
+    ${x.items.length ? `<ul class="entries">${x.items.map(s => { const name = nameOf(s); return `
+      <li class="entry" data-item="${esc(s.id)}" data-kind="sess" data-from="items">
+        ${HANDLE(name)}
+        <button class="entrybtn" data-act="sessslot" data-id="${esc(s.id)}">
+          <span class="dot" style="--c:${catColor(catOf(s))}"></span>
+          <span><strong>${esc(name)}</strong><small>${s.target && s.target.length ? `Target: ${esc(fmtSets(s.target))}` : "No target (uses last time's sets)"}</small></span>
+        </button>
+        ${RM("sess", "items", s.id, name)}
+      </li>`; }).join("")}</ul>` : `<p class="empty">No exercises yet. Tap + Add.</p>`}
+  </section>`;
 }
 
 $("#view-plan").addEventListener("click", async ev => {
   const t = ev.target.closest("[data-act]"); if (!t) return;
-  const act = t.dataset.act;
-  const plan = currentPlan();
-  if (act === "newplan") { state.planId = newPlan().id; renderPlanTab(); window.scrollTo(0, 0); }
-  else if (act === "starter") { state.planId = newPlan(STARTERS[Number(t.dataset.i)]).id; renderPlanTab(); window.scrollTo(0, 0); }
-  else if (act === "openplan") { state.planId = t.dataset.id; renderPlanTab(); window.scrollTo(0, 0); }
-  else if (act === "backplans") { state.planId = null; renderPlanTab(); }
-  else if (act === "planadd") openPicker({ kind: "plan", day: Number(t.dataset.day) });
-  else if (act === "planslot") openEntry({ kind: "plan", day: Number(t.dataset.day), id: t.dataset.id });
-  else if (act === "remove") removeItem("plan", t.dataset.key, t.dataset.id);
-  else if (act === "applyplan") {
-    if (plan.applied && !(await askConfirm("Update your calendar with the changed plan? Anything you've logged or checked off is kept.", "Update calendar"))) return;
-    const wasApplied = plan.applied;
-    const n = applyPlan(plan);
-    renderPlanTab(); renderWeek();
-    toast(wasApplied ? "Calendar updated" : `Added ${n} workouts to your calendar`);
+  const act = t.dataset.act, id = t.dataset.id;
+  if (act === "newgoal") openGoal(null);
+  else if (act === "editgoal") openGoal(id);
+  else if (act === "newsess") {
+    const name = await askName("New session", "e.g. Pull day");
+    if (!name) return;
+    const x = { id: "ss-" + uid(), name, items: [] };
+    db.sessions.push(x); save();
+    state.sessId = x.id; renderPlanTab(); window.scrollTo(0, 0);
   }
-  else if (act === "viewplan") { state.week = parseKey(plan.start); renderWeek(); showTab("week"); }
-  else if (act === "unapplyplan") {
-    if (!(await askConfirm("Remove this plan's workouts from your calendar? Anything you've logged stays as history.", "Remove", true))) return;
-    stripPlan(plan, true);
-    plan.applied = false; plan.dirty = false;
-    save(); renderPlanTab(); renderWeek();
+  else if (act === "opensess") { state.sessId = id; renderPlanTab(); window.scrollTo(0, 0); }
+  else if (act === "backplan") { state.sessId = null; renderPlanTab(); }
+  else if (act === "sesstoday") {
+    const x = db.sessions.find(s => s.id === id); if (!x) return;
+    addSessionToDay(x, dkey(new Date()));
   }
-  else if (act === "deleteplan") {
-    if (!(await askConfirm(`Delete "${plan.name}"?${plan.applied ? " Its workouts will be removed from your calendar. Anything you logged stays." : ""}`, "Delete plan", true))) return;
-    stripPlan(plan, true);
-    db.plans = db.plans.filter(p => p.id !== plan.id);
-    state.planId = null;
-    save(); renderPlanTab(); renderWeek();
+  else if (act === "sessadd") openPicker({ kind: "sess" });
+  else if (act === "sessslot") openEntry({ kind: "sess", id });
+  else if (act === "remove") removeItem("sess", "items", id);
+  else if (act === "delsess") {
+    const x = currentSess();
+    if (!(await askConfirm(`Delete the session "${x.name}"? Days you've already added it to stay as they are.`, "Delete", true))) return;
+    db.sessions = db.sessions.filter(s => s !== x);
+    state.sessId = null; save(); renderPlanTab();
   }
 });
 
 $("#view-plan").addEventListener("input", ev => {
-  const plan = currentPlan(); if (!plan) return;
-  if (ev.target.id === "planName") {
-    plan.name = ev.target.value.trim() || "Untitled plan";
-    save();
-  } else if (ev.target.id === "planWeeks") {
-    plan.weeks = Number(ev.target.value);
-    $("#planWeeksOut").textContent = `${plan.weeks} weeks`;
-    $("#planRangeHint").textContent = planRange(plan);
-    markDirty(plan); save(); renderPlanBody();
-  }
+  const x = currentSess();
+  if (x && ev.target.id === "sessName") { x.name = ev.target.value.trim() || "Untitled session"; save(); }
 });
 
-$("#view-plan").addEventListener("change", ev => {
-  const plan = currentPlan(); if (!plan || ev.target.id !== "planStart") return;
-  if (!ev.target.value) { ev.target.value = plan.start; return; }
-  plan.start = dkey(mondayOf(parseKey(ev.target.value)));   // plans always start on a Monday
-  ev.target.value = plan.start;
-  $("#planRangeHint").textContent = planRange(plan);
-  markDirty(plan); save(); renderPlanBody();
+/* ---------- Goal editor ---------- */
+
+function goalExercises() {
+  return [...db.exercises].filter(e => (e.fields || []).length || catOf(e) === "Climbing").sort((a, b) => a.name.localeCompare(b.name));
+}
+function refreshGoalForm() {
+  const type = state.goalType;
+  document.querySelectorAll("#goalType [data-gtype]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.gtype === type)));
+  $("#goalGradeWrap").hidden = type !== "grade";
+  $("#goalHoursWrap").hidden = type !== "weekly";
+  $("#goalExWrap").hidden = type !== "exercise";
+  if (type === "exercise") {
+    const ex = findEx($("#goalEx").value), m = ex && progressMetric(ex);
+    const unit = !m ? "" : { load: "pounds (+ added, − assistance)", reps: "reps in one set", time: "seconds held", dist: "miles in a week", mins: "minutes in a week", climb: "minutes climbing in a week" }[m.key];
+    $("#goalValueLabel").textContent = `Target${unit ? ` (${unit})` : ""}`;
+    const best = ex && exBest(ex.id, m);
+    $("#goalBestHint").textContent = best == null ? "Not logged yet." : `Your best so far: ${fmtMetric(best, m)}.`;
+  }
+}
+
+function openGoal(id) {
+  const g = id ? db.goals.find(x => x.id === id) : null;
+  state.editGoal = g ? g.id : null;
+  state.goalType = g ? g.type : "grade";
+  $("#goalTitle").textContent = g ? "Edit goal" : "New goal";
+  $("#goalGrade").innerHTML = Array.from({ length: 13 }, (_, v) => `<option value="${v}">V${v}</option>`).join("");
+  const best = allBestGrade();
+  $("#goalGrade").value = String(g && g.type === "grade" ? g.grade : Math.min(12, best == null ? 5 : best + 1));
+  $("#goalHours").value = g && g.type === "weekly" ? g.hours : "";
+  $("#goalEx").innerHTML = goalExercises().map(e => `<option value="${esc(e.id)}">${esc(e.name)}</option>`).join("");
+  if (g && g.type === "exercise") $("#goalEx").value = g.ex;
+  else if (state.progEx && findEx(state.progEx)) $("#goalEx").value = state.progEx;
+  $("#goalValue").value = g && g.type === "exercise" ? g.value : "";
+  $("#goalBy").value = g && g.by ? g.by : "";
+  $("#goalDelete").hidden = !g;
+  $("#goalErr").textContent = "";
+  refreshGoalForm();
+  openSheet($("#goalDialog"));
+}
+
+$("#goalType").addEventListener("click", e => {
+  const b = e.target.closest("[data-gtype]"); if (!b) return;
+  state.goalType = b.dataset.gtype; refreshGoalForm();
 });
+$("#goalEx").addEventListener("change", refreshGoalForm);
+
+$("#goalForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const type = state.goalType, err = msg => { $("#goalErr").textContent = msg; };
+  const g = { type, by: $("#goalBy").value || undefined };
+  if (type === "grade") g.grade = Number($("#goalGrade").value);
+  if (type === "weekly") {
+    const h = parseNum($("#goalHours").value.trim());
+    if (!Number.isFinite(h) || h <= 0) return err("Enter hours per week, like 10.");
+    g.hours = h;
+  }
+  if (type === "exercise") {
+    const ex = findEx($("#goalEx").value); if (!ex) return err("Pick an exercise.");
+    const v = parseNum($("#goalValue").value.trim());
+    if (!Number.isFinite(v)) return err("Enter a target number, like 45.");
+    const m = progressMetric(ex);
+    g.ex = ex.id; g.value = v;
+    const old = state.editGoal && db.goals.find(x => x.id === state.editGoal);
+    // Progress is measured from where you were when you set the goal.
+    g.base = old && old.type === "exercise" && old.ex === ex.id ? old.base : (exBest(ex.id, m) ?? 0);
+  }
+  if (state.editGoal) Object.assign(db.goals.find(x => x.id === state.editGoal), g, type === "exercise" ? {} : { ex: undefined, value: undefined, base: undefined });
+  else db.goals.push({ id: "g-" + uid(), created: dkey(new Date()), ...g });
+  save();
+  closeSheet($("#goalDialog"));
+  renderPlanTab();
+});
+
+$("#goalDelete").addEventListener("click", () => {
+  const i = db.goals.findIndex(x => x.id === state.editGoal); if (i < 0) return;
+  const [g] = db.goals.splice(i, 1);
+  save(); closeSheet($("#goalDialog")); renderPlanTab();
+  toast("Goal deleted", { label: "Undo", run: () => { db.goals.splice(i, 0, g); save(); renderPlanTab(); } });
+});
+
+/* ---------- Name prompt (the viewer blocks the browser's own prompt) ---------- */
+
+function askName(title, placeholder) {
+  const d = $("#nameDialog");
+  $("#nameTitle").textContent = title;
+  $("#nameInput").value = "";
+  $("#nameInput").placeholder = placeholder || "";
+  return new Promise(resolve => {
+    const done = v => { d.onclose = null; closeSheet(d); resolve(v); };
+    $("#nameForm").onsubmit = ev => { ev.preventDefault(); const v = $("#nameInput").value.trim(); if (v) done(v); else $("#nameInput").focus(); };
+    d.onclose = () => resolve(null);
+    openSheet(d);
+    setTimeout(() => $("#nameInput").focus(), 50);
+  });
+}
 
 /* =========================================================
    Exercise dialog: create / edit a library exercise
@@ -2042,7 +2145,8 @@ $("#importFile").addEventListener("change", async e => {
     if (!validDb(d)) throw new Error("bad file");
     if (!(await askConfirm("Replace everything in this browser with the backup?", "Replace", true))) return;
     db = normalize(d);
-    state.planId = null;
+    state.sessId = null;
+    ensureSessions();
     save(); applyTheme(); renderAll();
     closeSheet($("#settingsDialog"));
     toast("Backup imported");
@@ -2388,6 +2492,9 @@ function renderAll() {
   renderPlanTab();
 }
 
+// Example sessions, first time only (added after load, once everything is defined).
+function ensureSessions() { if (!Array.isArray(db.sessions)) db.sessions = seedSessions(db.exercises); }
+ensureSessions();
 applyTheme();
 renderAll();
 save();
