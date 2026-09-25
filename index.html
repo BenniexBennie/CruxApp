@@ -194,10 +194,37 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 #pickDialog{height:90vh;height:90dvh}
 /* Same fixed-height build as the picker (the one pop-up that always rendered on iPhone);
    content-sized pop-ups came out blank in the iPhone Claude app. */
-#entryDialog,#exDialog,#settingsDialog,#goalDialog{height:88vh;height:88dvh}
+#entryDialog,#exDialog,#settingsDialog,#goalDialog,#projDialog{height:88vh;height:88dvh}
+#timerDialog,#checkDialog{height:78vh;height:78dvh}
 #nameDialog{min-height:240px}
 #confirmDialog{min-height:180px}
-@media (min-width:640px){#pickDialog,#entryDialog,#exDialog,#settingsDialog,#goalDialog{height:86vh;height:86dvh}}
+@media (min-width:640px){#pickDialog,#entryDialog,#exDialog,#settingsDialog,#goalDialog,#projDialog{height:86vh;height:86dvh}#timerDialog,#checkDialog{height:74vh;height:74dvh}}
+/* Timer */
+#tmClock{font-family:var(--display);font-size:5.5rem;font-weight:600;line-height:1;text-align:center;margin:18px 0 4px;font-variant-numeric:tabular-nums;color:var(--ink)}
+#tmClock.hang{color:var(--tape)}
+#tmPhase{text-align:center;font-weight:700;color:var(--muted);margin-bottom:14px}
+.tmrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+/* Check-in */
+.ckrow{margin-top:14px}
+.ckrow b{display:block;margin-bottom:6px}
+.ckbtns{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.ckbtn{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 0;font-weight:800;font-size:1.05rem}
+.ckbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.cktable td,.cktable th{text-align:center}
+/* Load warning */
+.warnchip{display:block;background:color-mix(in srgb,var(--sun) 28%,var(--surface));color:var(--ink);border-radius:10px;padding:6px 10px;margin:6px 0 2px;font-size:.88rem;font-weight:600}
+/* Projects */
+.proj .bar{align-items:center}
+.gpill{font-weight:800;font-size:.85rem;background:var(--accent-soft);color:var(--accent-press);border-radius:99px;padding:2px 10px}
+/* Month view */
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:12px}
+.mhead{text-align:center;font-size:.75rem;font-weight:800;color:var(--muted)}
+.mday{border:0;background:var(--sunk);border-radius:10px;padding:6px 0 4px;min-height:52px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ink);font-weight:700}
+.mday.out{opacity:.4}
+.mday.today{box-shadow:inset 0 0 0 2px var(--sun)}
+.mday.done{background:var(--accent-soft)}
+.mday i{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;padding:0 2px}
+.mday i b{width:7px;height:7px;border-radius:2px}
 #pickDialog .sheet-head{padding:10px 8px 6px 16px;border-bottom:0}
 #pickDialog .sheet-head h2{font-size:1.25rem}
 #pickDialog .sheet-body{padding:0 16px 16px;border-top:1px solid var(--line)}
@@ -401,6 +428,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   <form id="entryForm" class="sheetform" novalidate>
     <div class="sheet-head">
       <h2 id="entryTitle"></h2>
+      <button type="button" class="iconbtn" id="timerBtn" aria-label="Timer" style="font-size:1.25rem">⏱</button>
       <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -579,11 +607,87 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   </div>
 </dialog>
 
+<!-- Rest / hang timer -->
+<dialog id="timerDialog" aria-labelledby="tmTitle">
+  <div class="sheet-head">
+    <h2 id="tmTitle">Timer</h2>
+    <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="sheet-body">
+    <div class="seg" id="tmMode" style="margin-top:12px">
+      <button type="button" class="chip" data-tm="rest">Rest</button>
+      <button type="button" class="chip" data-tm="hang">Hang repeaters</button>
+    </div>
+    <div id="tmClock" aria-live="off">0</div>
+    <p id="tmPhase" aria-live="polite"></p>
+    <div id="tmRestOpts"><div class="chips wrap" id="tmPresets">
+      <button type="button" class="chip" data-rest="60">1 min</button>
+      <button type="button" class="chip" data-rest="90">1:30</button>
+      <button type="button" class="chip" data-rest="120">2 min</button>
+      <button type="button" class="chip" data-rest="180">3 min</button>
+      <button type="button" class="chip" data-rest="300">5 min</button>
+    </div></div>
+    <div id="tmHangOpts" class="tmrow">
+      <label class="field"><span>On (s)</span><input type="text" id="tmOn" inputmode="numeric" autocomplete="off"></label>
+      <label class="field"><span>Off (s)</span><input type="text" id="tmOff" inputmode="numeric" autocomplete="off"></label>
+      <label class="field"><span>Reps</span><input type="text" id="tmReps" inputmode="numeric" autocomplete="off"></label>
+    </div>
+    <p class="hint">Beeps on each change. Keep the app open; phones pause timers in the background.</p>
+  </div>
+  <div class="sheet-foot">
+    <button type="button" class="ghost" id="tmReset">Reset</button>
+    <span class="spacer"></span>
+    <button type="button" class="primary" id="tmStart">Start</button>
+  </div>
+</dialog>
+
+<!-- Daily check-in -->
+<dialog id="checkDialog" aria-labelledby="ckTitle">
+  <form id="checkForm" class="sheetform" novalidate>
+    <div class="sheet-head">
+      <h2 id="ckTitle">Check-in</h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <p class="hint" style="margin-top:12px">1 = sore or tired, 5 = great.</p>
+      <div id="ckRows"></div>
+      <label class="field"><span>Note</span><input type="text" id="ckNote" maxlength="120" autocomplete="off" placeholder="e.g. left ring finger tweaky"></label>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="ghost sm danger" id="ckClear">Clear</button>
+      <span class="spacer"></span>
+      <button type="submit" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Project editor -->
+<dialog id="projDialog" aria-labelledby="prTitle">
+  <form id="projForm" class="sheetform" novalidate>
+    <div class="sheet-head">
+      <h2 id="prTitle">New project</h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <label class="field"><span>Name</span><input type="text" id="prName" maxlength="80" autocomplete="off" placeholder="e.g. Pink roof problem"></label>
+      <label class="field"><span>Grade</span><select id="prGrade"></select></label>
+      <label class="field"><span>Where</span><input type="text" id="prWhere" maxlength="80" autocomplete="off" placeholder="e.g. Movement gym, cave wall"></label>
+      <label class="field"><span>Beta and notes</span><textarea id="prNotes" rows="3" placeholder="Heel hook on the left, don't cut feet on the crux"></textarea></label>
+      <p class="err" id="prErr"></p>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="ghost sm danger" id="prDelete">Delete</button>
+      <span class="spacer"></span>
+      <button type="submit" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
 <script>
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.26-2";
+const APP_VERSION = "2026.09.26-3";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -762,7 +866,7 @@ const V12_ADDED = ["s-soccer"];
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 13, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], theme: "system" });
+const freshDb = () => ({ v: 13, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], checkin: {}, projects: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -798,6 +902,8 @@ function normalize(d) {
   if (!Array.isArray(d.plans)) d.plans = [];
   if (!d.lift || typeof d.lift !== "object") d.lift = {};   // lifting minutes per day
   if (!Array.isArray(d.goals)) d.goals = [];
+  if (!d.checkin || typeof d.checkin !== "object") d.checkin = {};   // fingers / skin / energy per day
+  if (!Array.isArray(d.projects)) d.projects = [];
   d.v = d.v || 1;
   if (d.v < 2) {
     const have = new Set(d.exercises.map(e => e.id));
@@ -1248,6 +1354,7 @@ const state = {
   sessId: null,      // session open in the editor
   editGoal: null, goalType: "grade",
   dataWeeks: 8, progEx: null, liftDate: null, editGrades: [],
+  weekMode: "week", month: new Date(), checkDate: null, checkVals: {}, editProj: null,
 };
 
 /* =========================================================
@@ -1287,13 +1394,16 @@ function entryHTML(date, e) {
     <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="${esc(name)}: done${e.target.length && !hasLog(e) ? " as planned" : ""}">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
-      <span><strong>${esc(name)}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.sends ? `<small class="notesnip">🏅 ${esc(noteSnippet(e.sends))}</small>` : ""}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
+      <span><strong>${e.pr ? "🏆 " : ""}${esc(name)}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.sends ? `<small class="notesnip">🏅 ${esc(noteSnippet(e.sends))}</small>` : ""}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
     </button>
     ${RM("cal", date, e.id, name)}
   </li>`;
 }
 
+const MODE_SEG = () => `<div class="seg" style="margin-bottom:12px">${[["week", "Week"], ["month", "Month"]].map(([k, l]) =>
+  `<button type="button" class="chip" data-act="mode" data-mode="${k}" aria-pressed="${state.weekMode === k}">${l}</button>`).join("")}</div>`;
 function renderWeek() {
+  if (state.weekMode === "month") { $("#view-week").innerHTML = MODE_SEG() + renderMonth(); return; }
   const days = weekDays();
   const todayKey = dkey(new Date());
   const isCurrent = dkey(state.week) === dkey(mondayOf(new Date()));
@@ -1306,7 +1416,7 @@ function renderWeek() {
   const pct = total ? Math.round((done / total) * 100) : 0;
   const when = isCurrent ? "This week" : state.week < mondayOf(new Date()) ? "Past week" : "Upcoming";
 
-  let html = `<div class="card weekhead">
+  let html = MODE_SEG() + `<div class="card weekhead">
     <div class="bar">
       <button class="iconbtn" data-act="prev" aria-label="Previous week">${ICON_L}</button>
       <div class="wk"><h2>${range}</h2>
@@ -1334,6 +1444,7 @@ function renderWeek() {
         <div class="bar dayhead">
           <h3>${fmt(d, { weekday: "short" })} <small>${fmt(d, { month: "short", day: "numeric" })}</small>${isToday ? `<span class="pill">Today</span>` : ""}<small class="restlbl">Rest</small></h3>
           <span class="row" style="flex-wrap:nowrap">
+            ${k <= todayKey ? `<button class="iconbtn sm" data-act="checkin" data-date="${k}" aria-label="Check-in${db.checkin[k] ? `: ${esc(checkSummary(db.checkin[k]))}` : ""}">${db.checkin[k] ? "✅" : "🙂"}</button>` : ""}
             <button class="iconbtn sm" data-act="lift" data-date="${k}" aria-label="Add lifting time">⏱</button>
             <button class="ghost sm" data-act="add" data-date="${k}">+ Add</button>
           </span>
@@ -1346,9 +1457,11 @@ function renderWeek() {
         <h3>${fmt(d, { weekday: "long" })} <small>${fmt(d, { month: "short", day: "numeric" })}</small>${isToday ? `<span class="pill">Today</span>` : ""}</h3>
         <button class="ghost sm" data-act="add" data-date="${k}">+ Add</button>
       </div>
+      ${(w => w ? `<p class="warnchip">⚠ ${esc(w)}</p>` : "")(dayWarning(k))}
       ${entries.length ? `<ul class="entries">${entries.map(e => entryHTML(k, e)).join("")}</ul>` : `<p class="empty">Rest day</p>`}
       <div class="dayfoot">
         <button type="button" class="liftbtn${db.lift[k] ? " has" : ""}" data-act="lift" data-date="${k}">⏱ ${db.lift[k] ? `Lifting ${fmtClimbMins(db.lift[k])}` : "Lifting"}</button>
+        ${k <= todayKey ? `<button type="button" class="liftbtn${db.checkin[k] ? " has" : ""}" data-act="checkin" data-date="${k}">${db.checkin[k] ? `✅ ${esc(checkSummary(db.checkin[k]) || "Checked in")}` : "🙂 Check-in"}</button>` : ""}
         ${entries.length ? `<button type="button" class="liftbtn" data-act="savesess" data-date="${k}">☆ Save session</button>` : ""}
       </div>
     </section>`;
@@ -1403,6 +1516,21 @@ $("#view-week").addEventListener("click", ev => {
   else if (act === "entry") openEntry({ kind: "cal", date, id });
   else if (act === "lift") openLift(date);
   else if (act === "savesess") saveDayAsSession(date);
+  else if (act === "checkin") openCheckin(date);
+  else if (act === "mode") {
+    state.weekMode = t.dataset.mode;
+    if (state.weekMode === "month") state.month = new Date(state.week);
+    renderWeek();
+  }
+  else if (act === "mprev" || act === "mnext") {
+    state.month = new Date(state.month.getFullYear(), state.month.getMonth() + (act === "mnext" ? 1 : -1), 1);
+    renderWeek();
+  }
+  else if (act === "gotoday") {
+    state.week = mondayOf(parseKey(date)); state.weekMode = "week"; renderWeek();
+    const card = document.getElementById("day-" + date);
+    if (card) card.scrollIntoView({ block: "start" });
+  }
   else if (act === "remove") removeItem("cal", t.dataset.key, id);
   else if (act === "toggle") {
     const e = getEntry(date, id); if (!e) return;
@@ -1411,13 +1539,14 @@ $("#view-week").addEventListener("click", ev => {
       // Done as planned: the target becomes what you did (Undo in the toast).
       if (!hasLog(e) && e.target.length) {
         e.log = clone(e.target); e.autoLog = true;
-        toast(`Logged as planned: ${fmtSets(e.log)}`, { label: "Undo", run: () => {
-          e.log = []; delete e.autoLog; e.done = false; save(); renderWeek(); renderLibrary();
+        const pr = checkPR(e);
+        toast(pr.length ? `🎉 New PR: ${pr.join(", ")}` : `Logged as planned: ${fmtSets(e.log)}`, { label: "Undo", run: () => {
+          e.log = []; delete e.autoLog; delete e.pr; e.done = false; save(); renderWeek(); renderLibrary();
         } });
       }
     } else {
       e.done = false;
-      if (e.autoLog) { e.log = []; delete e.autoLog; }   // only undo what the tick filled in
+      if (e.autoLog) { e.log = []; delete e.autoLog; delete e.pr; }   // only undo what the tick filled in
     }
     save(); renderWeek(); renderLibrary();
   }
@@ -1673,6 +1802,8 @@ $("#entryForm").addEventListener("submit", ev => {
   if (!$("#gradesWrap").hidden) { if (state.editGrades.length) item.grades = [...state.editGrades]; else delete item.grades; }
   if (hasLog(item) && !hadLog) item.done = true;   // logging it counts as doing it
   item.note = f.note.value.trim();
+  const hadPR = JSON.stringify(item.pr || null);
+  const pr = checkPR(item);
   if (newDate !== t.date) {
     const i = db.plan[t.date].indexOf(item);
     db.plan[t.date].splice(i, 1);
@@ -1683,7 +1814,8 @@ $("#entryForm").addEventListener("submit", ev => {
   closeSheet($("#entryDialog"));
   renderWeek();
   renderLibrary();
-  if (newDate !== t.date) toast(`Moved to ${shortDate(newDate)}`);
+  if (pr.length && JSON.stringify(pr) !== hadPR) toast(`🎉 New PR: ${pr.join(", ")}`);
+  else if (newDate !== t.date) toast(`Moved to ${shortDate(newDate)}`);
 });
 
 $("#climbMins").addEventListener("input", e => e.target.classList.remove("bad"));
@@ -1950,6 +2082,8 @@ function renderPlanTab() {
     }).join("") : `<div class="card"><p class="muted">Set a goal and watch it fill in as you log. For example: <b>Send V7</b>, <b>Train 10 h a week</b> or <b>Weighted pull-ups +45 lb</b>.</p>
       <button class="primary" data-act="newgoal" style="margin-top:12px">Set a goal</button></div>`}
 
+    ${projectsHTML()}
+
     <div class="bar"><h3 class="grouph" style="margin:14px 0 0">Sessions</h3><button class="ghost sm" data-act="newsess">+ Session</button></div>
     ${sessions.map(x => `
       <div class="card sess">
@@ -2004,6 +2138,8 @@ $("#view-plan").addEventListener("click", async ev => {
   const t = ev.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act, id = t.dataset.id;
   if (act === "newgoal") openGoal(null);
+  else if (act === "newproj") openProject(null);
+  else if (act === "projtry" || act === "projsent" || act === "projedit") projectAction(act, id);
   else if (act === "editgoal") openGoal(id);
   else if (act === "newsess") {
     const name = await askName("New session", "e.g. Pull day");
@@ -2465,9 +2601,41 @@ function renderData() {
         ${vals.some(v => v != null) ? `<div class="chartwrap">${lineChart(weeks, vals, m)}<div class="ctip" hidden></div></div>`
           : `<p class="empty">Nothing logged for ${esc(ex.name)} in the last ${n} weeks.</p>`}`
       : `<p class="empty">Log some sets on the Week tab and your progress shows up here.</p>`}
-    </section>`;
+    </section>
+    ${prCard()}
+    ${checkinCard(weeks)}`;
   const gg = $("#view-data .gradegrid");
   if (gg) gg.scrollLeft = gg.scrollWidth;   // newest week in view
+}
+
+function prCard() {
+  const { list, grade } = personalRecords();
+  if (!list.length && !grade) return "";
+  const rows = [...(grade ? [{ name: "Hardest send", v: `V${grade.v}`, date: grade.date }] : []),
+    ...list.map(r => ({ name: r.ex.name, v: fmtMetric(r.v, r.m), date: r.date }))];
+  return `<section class="card">
+    <h3>🏆 Personal records</h3>
+    <p class="hint" style="margin-top:2px">Your best set of each exercise, newest first.</p>
+    <table class="dt"><tbody>${rows.map(r => `<tr><td>${esc(r.name)}</td><td><b>${esc(r.v)}</b></td><td class="muted">${shortDate(r.date)}</td></tr>`).join("")}</tbody></table>
+  </section>`;
+}
+function checkinCard(weeks) {
+  const avg = w => {
+    const out = {};
+    for (const [k] of CHECKS) {
+      const v = [0, 1, 2, 3, 4, 5, 6].map(i => db.checkin[dkey(addDays(w, i))]).filter(c => c && c[k]).map(c => c[k]);
+      out[k] = v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(1) : "–";
+    }
+    return out;
+  };
+  const any = weeks.some(w => [0, 1, 2, 3, 4, 5, 6].some(i => db.checkin[dkey(addDays(w, i))]));
+  return `<section class="card">
+    <h3>How you felt</h3>
+    <p class="hint" style="margin-top:2px">Average daily check-in (1 = sore, 5 = great). Check in from any day on the Week tab.</p>
+    ${any ? `<table class="dt cktable"><thead><tr><th>Week</th>${CHECKS.map(([, l]) => `<th>${l}</th>`).join("")}</tr></thead><tbody>
+      ${weeks.filter(w => [0, 1, 2, 3, 4, 5, 6].some(i => db.checkin[dkey(addDays(w, i))])).map(w => { const a = avg(w); return `<tr><td>${wkLabel(w)}</td>${CHECKS.map(([k]) => `<td>${a[k]}</td>`).join("")}</tr>`; }).reverse().join("")}
+    </tbody></table>` : `<p class="empty">No check-ins yet.</p>`}
+  </section>`;
 }
 
 $("#view-data").addEventListener("click", e => {
@@ -2748,6 +2916,308 @@ async function receiveShare() {
 
 
 /* =========================================================
+   Personal records
+   ========================================================= */
+
+// Best value for an exercise, ignoring one entry (the one being saved).
+function exBestExcept(exId, m, skipId) {
+  let v = null;
+  for (const list of Object.values(db.plan)) for (const e of list) {
+    if (e.ex !== exId || e.id === skipId) continue;
+    for (const s of e.log || []) if (s[m.key] != null) v = v == null ? s[m.key] : Math.max(v, s[m.key]);
+  }
+  return v;
+}
+function bestGradeExcept(skipId) {
+  let v = null;
+  for (const list of Object.values(db.plan)) for (const e of list) if (e.id !== skipId) for (const g of e.grades || []) v = v == null ? g : Math.max(v, g);
+  return v;
+}
+
+// Marks e.pr and returns what was beaten, e.g. ["Weighted pull-ups +35 lb"]. The first ever log isn't a PR.
+function checkPR(e) {
+  const ex = findEx(e.ex), out = [];
+  if (ex) {
+    const m = progressMetric(ex);
+    const vals = m.agg === "max" ? (e.log || []).map(s => s[m.key]).filter(x => x != null) : [];
+    if (vals.length) {
+      const v = Math.max(...vals), prev = exBestExcept(ex.id, m, e.id);
+      if (prev != null && v > prev) out.push(`${ex.name} ${fmtMetric(v, m)}`);
+    }
+  }
+  if (e.grades && e.grades.length) {
+    const top = Math.max(...e.grades), prev = bestGradeExcept(e.id);
+    if (prev != null && top > prev) out.push(`V${top} send`);
+  }
+  if (out.length) e.pr = out; else delete e.pr;
+  return out;
+}
+
+// Best set per exercise with the date it happened (max-type metrics), plus top grade.
+function personalRecords() {
+  const best = {};
+  for (const [k, list] of Object.entries(db.plan)) for (const e of list) {
+    const ex = findEx(e.ex); if (!ex) continue;
+    const m = progressMetric(ex); if (m.agg !== "max") continue;
+    for (const s of e.log || []) {
+      const v = s[m.key]; if (v == null) continue;
+      const b = best[ex.id];
+      if (!b || v > b.v || (v === b.v && k < b.date)) best[ex.id] = { ex, m, v, date: k };
+    }
+  }
+  let grade = null;
+  for (const [k, list] of Object.entries(db.plan)) for (const e of list) for (const g of e.grades || [])
+    if (!grade || g > grade.v || (g === grade.v && k < grade.date)) grade = { v: g, date: k };
+  return { list: Object.values(best).sort((a, b) => b.date.localeCompare(a.date)), grade };
+}
+
+/* =========================================================
+   Timer: rest countdown, or hang repeaters (on / off × reps)
+   ========================================================= */
+
+const timer = { mode: "rest", rest: 120, on: 7, off: 3, reps: 6, phases: [], i: 0, endAt: 0, left: 0, running: false, iv: null, lock: null };
+let actx = null;
+function beep(freq = 880, dur = 0.15) {
+  try {
+    actx ||= new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.value = freq; o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(0.3, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur);
+    o.start(); o.stop(actx.currentTime + dur);
+  } catch (e) {}
+  try { navigator.vibrate && navigator.vibrate(dur > 0.2 ? 250 : 60); } catch (e) {}
+}
+function buildPhases() {
+  if (timer.mode === "rest") return [{ label: "Rest", secs: timer.rest }];
+  const p = [{ label: "Get ready", secs: 5 }];
+  for (let r = 1; r <= timer.reps; r++) {
+    p.push({ label: "Hang", secs: timer.on, rep: r });
+    if (r < timer.reps) p.push({ label: "Rest", secs: timer.off, rep: r });
+  }
+  return p;
+}
+function renderTimer() {
+  const ph = timer.phases[timer.i], secs = timer.running || timer.left ? timer.left : ph ? ph.secs : timer.phases.length ? 0 : buildPhases()[0].secs;
+  $("#tmClock").textContent = secs >= 60 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}` : String(secs);
+  $("#tmPhase").textContent = !timer.phases.length ? (timer.mode === "rest" ? "Rest timer" : `${timer.reps} × ${timer.on}s on / ${timer.off}s off`)
+    : ph ? `${ph.label}${ph.rep ? ` · rep ${ph.rep} of ${timer.reps}` : ""}` : "Done ✓";
+  $("#tmClock").className = ph && ph.label === "Hang" ? "hang" : "";
+  $("#tmStart").textContent = timer.running ? "Pause" : timer.phases.length && timer.i < timer.phases.length ? "Resume" : "Start";
+  document.querySelectorAll("#tmMode [data-tm]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tm === timer.mode)));
+  document.querySelectorAll("#tmPresets [data-rest]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.rest) === timer.rest)));
+  $("#tmRestOpts").hidden = timer.mode !== "rest";
+  $("#tmHangOpts").hidden = timer.mode !== "hang";
+}
+function tick() {
+  const ph = timer.phases[timer.i]; if (!ph) return;
+  const left = Math.max(0, Math.ceil((timer.endAt - Date.now()) / 1000));
+  if (left !== timer.left && left > 0 && left <= 3) beep(660, 0.08);
+  timer.left = left;
+  if (left <= 0) {
+    timer.i++;
+    const next = timer.phases[timer.i];
+    if (!next) { stopTimer(); timer.left = 0; beep(990, 0.5); renderTimer(); return; }
+    beep(next.label === "Hang" ? 990 : 520, 0.3);
+    timer.endAt = Date.now() + next.secs * 1000; timer.left = next.secs;
+  }
+  renderTimer();
+}
+async function startTimer() {
+  if (!timer.phases.length || timer.i >= timer.phases.length) { timer.phases = buildPhases(); timer.i = 0; timer.left = timer.phases[0].secs; }
+  timer.endAt = Date.now() + timer.left * 1000;
+  timer.running = true;
+  beep(timer.phases[timer.i].label === "Hang" ? 990 : 520, 0.12);
+  clearInterval(timer.iv); timer.iv = setInterval(tick, 200);
+  try { timer.lock = await navigator.wakeLock.request("screen"); } catch (e) {}   // keep the screen on if allowed
+  renderTimer();
+}
+function stopTimer() {
+  timer.running = false; clearInterval(timer.iv);
+  try { timer.lock && timer.lock.release(); } catch (e) {}
+  timer.lock = null;
+}
+function resetTimer() { stopTimer(); timer.phases = []; timer.i = 0; timer.left = 0; renderTimer(); }
+
+function openTimer() {
+  // Hang settings from the target's first set when it has a hold time.
+  const item = editedItem(), first = item && (item.target || [])[0];
+  if (first && first.time) { timer.mode = "hang"; timer.on = first.time; }
+  if (item && catOf(item) !== "Fingers" && !(first && first.time)) timer.mode = "rest";
+  $("#tmOn").value = timer.on; $("#tmOff").value = timer.off; $("#tmReps").value = timer.reps;
+  resetTimer();
+  openSheet($("#timerDialog"));
+}
+$("#timerBtn").addEventListener("click", openTimer);
+$("#timerDialog").addEventListener("click", e => {
+  const m = e.target.closest("[data-tm]"); if (m) { timer.mode = m.dataset.tm; resetTimer(); }
+  const r = e.target.closest("[data-rest]"); if (r) { timer.rest = Number(r.dataset.rest); resetTimer(); }
+  if (e.target.closest("#tmStart")) timer.running ? (stopTimer(), renderTimer()) : startTimer();
+  if (e.target.closest("#tmReset")) resetTimer();
+});
+$("#timerDialog").addEventListener("input", e => {
+  const n = Math.max(1, Math.round(parseNum(e.target.value) || 0));
+  if (e.target.id === "tmOn") timer.on = n;
+  if (e.target.id === "tmOff") timer.off = n;
+  if (e.target.id === "tmReps") timer.reps = n;
+  if (!timer.running) resetTimer();
+});
+$("#timerDialog").addEventListener("close", stopTimer);
+
+/* =========================================================
+   Daily check-in: fingers, skin, energy (1 = bad, 5 = great)
+   ========================================================= */
+
+const CHECKS = [["fingers", "Fingers"], ["skin", "Skin"], ["energy", "Energy"]];
+function openCheckin(date) {
+  state.checkDate = date;
+  const c = db.checkin[date] || {};
+  state.checkVals = { fingers: c.fingers, skin: c.skin, energy: c.energy };
+  $("#ckTitle").textContent = `Check-in · ${shortDate(date)}`;
+  $("#ckRows").innerHTML = CHECKS.map(([k, label]) => `<div class="ckrow"><b>${label}</b><div class="ckbtns">${[1, 2, 3, 4, 5].map(v =>
+    `<button type="button" class="ckbtn" data-ck="${k}" data-v="${v}" aria-pressed="${c[k] === v}" aria-label="${label} ${v} of 5">${v}</button>`).join("")}</div></div>`).join("");
+  $("#ckNote").value = c.note || "";
+  openSheet($("#checkDialog"));
+}
+$("#ckRows").addEventListener("click", e => {
+  const b = e.target.closest("[data-ck]"); if (!b) return;
+  state.checkVals[b.dataset.ck] = Number(b.dataset.v);
+  document.querySelectorAll(`#ckRows [data-ck="${b.dataset.ck}"]`).forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+});
+$("#checkForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const c = { ...state.checkVals, note: $("#ckNote").value.trim() };
+  Object.keys(c).forEach(k => { if (c[k] == null || c[k] === "") delete c[k]; });
+  if (Object.keys(c).length) db.checkin[state.checkDate] = c; else delete db.checkin[state.checkDate];
+  save(); closeSheet($("#checkDialog")); renderWeek();
+});
+$("#ckClear").addEventListener("click", () => { delete db.checkin[state.checkDate]; save(); closeSheet($("#checkDialog")); renderWeek(); });
+const checkSummary = c => CHECKS.filter(([k]) => c[k]).map(([k, l]) => `${l} ${c[k]}`).join(" · ");
+
+/* =========================================================
+   Load warnings
+   ========================================================= */
+
+const FINGER_HEAVY = ["s-limit", "s-board", "s-campus", "s-bumps"];
+const isHard = e => catOf(e) === "Fingers" || catOf(e) === "Climbing power" || FINGER_HEAVY.includes(e.ex);
+const hardDay = k => (db.plan[k] || []).some(isHard);
+
+function dayWarning(k) {
+  if (!hardDay(k)) return "";
+  const d = parseKey(k);
+  if (hardDay(dkey(addDays(d, -1))) && hardDay(dkey(addDays(d, -2)))) return "3 hard finger days in a row. Consider a rest or easy day.";
+  for (let i = 0; i <= 2; i++) {
+    const c = db.checkin[dkey(addDays(d, -i))];
+    if (c && c.fingers && c.fingers <= 2) return `Fingers felt sore (${c.fingers}/5) ${i === 0 ? "today" : `on ${fmt(addDays(d, -i), { weekday: "short" })}`}. Go easy.`;
+  }
+  return "";
+}
+
+/* =========================================================
+   Projects: boulders you're working on
+   ========================================================= */
+
+function openProject(id) {
+  const p = id ? db.projects.find(x => x.id === id) : null;
+  state.editProj = p ? p.id : null;
+  $("#prTitle").textContent = p ? "Edit project" : "New project";
+  $("#prName").value = p ? p.name : "";
+  $("#prGrade").innerHTML = `<option value="">–</option>` + Array.from({ length: 13 }, (_, v) => `<option value="${v}">V${v}</option>`).join("");
+  $("#prGrade").value = p && p.grade != null ? String(p.grade) : "";
+  $("#prWhere").value = p ? p.where || "" : "";
+  $("#prNotes").value = p ? p.notes || "" : "";
+  $("#prDelete").hidden = !p;
+  $("#prErr").textContent = "";
+  openSheet($("#projDialog"));
+}
+$("#projForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const name = $("#prName").value.trim();
+  if (!name) { $("#prErr").textContent = "Give it a name, like 'Pink roof problem'."; return; }
+  const data = { name, grade: $("#prGrade").value === "" ? null : Number($("#prGrade").value), where: $("#prWhere").value.trim(), notes: $("#prNotes").value.trim() };
+  if (state.editProj) Object.assign(db.projects.find(x => x.id === state.editProj), data);
+  else db.projects.push({ id: "pj-" + uid(), sessions: [], started: dkey(new Date()), ...data });
+  save(); closeSheet($("#projDialog")); renderPlanTab();
+});
+$("#prDelete").addEventListener("click", () => {
+  const i = db.projects.findIndex(x => x.id === state.editProj); if (i < 0) return;
+  const [p] = db.projects.splice(i, 1);
+  save(); closeSheet($("#projDialog")); renderPlanTab();
+  toast("Project deleted", { label: "Undo", run: () => { db.projects.splice(i, 0, p); save(); renderPlanTab(); } });
+});
+
+function projectsHTML() {
+  const open = db.projects.filter(p => !p.sentOn), sent = db.projects.filter(p => p.sentOn);
+  const card = p => `<div class="card proj">
+    <div class="bar"><strong>${esc(p.name)}</strong>${p.grade != null ? `<span class="gpill">V${p.grade}</span>` : ""}</div>
+    <small class="muted">${[p.where, `${p.sessions.length} session${p.sessions.length === 1 ? "" : "s"}`, p.sentOn ? `sent ${shortDate(p.sentOn)} 🎉` : p.sessions.length ? `last tried ${shortDate(p.sessions[p.sessions.length - 1])}` : ""].filter(Boolean).map(esc).join(" · ")}</small>
+    ${p.notes ? `<p class="hint" style="margin-top:4px">${esc(p.notes)}</p>` : ""}
+    <div class="row" style="margin-top:10px">
+      ${p.sentOn ? "" : `<button class="ghost sm" data-act="projtry" data-id="${esc(p.id)}">+ Tried it today</button>
+      <button class="primary sm" data-act="projsent" data-id="${esc(p.id)}">Sent it! 🎉</button>`}
+      <button class="linkish" data-act="projedit" data-id="${esc(p.id)}">Edit</button>
+    </div></div>`;
+  return `
+    <div class="bar"><h3 class="grouph" style="margin:14px 0 0">Projects</h3><button class="ghost sm" data-act="newproj">+ Project</button></div>
+    ${open.length ? open.map(card).join("") : `<p class="hint">Boulders you're working on. Log each session you try one and mark it sent when you top it.</p>`}
+    ${sent.length ? `<details class="tableview"><summary>Sent (${sent.length})</summary>${sent.map(card).join("")}</details>` : ""}`;
+}
+
+async function projectAction(act, id) {
+  const p = db.projects.find(x => x.id === id); if (!p) return;
+  const today = dkey(new Date());
+  if (act === "projtry") {
+    if (!p.sessions.includes(today)) p.sessions.push(today);
+    save(); renderPlanTab(); toast(`${p.name}: session ${p.sessions.length} logged`);
+  } else if (act === "projsent") {
+    if (!p.sessions.includes(today)) p.sessions.push(today);
+    p.sentOn = today; save(); renderPlanTab();
+    toast(`🎉 Sent ${p.name}${p.grade != null ? ` (V${p.grade})` : ""} after ${p.sessions.length} session${p.sessions.length === 1 ? "" : "s"}!`);
+  } else if (act === "projedit") openProject(id);
+}
+
+/* =========================================================
+   Month view
+   ========================================================= */
+
+// Training type for the calendar dots.
+function kindOf(e) {
+  const c = catOf(e);
+  if (c === "Climbing" || c === "Climbing power" || c === "Fingers") return "climb";
+  if (c === "Strength" || c === "Core") return "lift";
+  if (c === "Cardio") return "cardio";
+  return "other";
+}
+const KIND_COLOR = { climb: "var(--c-climb)", lift: "var(--c-lift)", cardio: "var(--c-cardio)", other: "var(--grey)" };
+
+function renderMonth() {
+  const first = new Date(state.month.getFullYear(), state.month.getMonth(), 1);
+  const start = mondayOf(first), todayK = dkey(new Date());
+  const title = fmt(first, { month: "long", year: "numeric" });
+  let cells = "";
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(start, i), k = dkey(d);
+    if (i >= 35 && d.getMonth() !== first.getMonth()) break;
+    const entries = db.plan[k] || [];
+    const kinds = [...new Set([...entries.map(kindOf), ...(db.lift[k] ? ["lift"] : [])])];
+    const done = entries.length && entries.every(e => e.done);
+    cells += `<button class="mday${d.getMonth() !== first.getMonth() ? " out" : ""}${k === todayK ? " today" : ""}${done ? " done" : ""}" data-act="gotoday" data-date="${k}" aria-label="${fmt(d, { weekday: "long", month: "long", day: "numeric" })}: ${entries.length} exercise${entries.length === 1 ? "" : "s"}">
+      <span>${d.getDate()}</span><i>${kinds.map(t => `<b style="background:${KIND_COLOR[t]}"></b>`).join("")}</i></button>`;
+  }
+  const n = Object.keys(db.plan).filter(k => k.startsWith(`${first.getFullYear()}-${pad(first.getMonth() + 1)}`) && db.plan[k].length).length;
+  return `<div class="card">
+    <div class="bar">
+      <button class="iconbtn" data-act="mprev" aria-label="Previous month">${ICON_L}</button>
+      <div class="wk"><h2 style="font-size:1.35rem;white-space:nowrap">${title}</h2><p class="muted">${n} training day${n === 1 ? "" : "s"}</p></div>
+      <button class="iconbtn" data-act="mnext" aria-label="Next month">${ICON_R}</button>
+    </div>
+    <div class="mgrid">${["M", "T", "W", "T", "F", "S", "S"].map(x => `<span class="mhead">${x}</span>`).join("")}${cells}</div>
+    <div class="legend2">${[["climb", "Climbing & fingers"], ["lift", "Lifting"], ["cardio", "Cardio"], ["other", "Mobility"]].map(([k, l]) => `<span><i style="background:${KIND_COLOR[k]}"></i>${l}</span>`).join("")}</div>
+    <p class="hint">Tap a day to open its week.</p>
+  </div>`;
+}
+
+/* =========================================================
    Tabs, dialogs, boot
    ========================================================= */
 
@@ -2811,6 +3281,8 @@ async function checkForUpdate() {
   } catch (e) { /* offline: keep using this copy */ }
 }
 checkForUpdate();
+// Offline: a service worker keeps a copy of the app (only on the real site, not in previews).
+if ("serviceWorker" in navigator && location.hostname.endsWith("github.io")) navigator.serviceWorker.register("sw.js").catch(() => {});
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { checkForUpdate(); syncPull(); } });
 
 // In a stretched frame the bottom tab bar would sit at the very end of the page: put it under the header.
