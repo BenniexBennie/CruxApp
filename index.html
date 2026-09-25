@@ -573,7 +573,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.25-7";
+const APP_VERSION = "2026.09.25-8";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -610,9 +610,9 @@ const GRIPS = [["Half crimp", "Half"], ["Open hand", "Open"], ["Full crimp", "Fu
 // What each set can record. Load in pounds (+ added, − assistance); edge in mm, like hangboards are labelled.
 // "edge" also brings a grip column with it.
 // Cardio uses minutes and miles instead.
-const FIELDS = [["reps", "Reps"], ["time", "Time (sec)"], ["mins", "Time (min)"], ["dist", "Distance (mi)"],
+const FIELDS = [["reps", "Reps"], ["time", "Time (sec)"], ["mins", "Time (min)"], ["dist", "Distance (mi)"], ["elev", "Elevation gain (ft)"],
   ["load", "Load (lb)"], ["edge", "Edge + grip"]];
-const COL_HEAD = { reps: "Reps", time: "Sec", mins: "Min", dist: "Miles", load: "± lb", edge: "Edge mm", grip: "Grip" };
+const COL_HEAD = { reps: "Reps", time: "Sec", mins: "Min", dist: "Miles", elev: "Elev ft", load: "± lb", edge: "Edge mm", grip: "Grip" };
 const DEFAULT_FIELDS = ["reps", "load"];
 const CAT_FIELDS = {
   "Warm-up & mobility": ["reps", "time"], Climbing: ["reps"], "Climbing power": ["reps"], Fingers: ["time", "load", "edge"],
@@ -624,6 +624,7 @@ const FIELD_OVERRIDES = {
   "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
   "s-scappull": ["reps"], "s-fingerext": ["reps"],
   "s-dips": ["reps"], "s-trxrow": ["reps"],
+  "s-bike": ["mins", "dist", "elev"], "s-run": ["mins", "dist", "elev"], "s-soccer": ["mins"],
   // tracked as they were before Warm-up & prehab and Mobility merged
   "s-pushup": ["reps", "load"], "s-wrist": ["reps", "load"], "s-extrot": ["reps", "load"], "s-pronsup": ["reps", "load"],
   "s-eccwrist": ["reps", "load"], "s-facepull": ["reps", "load"], "s-ytw": ["reps", "load"],
@@ -716,6 +717,7 @@ const SEED = [
   { id: "s-bike", name: "Bike ride", cat: "Cardio", notes: "Road, mountain or stationary. Easy rides make good active recovery between climbing days." },
   { id: "s-run", name: "Run", cat: "Cardio", notes: "Keep most runs at an easy, conversational pace." },
   { id: "s-hike", name: "Hike", cat: "Cardio", notes: "Note the trail or elevation gain in your session notes." },
+  { id: "s-soccer", name: "Soccer", cat: "Cardio", notes: "Log the minutes you played. Note the position or intensity in your session notes." },
 ];
 SEED.forEach(x => { x.fields = defaultFields(x.id, x.cat); });
 
@@ -737,6 +739,8 @@ const V9_ADDED = ["s-bike", "s-run", "s-hike"];
 const V10_ADDED = ["s-rdl"];
 // Library version 11: front squat and TRX low row added.
 const V11_ADDED = ["s-frontsquat", "s-trxrow"];
+// Library version 12: elevation gain on bike rides and runs; soccer added.
+const V12_ADDED = ["s-soccer"];
 
 /* =========================================================
    Storage
@@ -748,7 +752,7 @@ const V11_ADDED = ["s-frontsquat", "s-trxrow"];
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 11, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], theme: "system" });
+const freshDb = () => ({ v: 12, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -867,6 +871,12 @@ function normalize(d) {
     d.exercises.push(...clone(SEED.filter(x => V11_ADDED.includes(x.id) && !have.has(x.id))));
     d.v = 11;
   }
+  if (d.v < 12) {
+    for (const e of d.exercises) if ((e.id === "s-bike" || e.id === "s-run") && !e.fields.includes("elev")) e.fields.push("elev");
+    const have = new Set(d.exercises.map(e => e.id));
+    d.exercises.push(...clone(SEED.filter(x => V12_ADDED.includes(x.id) && !have.has(x.id))));
+    d.v = 12;
+  }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
   }
@@ -934,6 +944,7 @@ function fmtSet(s) {
     s.time != null ? `${s.time}s` : "",
     s.mins != null ? `${s.mins} min` : "",
     s.dist != null ? `${s.dist} mi` : "",
+    s.elev != null ? `${s.elev} ft gain` : "",
     s.load != null ? fmtLoad(s.load) : "",
     s.edge != null ? `${s.edge}mm` : "",
     s.grip ? s.grip.toLowerCase() : "",
@@ -994,7 +1005,7 @@ function renderSets(box, sets) {
 
 // Accepts "+25", "-15", "−15", "25 lb", "12,5", "20mm", "10s". Returns NaN if it isn't a number.
 function parseNum(v) {
-  const t = v.replace(/[−–]/g, "-").replace(",", ".").replace(/\s*(lbs?|mm|sec|s|mins?|miles?|mi)$/i, "").replace(/\s+/g, "");
+  const t = v.replace(/[−–]/g, "-").replace(",", ".").replace(/\s*(lbs?|mm|sec|s|mins?|miles?|mi|ft|feet)$/i, "").replace(/\s+/g, "");
   return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(t) ? Number(t) : NaN;
 }
 
