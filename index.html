@@ -514,7 +514,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.25-4";
+const APP_VERSION = "2026.09.25-5";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -609,6 +609,7 @@ const SEED = [
   { id: "s-archer", name: "Archer pull-ups", cat: "Strength", notes: "Wide grip; pull toward one hand while the other arm straightens. Reps per side. Make it harder by relying less on the straight arm (open palm, then fingertips)." },
   { id: "s-typewriter", name: "Typewriter pull-ups", cat: "Strength", notes: "Pull to the top, then slide side to side over each hand while staying high. One rep = there and back." },
   { id: "s-deadlift", name: "Deadlift", cat: "Strength", notes: "Brace hard, bar close to the body. Builds posterior chain for heel hooks and body tension." },
+  { id: "s-rdl", name: "Romanian deadlift", cat: "Strength", notes: "Soft knees, push the hips back and lower the bar along your legs until you feel the hamstrings stretch, then drive the hips forward. Back flat throughout." },
   { id: "s-squat", name: "Back squat", cat: "Strength", notes: "" },
   { id: "s-bench", name: "Bench press", cat: "Strength", notes: "Feet planted, shoulder blades pinched, bar to lower chest. Use a spotter or safeties for heavy sets." },
   { id: "s-inclinedb", name: "Incline dumbbell press", cat: "Strength", notes: "Bench at 30–45°. Lower with control to the sides of the chest; elbows about 45° from the body." },
@@ -671,6 +672,9 @@ const V8_ADDED = ["s-bench", "s-inclinedb", "s-hammer", "s-pushdown", "s-dips", 
 // Library version 9: cardio added; Warm-up & prehab and Mobility merged.
 const V9_ADDED = ["s-bike", "s-run", "s-hike"];
 
+// Library version 10: Romanian deadlift added.
+const V10_ADDED = ["s-rdl"];
+
 // Starter plans for the Plan tab: exercise ids per day, Monday first.
 const STARTERS = [
   { name: "One-arm pull-up", weeks: 10,
@@ -705,7 +709,7 @@ const STARTERS = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 9, exercises: clone(SEED), plan: {}, plans: [], lift: {}, theme: "system" });
+const freshDb = () => ({ v: 10, exercises: clone(SEED), plan: {}, plans: [], lift: {}, theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -812,6 +816,11 @@ function normalize(d) {
     const have = new Set(d.exercises.map(e => e.id));
     d.exercises.push(...clone(SEED.filter(x => V9_ADDED.includes(x.id) && !have.has(x.id))));
     d.v = 9;
+  }
+  if (d.v < 10) {
+    const have = new Set(d.exercises.map(e => e.id));
+    d.exercises.push(...clone(SEED.filter(x => V10_ADDED.includes(x.id) && !have.has(x.id))));
+    d.v = 10;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
