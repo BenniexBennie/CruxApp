@@ -514,7 +514,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.25-5";
+const APP_VERSION = "2026.09.25-6";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -564,7 +564,7 @@ const FIELD_OVERRIDES = {
   "s-lockoff": ["reps", "time", "load"], "s-oap-neg": ["reps", "time", "load"], "s-oap-lock": ["reps", "time", "load"],
   "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
   "s-scappull": ["reps"], "s-fingerext": ["reps"],
-  "s-dips": ["reps"],
+  "s-dips": ["reps"], "s-trxrow": ["reps"],
   // tracked as they were before Warm-up & prehab and Mobility merged
   "s-pushup": ["reps", "load"], "s-wrist": ["reps", "load"], "s-extrot": ["reps", "load"], "s-pronsup": ["reps", "load"],
   "s-eccwrist": ["reps", "load"], "s-facepull": ["reps", "load"], "s-ytw": ["reps", "load"],
@@ -611,6 +611,8 @@ const SEED = [
   { id: "s-deadlift", name: "Deadlift", cat: "Strength", notes: "Brace hard, bar close to the body. Builds posterior chain for heel hooks and body tension." },
   { id: "s-rdl", name: "Romanian deadlift", cat: "Strength", notes: "Soft knees, push the hips back and lower the bar along your legs until you feel the hamstrings stretch, then drive the hips forward. Back flat throughout." },
   { id: "s-squat", name: "Back squat", cat: "Strength", notes: "" },
+  { id: "s-frontsquat", name: "Front squat", cat: "Strength", notes: "Bar resting on the front of the shoulders, elbows high, chest up. Sit straight down between the heels; keep the elbows up as you drive out of the bottom." },
+  { id: "s-trxrow", name: "TRX low row", cat: "Strength", notes: "Walk the feet forward so your body is at a low angle, straight from head to heels. Pull chest to hands, squeezing the shoulder blades; lower with control. Lower angle = harder." },
   { id: "s-bench", name: "Bench press", cat: "Strength", notes: "Feet planted, shoulder blades pinched, bar to lower chest. Use a spotter or safeties for heavy sets." },
   { id: "s-inclinedb", name: "Incline dumbbell press", cat: "Strength", notes: "Bench at 30–45°. Lower with control to the sides of the chest; elbows about 45° from the body." },
   { id: "s-hammer", name: "Hammer curls", cat: "Strength", notes: "Palms facing each other, elbows pinned to your sides. Load = weight per dumbbell." },
@@ -674,6 +676,8 @@ const V9_ADDED = ["s-bike", "s-run", "s-hike"];
 
 // Library version 10: Romanian deadlift added.
 const V10_ADDED = ["s-rdl"];
+// Library version 11: front squat and TRX low row added.
+const V11_ADDED = ["s-frontsquat", "s-trxrow"];
 
 // Starter plans for the Plan tab: exercise ids per day, Monday first.
 const STARTERS = [
@@ -709,7 +713,7 @@ const STARTERS = [
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 10, exercises: clone(SEED), plan: {}, plans: [], lift: {}, theme: "system" });
+const freshDb = () => ({ v: 11, exercises: clone(SEED), plan: {}, plans: [], lift: {}, theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -821,6 +825,11 @@ function normalize(d) {
     const have = new Set(d.exercises.map(e => e.id));
     d.exercises.push(...clone(SEED.filter(x => V10_ADDED.includes(x.id) && !have.has(x.id))));
     d.v = 10;
+  }
+  if (d.v < 11) {
+    const have = new Set(d.exercises.map(e => e.id));
+    d.exercises.push(...clone(SEED.filter(x => V11_ADDED.includes(x.id) && !have.has(x.id))));
+    d.v = 11;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
