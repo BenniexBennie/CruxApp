@@ -246,7 +246,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .setrow.head{margin-top:10px}
 .setrow.head span{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap;overflow:hidden}
 .setrow input,.setrow select{padding:8px 6px;min-width:0;border-radius:8px}
-.setrow input.bad{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,var(--sunk))}
+.setrow input.bad,#climbMins.bad{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,var(--sunk))}
 .setrow .rm{padding:6px}
 .setn{font-weight:600;color:var(--muted);text-align:center}
 .setsec .ghost{margin-top:10px}
@@ -349,6 +349,8 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
         <label class="field"><span>Day</span><select name="day" id="entryDay"></select></label>
       </div>
       <div id="entryCalFields">
+        <label class="field" id="climbTimeWrap"><span>Time climbing (min)</span><input type="text" name="climbMins" id="climbMins" inputmode="decimal" autocomplete="off" placeholder="e.g. 90"></label>
+        <label class="field" id="sendsWrap"><span>Notable boulders sent</span><textarea name="sends" id="sends" rows="2" placeholder="e.g. Pink V5 in the cave, Moonboard 6B+ benchmark"></textarea></label>
         <label class="field"><span>Session notes</span><textarea name="note" placeholder="How did it go? Felt strong, left index a bit sore…"></textarea></label>
         <label class="field"><span>Date</span><input type="date" name="date"></label>
       </div>
@@ -434,7 +436,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.25-1";
+const APP_VERSION = "2026.09.25-3";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -902,10 +904,19 @@ document.addEventListener("click", e => {
 });
 
 // Most recent logged session of an exercise before a given date.
+// Bouldering sessions (the Climbing category and the bouldering warm-up) also log total time on the wall.
+const tracksClimbTime = item => catOf(item) === "Climbing" || item.ex === "s-warmup";
+// Limit bouldering and board sessions also record notable sends.
+const tracksSends = item => item.ex === "s-limit" || item.ex === "s-board";
+const hasLog = e => (e.log && e.log.length) || e.mins || e.sends;
+const fmtClimbMins = m => m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${Math.round(m % 60)} min` : ""}` : `${m} min`;
+// What was done in a session: sets, then time climbing.
+const logSummary = e => [fmtSets(e.log), e.mins ? `⏱ ${fmtClimbMins(e.mins)} climbing` : "", e.sends ? `🏅 ${e.sends}` : ""].filter(Boolean).join(" · ");
+
 function lastLog(exId, beforeKey, skipId) {
   const keys = Object.keys(db.plan).filter(k => k < beforeKey).sort().reverse();
   for (const k of keys) {
-    const e = db.plan[k].find(x => x.ex === exId && x.id !== skipId && x.log && x.log.length);
+    const e = db.plan[k].find(x => x.ex === exId && x.id !== skipId && hasLog(x));
     if (e) return { date: k, entry: e };
   }
   return null;
@@ -914,7 +925,7 @@ function lastLog(exId, beforeKey, skipId) {
 function history(exId) {
   const out = [];
   for (const [k, list] of Object.entries(db.plan)) {
-    for (const e of list) if (e.ex === exId && ((e.log && e.log.length) || e.note)) out.push({ date: k, entry: e });
+    for (const e of list) if (e.ex === exId && (hasLog(e) || e.note)) out.push({ date: k, entry: e });
   }
   return out.sort((a, b) => b.date.localeCompare(a.date));
 }
@@ -1078,7 +1089,9 @@ function noteSnippet(note, words = 7, chars = 48) {
 }
 
 function entryLine(e) {
-  if (e.log.length) return `<span class="logged">✓ ${esc(fmtSets(e.log))}</span>`;
+  const done = [fmtSets(e.log), e.mins ? `⏱ ${fmtClimbMins(e.mins)} climbing` : ""].filter(Boolean).join(" · ");
+  if (done) return `<span class="logged">✓ ${esc(done)}</span>`;
+  if (e.sends) return "";
   if (e.target.length) return `Target: ${esc(fmtSets(e.target))}`;
   if (!fieldsOf(e).length && e.note) return "";   // notes-only (e.g. a climbing session): the note says it all
   return fieldsOf(e).length ? "Tap to set a target or log it" : "Tap to add notes";
@@ -1091,7 +1104,7 @@ function entryHTML(date, e) {
     <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="Mark ${esc(name)} done">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
-      <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
+      <span><strong>${esc(name)}${e.plan ? `<span class="progtag">Plan</span>` : ""}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.sends ? `<small class="notesnip">🏅 ${esc(noteSnippet(e.sends))}</small>` : ""}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
     </button>
     ${RM("cal", date, e.id, name)}
   </li>`;
@@ -1101,8 +1114,8 @@ function renderWeek() {
   const days = weekDays();
   const todayKey = dkey(new Date());
   const isCurrent = dkey(state.week) === dkey(mondayOf(new Date()));
-  let total = 0, done = 0;
-  for (const d of days) for (const e of db.plan[dkey(d)] || []) { total++; if (e.done) done++; }
+  let total = 0, done = 0, climbMins = 0;
+  for (const d of days) for (const e of db.plan[dkey(d)] || []) { total++; if (e.done) done++; climbMins += e.mins || 0; }
 
   const end = days[6];
   const sameMonth = end.getMonth() === state.week.getMonth();
@@ -1123,7 +1136,7 @@ function renderWeek() {
     ${planLine}
     <div class="progress" role="progressbar" aria-label="Week progress" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div style="width:${pct}%"></div></div>
     <div class="bar weekstats">
-      <span class="muted">${total ? `${done} of ${total} done` : "Nothing planned yet"}</span>
+      <span class="muted">${total ? `${done} of ${total} done` : "Nothing planned yet"}${climbMins ? ` · ⏱ ${fmtClimbMins(climbMins)} climbing` : ""}</span>
       <span class="row">
         <button class="ghost sm" data-act="copy"${total ? "" : " disabled"}>Copy to next week</button>
         ${total ? `<button class="ghost sm danger" data-act="clear">Clear</button>` : ""}
@@ -1229,7 +1242,7 @@ const tomorrowKey = () => dkey(addDays(new Date(), 1));
 
 function exSubtitle(e) {
   const last = lastLog(e.id, tomorrowKey());
-  return last ? `Last: ${shortDate(last.date)} · ${fmtSets(last.entry.log)}` : "Not logged yet";
+  return last ? `Last: ${shortDate(last.date)} · ${logSummary(last.entry)}` : "Not logged yet";
 }
 
 /* ---------- Library view ---------- */
@@ -1342,7 +1355,7 @@ function openEntry(target) {
   const last = lastLog(item.ex, isPlan ? tomorrowKey() : target.date, item.id);
   state.lastSets = last ? last.entry.log : null;
   $("#entryLast").innerHTML = last
-    ? `<div class="lastbox"><b>Last time</b> · ${shortDate(last.date)}<br>${esc(fmtSets(last.entry.log))}${last.entry.note ? `<br><small>“${esc(last.entry.note)}”</small>` : ""}</div>`
+    ? `<div class="lastbox"><b>Last time</b> · ${shortDate(last.date)}<br>${esc(logSummary(last.entry))}${last.entry.note ? `<br><small>“${esc(last.entry.note)}”</small>` : ""}</div>`
     : "";
 
   for (const id of ["targetSets", "logSets"]) $("#" + id).dataset.cols = JSON.stringify(cols);
@@ -1355,12 +1368,23 @@ function openEntry(target) {
 
   $("#entryPlanFields").hidden = !isPlan;
   $("#entryCalFields").hidden = isPlan;
+  $("#climbTimeWrap").hidden = isPlan || !tracksClimbTime(item);
+  if (!isPlan && tracksClimbTime(item)) {
+    $("#entryHint").textContent = hasSets
+      ? "Set a target, then log your sets, time on the wall and how it went."
+      : `Log your time on the wall${tracksSends(item) ? ", notable sends" : ""} and how it went.`;
+    $("#noFields").hidden = true;
+  }
+  $("#sendsWrap").hidden = isPlan || !tracksSends(item);
   if (isPlan) {
     $("#entryDay").innerHTML = [0, 1, 2, 3, 4, 5, 6].map(i => `<option value="${i}">${dayName(i)}</option>`).join("");
     $("#entryDay").value = String(target.day);
   } else {
     f.date.value = target.date;
     f.note.value = item.note || "";
+    f.climbMins.value = item.mins ?? "";
+    f.sends.value = item.sends || "";
+    f.climbMins.classList.remove("bad");
   }
   $("#entryErr").textContent = "";
   openSheet($("#entryDialog"));
@@ -1379,6 +1403,7 @@ $("#entryForm").addEventListener("submit", ev => {
   const t = state.editEntry;
   const item = editedItem(); if (!item) return;
   const f = ev.target;
+  f.climbMins.classList.remove("bad");
   const target = readSets($("#targetSets"));
   const log = readSets($("#logSets"));
   const bad = $("#entryForm .bad");
@@ -1405,10 +1430,23 @@ $("#entryForm").addEventListener("submit", ev => {
 
   const newDate = f.date.value;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) { $("#entryErr").textContent = "Pick a date."; return; }
-  const hadLog = item.log.length > 0;
+  let mins;
+  if (!$("#climbTimeWrap").hidden && f.climbMins.value.trim()) {
+    mins = parseNum(f.climbMins.value.trim());
+    if (!Number.isFinite(mins) || mins < 0) {
+      f.climbMins.classList.add("bad");
+      $("#entryErr").textContent = "Time climbing should be a number of minutes, like 90.";
+      f.climbMins.focus();
+      return;
+    }
+  }
+  const hadLog = !!hasLog(item);
   item.log = log;
+  if (mins) item.mins = mins; else delete item.mins;
+  const sends = $("#sendsWrap").hidden ? "" : f.sends.value.trim();
+  if (sends) item.sends = sends; else if (!$("#sendsWrap").hidden) delete item.sends;
   item.note = f.note.value.trim();
-  if (item.log.length && !hadLog) item.done = true;   // logging it counts as doing it
+  if (hasLog(item) && !hadLog) item.done = true;   // logging it counts as doing it
   if (newDate !== t.date) {
     const i = db.plan[t.date].indexOf(item);
     db.plan[t.date].splice(i, 1);
@@ -1421,6 +1459,8 @@ $("#entryForm").addEventListener("submit", ev => {
   renderLibrary();
   if (newDate !== t.date) toast(`Moved to ${shortDate(newDate)}`);
 });
+
+$("#climbMins").addEventListener("input", e => e.target.classList.remove("bad"));
 
 $("#entryRemove").addEventListener("click", () => {
   const t = state.editEntry;
@@ -1592,7 +1632,7 @@ function stripPlan(plan, keepLogged) {
     db.plan[k] = db.plan[k].filter(e => {
       if (e.plan !== plan.id) return true;
       old[e.pk] = e;
-      return keepLogged && (e.done || e.log.length || e.note);
+      return keepLogged && (e.done || hasLog(e) || e.note);
     });
     if (!db.plan[k].length) delete db.plan[k];
   }
@@ -1611,7 +1651,7 @@ function applyPlan(plan) {
         const prev = old[pk] || {};
         (db.plan[k] ||= []).push({
           id: uid(), ex: slot.ex, name: slot.name, cat: slot.cat, fields: clone(slot.fields || fieldsOf(slot)),
-          target: clone(slot.target || []), log: prev.log || [], done: !!prev.done, note: prev.note || "",
+          target: clone(slot.target || []), log: prev.log || [], ...(prev.mins ? { mins: prev.mins } : {}), ...(prev.sends ? { sends: prev.sends } : {}), done: !!prev.done, note: prev.note || "",
           plan: plan.id, pk,
         });
         n++;
@@ -1822,7 +1862,7 @@ function openExercise(id) {
   const hist = ex ? history(ex.id) : [];
   $("#exHistory").hidden = !ex;
   $("#exHistoryList").innerHTML = hist.length
-    ? hist.slice(0, 20).map(h => `<li><b>${shortDate(h.date)}</b> ${esc(fmtSets(h.entry.log))}${h.entry.note ? ` <small>“${esc(h.entry.note)}”</small>` : ""}</li>`).join("")
+    ? hist.slice(0, 20).map(h => `<li><b>${shortDate(h.date)}</b> ${esc(logSummary(h.entry))}${h.entry.note ? ` <small>“${esc(h.entry.note)}”</small>` : ""}</li>`).join("")
     : `<li class="muted">Nothing logged yet.</li>`;
   $("#exDelete").hidden = !ex;
   $("#exErr").textContent = "";
