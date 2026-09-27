@@ -10,9 +10,9 @@ On iPhone, open it in Safari, tap Share, then **Add to Home Screen**.
 - **Week tab:** schedule exercises from the library for each day.
   - Set a target set by set, then log what you actually did. Ticking a box logs it as planned.
   - Track lifting time, a daily check-in (fingers, skin, energy) and load warnings.
-  - Switch to the Month calendar for an overview.
+  - Switch to the Month calendar for an overview. Bodyweight is logged in the check-in.
 - **Plan tab:** goals, repeatable sessions (shareable by link) and boulder projects.
-- **Data tab:** training time per week, V grades, exercise progress, personal records and check-in averages.
+- **Data tab:** training time per week, V grades, a grade pyramid, exercise progress (in lb or % of bodyweight), personal records, bodyweight and check-in averages.
 - **Library:** your exercises by category. Weights are in lb, edges in mm, distance in miles and elevation in feet.
 - **Timer:** ⏱ in any exercise opens a rest countdown or hang repeaters.
 

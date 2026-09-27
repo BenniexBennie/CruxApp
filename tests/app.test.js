@@ -212,3 +212,36 @@ test("a shared session link adds the session", async () => {
   assert.ok(await other.evaluate(() => db.sessions.some(x => x.name === "Shared test")));
   assert.equal(await other.evaluate(() => location.hash), "");
 });
+
+test("bodyweight from the check-in shows strength as % of bodyweight", async () => {
+  const page = await openApp();
+  await seed(page, [[-7, "s-maxhang", { log: [{ time: 10, load: 20, edge: 20 }], done: true }], [0, "s-maxhang", { log: [{ time: 10, load: 34, edge: 20 }], done: true }]]);
+  const k = await today(page);
+  await page.click(`#day-${k} [data-act=checkin]`);
+  await page.fill("#ckBw", "170");
+  await page.click("#checkForm button.primary");
+  assert.equal(await page.evaluate(k => db.bw[k], k), 170);
+  assert.match(await page.textContent(`#day-${k} [data-act=checkin]`), /170 lb/);
+  // Max hangs: (170 + 34) / 170 = 120% BW; bench is the bar alone: 170 / 170 = 100%.
+  assert.equal(await page.evaluate(() => Math.round(relStrength(findEx("s-maxhang"), 34, 170))), 120);
+  assert.equal(await page.evaluate(() => Math.round(relStrength(findEx("s-bench"), 170, 170))), 100);
+  await page.click(".tabs [data-tab=data]");
+  assert.match(await page.innerText("#view-data"), /Max hangs\s+\+34 lb \(120% BW\)/);
+  await page.selectOption("#progEx", "s-maxhang");
+  await page.click("[data-rel='1']");
+  assert.match(await page.innerText("#view-data"), /% of bodyweight[\s\S]*120% BW/);
+  assert.match(await page.innerText("#view-data"), /Bodyweight[\s\S]*Latest 170 lb/);
+  assert.deepEqual(page.errors, []);
+});
+
+test("grade pyramid counts sends and points at a thin layer", async () => {
+  const page = await openApp();
+  await seed(page, [[-3, "s-limit", { grades: [6, 6, 5, 5, 5, 4, 4, 4, 4, 4, 4], done: true }], [-60, "s-limit", { grades: [7], done: true }]]);
+  await page.click(".tabs [data-tab=data]");
+  const card = () => page.locator("#view-data section:has-text('Grade pyramid')").innerText();
+  assert.match(await card(), /11 sends/);
+  assert.match(await card(), /Build your base at V5: 3 sends vs 2 at V6/);
+  await page.click("[data-pyr=all]");
+  assert.match(await card(), /12 sends/);
+  assert.match(await card(), /V7/);
+});
