@@ -245,3 +245,44 @@ test("grade pyramid counts sends and points at a thin layer", async () => {
   assert.match(await card(), /12 sends/);
   assert.match(await card(), /V7/);
 });
+
+test("habits: quit nicotine (yes/no) and count drinks, with streaks", async () => {
+  const page = await openApp();
+  await page.click(".tabs [data-tab=plan]");
+  await page.click("[data-act=habittpl][data-name=Nicotine]");
+  assert.equal(await page.inputValue("#hbName"), "Nicotine");
+  await page.click("#habitForm button.primary");
+  await page.click("[data-act=habittpl][data-name=Alcohol]");
+  await page.fill("#hbLimit", "2");
+  await page.click("#habitForm button.primary");
+  const [nic, alc] = await page.evaluate(() => db.habits.map(h => h.id));
+  assert.equal(await page.evaluate(() => db.habits[1].limit), 2);
+
+  // Six clean days logged before today, then today on the Week tab makes 7 → milestone toast.
+  await page.evaluate(id => { for (let i = 1; i <= 6; i++) (db.habitLog[dkey(addDays(new Date(), -i))] ||= {})[id] = 0; save(); }, nic);
+  await page.click(".tabs [data-tab=week]");
+  const k = await today(page);
+  const cell = id => `[data-act=habit][data-h="${id}"][data-date="${k}"]`;
+  await page.click(cell(nic));
+  assert.equal(await page.textContent(cell(nic)), "✓");
+  assert.match(await page.textContent("#toast"), /7 days nicotine-free/);
+  await page.click(cell(nic));   // tap again: slipped
+  assert.equal(await page.textContent(cell(nic)), "✗");
+  assert.equal(await page.evaluate(() => habitStreak(db.habits[0])), 0);
+  await page.click(cell(nic));   // and again: cleared
+  assert.equal(await page.evaluate(k => db.habitLog[k] && db.habitLog[k][db.habits[0].id], k), undefined);
+
+  // Count: 3 drinks is over the limit of 2.
+  await page.click(cell(alc));
+  await page.click("#hcDialog [data-step='1']"); await page.click("#hcDialog [data-step='1']"); await page.click("#hcDialog [data-step='1']");
+  await page.click("#hcForm button.primary");
+  assert.equal(await page.textContent(cell(alc)), "3");
+  assert.match(await page.getAttribute(cell(alc), "class"), /miss/);
+
+  await page.click(".tabs [data-tab=data]");
+  const card = await page.locator("#view-data section:has-text('Habits')").innerText();
+  assert.match(card, /Nicotine[\s\S]*best 6/);
+  assert.match(card, /Alcohol[\s\S]*Within limit on 0 of 1 logged days/);
+  assert.match(card, /Drinks per week/);
+  assert.deepEqual(page.errors, []);
+});

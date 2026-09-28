@@ -194,11 +194,11 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 #pickDialog{height:90vh;height:90dvh}
 /* Same fixed-height build as the picker (the one pop-up that always rendered on iPhone);
    content-sized pop-ups came out blank in the iPhone Claude app. */
-#entryDialog,#exDialog,#settingsDialog,#goalDialog,#projDialog{height:88vh;height:88dvh}
-#timerDialog,#checkDialog{height:78vh;height:78dvh}
+#entryDialog,#exDialog,#settingsDialog,#goalDialog,#projDialog,#habitDialog{height:88vh;height:88dvh}
+#timerDialog,#checkDialog,#hcDialog{height:78vh;height:78dvh}
 #nameDialog{min-height:240px}
 #confirmDialog{min-height:180px}
-@media (min-width:640px){#pickDialog,#entryDialog,#exDialog,#settingsDialog,#goalDialog,#projDialog{height:86vh;height:86dvh}#timerDialog,#checkDialog{height:74vh;height:74dvh}}
+@media (min-width:640px){#pickDialog,#entryDialog,#exDialog,#settingsDialog,#goalDialog,#projDialog,#habitDialog{height:86vh;height:86dvh}#timerDialog,#checkDialog,#hcDialog{height:74vh;height:74dvh}}
 /* Timer */
 #tmClock{font-family:var(--display);font-size:5.5rem;font-weight:600;line-height:1;text-align:center;margin:18px 0 4px;font-variant-numeric:tabular-nums;color:var(--ink)}
 #tmClock.hang{color:var(--tape)}
@@ -211,6 +211,22 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 .ckbtn{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 0;font-weight:800;font-size:1.05rem}
 .ckbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .cktable td,.cktable th{text-align:center}
+/* Habits */
+.hgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;align-items:center;margin-top:8px}
+.hhd{text-align:center;font-size:.75rem;font-weight:800;color:var(--muted)}
+.hhd.now{color:var(--ink)}
+.hname{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;font-weight:700;font-size:.92rem;margin-top:6px;min-width:0}
+.hname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hname small{font-weight:700;color:var(--muted);font-size:.85rem;white-space:nowrap}
+.hcell{height:34px;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;font-weight:800;font-size:.9rem;padding:0;color:var(--ink)}
+.hcell.ok{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.hcell.miss{background:color-mix(in srgb,var(--danger) 16%,var(--surface));border-color:var(--danger);color:var(--danger)}
+.hcell:disabled{opacity:.35}
+.hstat{border-top:1px solid var(--line);padding:10px 0 4px;margin-top:8px}
+.hstat .bar{align-items:center}
+.stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0 6px}
+.stepper button{width:56px;height:56px;border-radius:16px;font-size:1.6rem;font-weight:800;padding:0}
+.stepper input{width:90px;text-align:center;font-family:var(--display);font-size:2.2rem;font-weight:600;padding:6px}
 /* Grade pyramid: one centred bar per grade */
 .pyr{display:grid;grid-template-columns:34px 1fr 30px;gap:4px 8px;align-items:center;margin-top:10px}
 .pyr b{font-size:.85rem;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
@@ -669,6 +685,65 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   </form>
 </dialog>
 
+<!-- Habit editor -->
+<dialog id="habitDialog" aria-labelledby="hbTitle">
+  <form id="habitForm" class="sheetform" novalidate>
+    <div class="sheet-head">
+      <h2 id="hbTitle">New habit</h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <div class="grid2" style="grid-template-columns:1fr 84px">
+        <label class="field"><span>Name</span><input type="text" id="hbName" maxlength="40" autocomplete="off" placeholder="e.g. Nicotine"></label>
+        <label class="field"><span>Emoji</span><input type="text" id="hbEmoji" maxlength="4" autocomplete="off" placeholder="🚭"></label>
+      </div>
+      <fieldset><legend>Goal</legend><div class="seg" id="hbGoal">
+        <button type="button" class="chip" data-goal="avoid">Quit or cut back</button>
+        <button type="button" class="chip" data-goal="build">Build a habit</button>
+      </div></fieldset>
+      <fieldset><legend>Track it as</legend><div class="seg" id="hbKind">
+        <button type="button" class="chip" data-kind="check">Yes / no</button>
+        <button type="button" class="chip" data-kind="count">A count</button>
+      </div></fieldset>
+      <div id="hbCountWrap" class="grid2">
+        <label class="field"><span>Unit</span><input type="text" id="hbUnit" maxlength="20" autocomplete="off" placeholder="e.g. drinks"></label>
+        <label class="field"><span id="hbLimitLabel">Daily limit</span><input type="text" id="hbLimit" inputmode="decimal" autocomplete="off" placeholder="0"></label>
+      </div>
+      <p class="hint">Log it each day from the Week tab. Your streak counts good days in a row.</p>
+      <p class="err" id="hbErr"></p>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="ghost sm danger" id="hbDelete">Delete</button>
+      <span class="spacer"></span>
+      <button type="submit" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Habit count for one day -->
+<dialog id="hcDialog" aria-labelledby="hcTitle">
+  <form id="hcForm" class="sheetform" novalidate>
+    <div class="sheet-head">
+      <h2 id="hcTitle">Count</h2>
+      <button type="button" class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <div class="stepper">
+        <button type="button" class="ghost" data-step="-1" aria-label="One less">−</button>
+        <input type="text" id="hcNum" inputmode="decimal" autocomplete="off" aria-label="How many">
+        <button type="button" class="ghost" data-step="1" aria-label="One more">+</button>
+      </div>
+      <p class="muted" id="hcUnit" style="text-align:center;font-weight:700"></p>
+      <p class="hint" id="hcHint" style="text-align:center"></p>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="ghost sm danger" id="hcClear">Clear</button>
+      <span class="spacer"></span>
+      <button type="submit" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- Project editor -->
 <dialog id="projDialog" aria-labelledby="prTitle">
   <form id="projForm" class="sheetform" novalidate>
@@ -695,7 +770,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.27-1";
+const APP_VERSION = "2026.09.28-1";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -867,7 +942,7 @@ const V12_ADDED = ["s-soccer"];
 /* =========================================================
    Storage
    db = { v, exercises, plan: { "YYYY-MM-DD": [entry, ...] }, lift: { date: min }, sessions, goals,
-          checkin: { date: {fingers, skin, energy, note} }, bw: { date: lb }, projects, theme, updatedAt, lastBackup,
+          checkin: { date: {fingers, skin, energy, note} }, bw: { date: lb }, habits, habitLog: { date: { habitId: value } }, projects, theme, updatedAt, lastBackup,
           plans (old plan builder, only read by migrations) }
    exercise = { id, name, cat, fields, notes, video }
    entry    = { id, ex, name, cat, fields, target: [set], log: [set], done, note,
@@ -877,7 +952,7 @@ const V12_ADDED = ["s-soccer"];
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 13, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], checkin: {}, bw: {}, projects: [], theme: "system" });
+const freshDb = () => ({ v: 13, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], checkin: {}, bw: {}, habits: [], habitLog: {}, projects: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -916,6 +991,8 @@ function normalize(d) {
   if (!d.checkin || typeof d.checkin !== "object") d.checkin = {};   // fingers / skin / energy per day
   if (!Array.isArray(d.projects)) d.projects = [];
   if (!d.bw || typeof d.bw !== "object") d.bw = {};   // bodyweight (lb) per day
+  if (!Array.isArray(d.habits)) d.habits = [];
+  if (!d.habitLog || typeof d.habitLog !== "object") d.habitLog = {};   // { date: { habitId: value } }
   d.v = d.v || 1;
   if (d.v < 2) {
     const have = new Set(d.exercises.map(e => e.id));
@@ -1365,7 +1442,7 @@ const state = {
   sessId: null,      // session open in the editor
   editGoal: null, goalType: "grade",
   dataWeeks: 8, progEx: null, liftDate: null, editGrades: [],
-  pyrAll: false, progRel: false,
+  pyrAll: false, progRel: false, editHabit: null, hbGoal: "avoid", hbKind: "check", hc: null,
   weekMode: "week", month: new Date(), checkDate: null, checkVals: {}, editProj: null,
 };
 
@@ -1445,6 +1522,7 @@ function renderWeek() {
       </span>
     </div>
   </div>`;
+  html += habitWeekHTML(days, todayKey);
 
   for (const d of days) {
     const k = dkey(d);
@@ -1529,6 +1607,7 @@ $("#view-week").addEventListener("click", ev => {
   else if (act === "lift") openLift(date);
   else if (act === "savesess") saveDayAsSession(date);
   else if (act === "checkin") openCheckin(date);
+  else if (act === "habit") tapHabit(t.dataset.h, date);
   else if (act === "mode") {
     state.weekMode = t.dataset.mode;
     if (state.weekMode === "month") state.month = new Date(state.week);
@@ -2081,7 +2160,7 @@ function renderPlanTab() {
   state.sessId = null;
   const goals = db.goals || [], sessions = db.sessions || [];
   $("#view-plan").innerHTML = `
-    <div><h2>Plan</h2><p class="lede">Goals to aim for and sessions you repeat.</p></div>
+    <div><h2>Plan</h2><p class="lede">Goals, habits, projects and the sessions you repeat.</p></div>
 
     <div class="bar"><h3 class="grouph" style="margin:10px 0 0">Goals</h3><button class="ghost sm" data-act="newgoal">+ Goal</button></div>
     ${goals.length ? goals.map(g => {
@@ -2093,6 +2172,8 @@ function renderPlanTab() {
       </button>`;
     }).join("") : `<div class="card"><p class="muted">Set a goal and watch it fill in as you log. For example: <b>Send V7</b>, <b>Train 10 h a week</b> or <b>Weighted pull-ups +45 lb</b>.</p>
       <button class="primary" data-act="newgoal" style="margin-top:12px">Set a goal</button></div>`}
+
+    ${habitsPlanHTML()}
 
     ${projectsHTML()}
 
@@ -2151,6 +2232,9 @@ $("#view-plan").addEventListener("click", async ev => {
   const act = t.dataset.act, id = t.dataset.id;
   if (act === "newgoal") openGoal(null);
   else if (act === "newproj") openProject(null);
+  else if (act === "newhabit") openHabit(null);
+  else if (act === "edithabit") openHabit(id);
+  else if (act === "habittpl") openHabit(null, HABIT_TEMPLATES.find(x => x.name === t.dataset.name));
   else if (act === "projtry" || act === "projsent" || act === "projedit") projectAction(act, id);
   else if (act === "editgoal") openGoal(id);
   else if (act === "newsess") {
@@ -2692,6 +2776,7 @@ function renderData() {
           : `<p class="empty">Nothing logged for ${esc(ex.name)} in the last ${n} weeks.</p>`}`
       : `<p class="empty">Log some sets on the Week tab and your progress shows up here.</p>`}
     </section>
+    ${habitsDataCard(weeks)}
     ${prCard()}
     ${bwCard(weeks)}
     ${checkinCard(weeks)}`;
@@ -3322,6 +3407,242 @@ function renderMonth() {
     <div class="legend2">${[["climb", "Climbing & fingers"], ["lift", "Lifting"], ["cardio", "Cardio"], ["other", "Mobility"]].map(([k, l]) => `<span><i style="background:${KIND_COLOR[k]}"></i>${l}</span>`).join("")}</div>
     <p class="hint">Tap a day to open its week.</p>
   </div>`;
+}
+
+/* =========================================================
+   Habits: anything you want to quit, cut back on, or build.
+   habit = { id, name, emoji, goal: "avoid" | "build", kind: "check" | "count", unit, limit }
+   db.habitLog = { date: { habitId: value } }
+     check: 1 = did it, 0 = didn't.  count: how many (drinks, pouches…).
+   ========================================================= */
+
+const HABIT_TEMPLATES = [
+  { name: "Nicotine", emoji: "🚭", goal: "avoid", kind: "check" },
+  { name: "Alcohol", emoji: "🍺", goal: "avoid", kind: "count", unit: "drinks", limit: 0 },
+  { name: "Stretch", emoji: "🧘", goal: "build", kind: "check" },
+  { name: "Sleep 8 h", emoji: "😴", goal: "build", kind: "check" },
+];
+const STREAK_MILESTONES = [3, 7, 14, 21, 30, 50, 60, 90, 100, 150, 180, 200, 250, 300, 365, 500, 730, 1000];
+
+const habitVal = (h, k) => { const d = db.habitLog[k]; return d && d[h.id] != null ? d[h.id] : null; };
+// true = a good day, false = a slip or a miss, null = not logged.
+function habitOK(h, v) {
+  if (v == null) return null;
+  if (h.kind === "count") return h.goal === "avoid" ? v <= (h.limit || 0) : v >= (h.limit || 1);
+  return h.goal === "avoid" ? v === 0 : v === 1;
+}
+function habitWord(h, v) {
+  if (v == null) return "not logged";
+  if (h.kind === "count") return `${v} ${h.unit || ""}`.trim();
+  return h.goal === "avoid" ? (v === 0 ? "free" : "had it") : (v === 1 ? "done" : "missed");
+}
+function habitDesc(h) {
+  const unit = h.unit || "per day";
+  if (h.goal === "avoid") return h.kind === "count"
+    ? `Cut back · count ${unit}${h.limit ? `, limit ${h.limit} a day` : ", aiming for none"}`
+    : "Quit · yes or no each day";
+  return h.kind === "count" ? `Build · ${h.limit || 1} ${unit} a day` : "Build · yes or no each day";
+}
+// Good days in a row up to today. Today not logged yet doesn't break it.
+function habitStreak(h) {
+  let d = new Date();
+  const t = habitOK(h, habitVal(h, dkey(d)));
+  if (t === false) return 0;
+  if (t == null) d = addDays(d, -1);
+  let n = 0;
+  while (habitOK(h, habitVal(h, dkey(d))) === true) { n++; d = addDays(d, -1); }
+  return n;
+}
+function habitBest(h) {
+  const days = Object.keys(db.habitLog).filter(k => habitVal(h, k) != null).sort();
+  if (!days.length) return 0;
+  let best = 0, run = 0;
+  const end = dkey(new Date());
+  for (let d = parseKey(days[0]); dkey(d) <= end; d = addDays(d, 1)) {
+    run = habitOK(h, habitVal(h, dkey(d))) === true ? run + 1 : 0;
+    best = Math.max(best, run);
+  }
+  return best;
+}
+const streakWord = (h, n) => h.goal === "avoid" && h.kind === "check" ? `${n} day${n === 1 ? "" : "s"} ${h.name.toLowerCase()}-free` : `${n}-day streak: ${h.name}`;
+
+function habitWeekHTML(days, todayKey) {
+  if (!db.habits.length) return "";
+  const head = days.map(d => `<span class="hhd${dkey(d) === todayKey ? " now" : ""}">${fmt(d, { weekday: "narrow" })}</span>`).join("");
+  const rows = db.habits.map(h => {
+    const st = habitStreak(h);
+    return `<div class="hname"><span>${esc(h.emoji || "")} ${esc(h.name)}</span>${st ? `<small>🔥 ${st} day${st === 1 ? "" : "s"}</small>` : ""}</div>` + days.map(d => {
+      const k = dkey(d), v = habitVal(h, k), ok = habitOK(h, v);
+      const txt = v == null ? "" : h.kind === "count" ? String(v) : ok ? "✓" : "✗";
+      return `<button type="button" class="hcell${ok === true ? " ok" : ok === false ? " miss" : ""}" data-act="habit" data-h="${esc(h.id)}" data-date="${k}"${k > todayKey ? " disabled" : ""} aria-label="${esc(h.name)}, ${fmt(d, { weekday: "long" })}: ${esc(habitWord(h, v))}">${txt}</button>`;
+    }).join("");
+  }).join("");
+  return `<div class="card habits"><div class="bar"><h3>Habits</h3><small class="muted">Tap a day to log</small></div><div class="hgrid">${head}${rows}</div></div>`;
+}
+
+function setHabit(h, k, v) {
+  const day = db.habitLog[k] ||= {};
+  if (v == null) delete day[h.id]; else day[h.id] = v;
+  if (!Object.keys(day).length) delete db.habitLog[k];
+  save(); renderWeek();
+  if (state.tab === "data") renderData();
+  if (state.tab === "plan") renderPlanTab();
+  if (habitOK(h, v)) { const n = habitStreak(h); if (STREAK_MILESTONES.includes(n)) toast(`🔥 ${streakWord(h, n)}!`); }
+}
+// Yes/no habits cycle: blank → good day → slip/miss → blank. Counts open a stepper.
+function tapHabit(id, k) {
+  const h = db.habits.find(x => x.id === id); if (!h) return;
+  if (h.kind === "count") return openHabitCount(h, k);
+  const v = habitVal(h, k), good = h.goal === "avoid" ? 0 : 1;
+  setHabit(h, k, v == null ? good : v === good ? 1 - good : null);
+}
+
+function openHabitCount(h, k) {
+  state.hc = { id: h.id, k };
+  $("#hcTitle").textContent = `${h.emoji ? h.emoji + " " : ""}${h.name}`;
+  const v = habitVal(h, k);
+  $("#hcNum").value = v == null ? "0" : String(v);
+  $("#hcUnit").textContent = `${h.unit ? h.unit + " on " : ""}${shortDate(k)}`;
+  $("#hcHint").textContent = h.goal === "avoid" ? (h.limit ? `Your limit is ${h.limit} a day.` : "Aiming for none.") : `Target: ${h.limit || 1} a day.`;
+  openSheet($("#hcDialog"));
+}
+$("#hcDialog").addEventListener("click", e => {
+  const b = e.target.closest("[data-step]"); if (!b) return;
+  const n = Math.max(0, (parseNum($("#hcNum").value) || 0) + Number(b.dataset.step));
+  $("#hcNum").value = String(n);
+});
+$("#hcForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const h = db.habits.find(x => x.id === state.hc.id); if (!h) return;
+  const n = parseNum($("#hcNum").value.trim() || "0");
+  if (!Number.isFinite(n) || n < 0) { $("#hcNum").classList.add("bad"); return; }
+  $("#hcNum").classList.remove("bad");
+  closeSheet($("#hcDialog"));
+  setHabit(h, state.hc.k, n);
+});
+$("#hcClear").addEventListener("click", () => {
+  const h = db.habits.find(x => x.id === state.hc.id); if (!h) return;
+  closeSheet($("#hcDialog"));
+  setHabit(h, state.hc.k, null);
+});
+
+/* ---------- Habit editor ---------- */
+
+function renderHabitForm() {
+  document.querySelectorAll("#hbGoal [data-goal]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.goal === state.hbGoal)));
+  document.querySelectorAll("#hbKind [data-kind]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === state.hbKind)));
+  $("#hbCountWrap").hidden = state.hbKind !== "count";
+  $("#hbLimitLabel").textContent = state.hbGoal === "avoid" ? "Limit per day" : "Target per day";
+  $("#hbLimit").placeholder = state.hbGoal === "avoid" ? "0 = none" : "1";
+}
+function openHabit(id, tpl) {
+  const h = id ? db.habits.find(x => x.id === id) : null, src = h || tpl || {};
+  state.editHabit = h ? h.id : null;
+  state.hbGoal = src.goal || "avoid"; state.hbKind = src.kind || "check";
+  $("#hbTitle").textContent = h ? "Edit habit" : "New habit";
+  $("#hbName").value = src.name || "";
+  $("#hbEmoji").value = src.emoji || "";
+  $("#hbUnit").value = src.unit || "";
+  $("#hbLimit").value = src.limit != null ? String(src.limit) : "";
+  $("#hbDelete").hidden = !h;
+  $("#hbErr").textContent = "";
+  renderHabitForm();
+  openSheet($("#habitDialog"));
+}
+$("#habitDialog").addEventListener("click", e => {
+  const g = e.target.closest("[data-goal]"); if (g) { state.hbGoal = g.dataset.goal; renderHabitForm(); }
+  const k = e.target.closest("[data-kind]"); if (k) { state.hbKind = k.dataset.kind; renderHabitForm(); }
+});
+$("#habitForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const name = $("#hbName").value.trim();
+  if (!name) { $("#hbErr").textContent = "Give it a name, like 'Nicotine' or 'Stretch'."; return; }
+  const data = { name, emoji: $("#hbEmoji").value.trim(), goal: state.hbGoal, kind: state.hbKind };
+  if (state.hbKind === "count") {
+    const lim = $("#hbLimit").value.trim() ? parseNum($("#hbLimit").value.trim()) : (state.hbGoal === "avoid" ? 0 : 1);
+    if (!Number.isFinite(lim) || lim < 0) { $("#hbErr").textContent = "The limit should be a number, like 0 or 2."; return; }
+    data.unit = $("#hbUnit").value.trim(); data.limit = lim;
+  }
+  if (state.editHabit) {
+    const h = db.habits.find(x => x.id === state.editHabit);
+    delete h.unit; delete h.limit;
+    Object.assign(h, data);
+  } else db.habits.push({ id: "hb-" + uid(), ...data });
+  save(); closeSheet($("#habitDialog")); renderPlanTab(); renderWeek();
+});
+$("#hbDelete").addEventListener("click", async () => {
+  const i = db.habits.findIndex(x => x.id === state.editHabit); if (i < 0) return;
+  const h = db.habits[i];
+  if (!(await askConfirm(`Delete "${h.name}" and everything you've logged for it?`, "Delete", true))) return;
+  const saved = {};
+  for (const [k, day] of Object.entries(db.habitLog)) if (day[h.id] != null) { saved[k] = day[h.id]; delete day[h.id]; if (!Object.keys(day).length) delete db.habitLog[k]; }
+  db.habits.splice(i, 1);
+  save(); closeSheet($("#habitDialog")); renderPlanTab(); renderWeek();
+  toast("Habit deleted", { label: "Undo", run: () => {
+    db.habits.splice(i, 0, h);
+    for (const [k, v] of Object.entries(saved)) (db.habitLog[k] ||= {})[h.id] = v;
+    save(); renderPlanTab(); renderWeek();
+  } });
+});
+
+function habitsPlanHTML() {
+  const ideas = HABIT_TEMPLATES.filter(t => !db.habits.some(h => h.name.toLowerCase() === t.name.toLowerCase()));
+  return `
+    <div class="bar"><h3 class="grouph" style="margin:14px 0 0">Habits</h3><button class="ghost sm" data-act="newhabit">+ Habit</button></div>
+    ${db.habits.map(h => { const st = habitStreak(h); return `<button class="card goal" data-act="edithabit" data-id="${esc(h.id)}">
+      <span class="bar"><strong>${esc(h.emoji || "")} ${esc(h.name)}</strong>${st ? `<span class="gpill">🔥 ${st}</span>` : ""}</span>
+      <small class="muted">${esc(habitDesc(h))}</small></button>`; }).join("")}
+    ${db.habits.length ? "" : `<p class="hint">Track anything daily: quitting nicotine, cutting back on drinks, stretching. Log it from the Week tab.</p>`}
+    ${ideas.length ? `<div class="chips wrap" style="margin-top:8px">${ideas.map(t => `<button type="button" class="chip" data-act="habittpl" data-name="${esc(t.name)}">+ ${t.emoji} ${esc(t.name)}</button>`).join("")}</div>` : ""}`;
+}
+
+/* ---------- Habits on the Data tab ---------- */
+
+function weekBars(weeks, vals, h) {
+  const W = 340, H = 120, L = 30, R = 8, T = 18, B = 22, pw = W - L - R, ph = H - T - B;
+  const max = niceMax(Math.max(1, ...vals.filter(v => v != null)));
+  const y = v => T + ph - (v / max) * ph;
+  const n = weeks.length, slot = pw / n, bw = Math.max(5, Math.min(30, slot - 6)), every = labelEvery(n);
+  const unit = h.unit || "";
+  let s = "";
+  for (const t of [0, max]) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
+  let lastI = -1;
+  vals.forEach((v, i) => {
+    const x = L + slot * i + (slot - bw) / 2;
+    if (v) s += `<path d="${barPath(x, y(v), bw, T + ph - y(v), 4)}" fill="var(--accent)"/>`;
+    if (v != null) lastI = i;
+    if ((n - 1 - i) % every === 0) s += `<text class="ax" x="${x + bw / 2}" y="${H - 6}" text-anchor="middle">${wkLabel(weeks[i])}</text>`;
+    s += `<rect class="hit" x="${L + slot * i}" y="${T}" width="${slot}" height="${ph}" data-tip="${esc(`Week of ${wkLabel(weeks[i])}: ${v == null ? "not logged" : `${v} ${unit}`.trim()}`)}"/>`;
+  });
+  if (lastI >= 0) s += `<text class="val" x="${L + slot * lastI + (slot + bw) / 2}" y="${y(vals[lastI]) - 6}" text-anchor="end">${esc(`${vals[lastI]} ${unit}`.trim())}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(h.name)} per week">${s}</svg>`;
+}
+
+function habitsDataCard(weeks) {
+  if (!db.habits.length) return "";
+  const todayK = dkey(new Date()), days = [];
+  for (let d = new Date(weeks[0]); dkey(d) <= todayK; d = addDays(d, 1)) days.push(dkey(d));
+  return `<section class="card">
+    <h3>Habits</h3>
+    <p class="hint" style="margin-top:2px">Last ${weeks.length} weeks. Log on the Week tab.</p>
+    ${db.habits.map(h => {
+      const logged = days.filter(k => habitVal(h, k) != null), good = logged.filter(k => habitOK(h, habitVal(h, k)));
+      const word = h.goal === "avoid" ? (h.kind === "count" && h.limit ? "Within limit" : "Free") : "Done";
+      const st = habitStreak(h), best = habitBest(h);
+      let chart = "";
+      if (h.kind === "count") {
+        const vals = weeks.map(w => {
+          const v = [0, 1, 2, 3, 4, 5, 6].map(i => habitVal(h, dkey(addDays(w, i)))).filter(x => x != null);
+          return v.length ? v.reduce((a, b) => a + b, 0) : null;
+        });
+        if (vals.some(v => v != null)) chart = `<p class="hint" style="margin:8px 0 0">${esc(h.unit ? h.unit[0].toUpperCase() + h.unit.slice(1) : "Total")} per week</p><div class="chartwrap">${weekBars(weeks, vals, h)}<div class="ctip" hidden></div></div>`;
+      }
+      return `<div class="hstat">
+        <div class="bar"><strong>${esc(h.emoji || "")} ${esc(h.name)}</strong><span class="gpill">🔥 ${st} · best ${best}</span></div>
+        <small class="muted">${logged.length ? `${word} on ${good.length} of ${logged.length} logged days (${Math.round((good.length / logged.length) * 100)}%)` : "Nothing logged in this range"}</small>
+        ${chart}</div>`;
+    }).join("")}
+  </section>`;
 }
 
 /* =========================================================
