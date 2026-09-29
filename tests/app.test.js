@@ -286,3 +286,48 @@ test("habits: quit nicotine (yes/no) and count drinks, with streaks", async () =
   assert.match(card, /Drinks per week/);
   assert.deepEqual(page.errors, []);
 });
+
+test("supersets: link exercises, keep them together, carry them over", async () => {
+  const page = await openApp();
+  await seed(page, [[0, "s-bench"], [0, "s-squat"], [0, "s-trxrow"], [0, "s-dips"]]);
+  const k = await today(page);
+  // Open Bench press and superset it with TRX low row (third in the list).
+  await page.click(`#day-${k} [data-act=entry] >> text=Bench press`);
+  await page.click("#ssChips [data-ss] >> text=TRX low row");
+  await page.click("#entryForm button.primary[type=submit]");
+  const names = () => page.evaluate(k => db.plan[k].map(e => nameOf(e) + (e.ss ? "*" : "")), k);
+  const list = await names();
+  assert.equal(list[0], "Bench press*");
+  assert.equal(list[1], "TRX low row*");
+  assert.deepEqual(await page.$$eval(`#day-${k} .sstag`, els => els.map(e => e.textContent)), ["A1", "A2"]);
+
+  // Chain a third (circuit) from Dips: picking Bench pulls in its whole group.
+  await page.click(`#day-${k} [data-act=entry] >> text=Dips`);
+  await page.click("#ssChips [data-ss] >> text=Bench press");
+  await page.click("#entryForm button.primary[type=submit]");
+  assert.deepEqual(await page.$$eval(`#day-${k} .sstag`, els => els.map(e => e.textContent)), ["A1", "A2", "A3"]);
+
+  // The dialog shows current partners as selected; unpicking all leaves the group.
+  await page.click(`#day-${k} [data-act=entry] >> text=Dips`);
+  assert.equal(await page.locator("#ssChips [aria-pressed=true]").count(), 2);
+  await page.click("#ssChips [data-ss] >> text=Bench press");
+  await page.click("#ssChips [data-ss] >> text=TRX low row");
+  await page.click("#entryForm button.primary[type=submit]");
+  assert.deepEqual(await page.$$eval(`#day-${k} .sstag`, els => els.map(e => e.textContent)), ["A1", "A2"]);
+
+  // Moving one away (drag/remove) breaks up a pair of two.
+  await page.evaluate(k => { const id = db.plan[k][1].id; moveItem("cal", k, id, dkey(addDays(parseKey(k), 1)), 0); }, k);
+  assert.equal(await page.evaluate(k => db.plan[k].some(e => e.ss), k), false);
+
+  // Copy to next week and save-as-session keep groups.
+  await page.click(`#day-${k} [data-act=entry] >> text=Bench press`);
+  await page.click("#ssChips [data-ss] >> text=Dips");
+  await page.click("#entryForm button.primary[type=submit]");
+  await page.evaluate(() => { state.week = mondayOf(new Date()); });
+  await page.evaluate(() => copyWeekForward());
+  await page.waitForTimeout(200);
+  const nk = await page.evaluate(k => dkey(addDays(parseKey(k), 7)), k);
+  const next = await page.evaluate(nk => db.plan[nk].map(e => !!e.ss), nk);
+  assert.equal(next.filter(Boolean).length, 2);
+  assert.deepEqual(page.errors, []);
+});

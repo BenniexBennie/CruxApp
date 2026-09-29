@@ -14,7 +14,7 @@
   --accent:#1E9E4E; --accent-press:#157A3B; --accent-soft:#DDF3E3; --on-accent:#FFFFFF;
   --sun:#FFC93C; --on-sun:#3A2A00; --danger:#E4574B;
   --tape:#D1246C; --orange:#E2621B; --go:#0E8878; --blue:#2F63C8; --gold:#D89B00; --grey:#8A96A1;
-  --violet:#7A4FC4; --leaf:#3B8F3F; --cyan:#1B8FB5;
+  --violet:#7A4FC4; --on-violet:#FFFFFF; --leaf:#3B8F3F; --cyan:#1B8FB5;
   --c-climb:#2F63C8; --c-lift:#C2410C; --c-cardio:#00897A;
   --display:"Fredoka","Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
   --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -27,7 +27,7 @@
     --accent:#4BD67E; --accent-press:#2E9E57; --accent-soft:#1D3D2A; --on-accent:#0B2415;
     --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
     --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
-    --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
+    --violet:#A98BFF; --on-violet:#1B1036; --leaf:#6CCB6F; --cyan:#4CC3E8;
     --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893;
     color-scheme:dark;
   }
@@ -37,7 +37,7 @@
   --accent:#4BD67E; --accent-press:#2E9E57; --accent-soft:#1D3D2A; --on-accent:#0B2415;
   --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
   --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
-  --violet:#A98BFF; --leaf:#6CCB6F; --cyan:#4CC3E8;
+  --violet:#A98BFF; --on-violet:#1B1036; --leaf:#6CCB6F; --cyan:#4CC3E8;
   --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893;
   color-scheme:dark;
 }
@@ -142,6 +142,15 @@ fieldset{border:0;padding:0;margin:18px 0 0}
 .pill{font-family:var(--body);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:var(--sun);color:var(--on-sun);border-radius:99px;padding:2px 9px;align-self:center}
 .entries{margin-top:8px}
 .entry{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding:6px 0}
+/* Supersets: a bracket down the left of the linked exercises, and A1 / A2 tags */
+.entry.ss{position:relative;padding-left:12px}
+.entry.ss::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--violet)}
+.entry.ss.ssfirst::before{top:10px;border-radius:4px 4px 0 0}
+.entry.ss.sslast::before{bottom:10px;border-radius:0 0 4px 4px}
+.entry.ss+.entry.ss{border-top-style:dashed}
+.sstag{display:inline-block;font-family:var(--body);font-size:.72rem;font-weight:800;background:var(--violet);color:var(--on-violet);border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:1px}
+#ssSec{margin-top:16px}
+#ssSec .chip[aria-pressed="true"]{background:var(--violet);border-color:var(--violet);color:var(--on-violet)}
 .entry:first-child{border-top:0}
 .entry input[type=checkbox]{appearance:none;-webkit-appearance:none;width:28px;height:28px;flex:none;margin:0 4px 0 0;cursor:pointer;border:2.5px solid var(--line);border-radius:9px;background:var(--surface);display:grid;place-items:center;transition:background .15s,border-color .15s}
 .entry input[type=checkbox]:hover{border-color:var(--accent)}
@@ -472,6 +481,11 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
         <div id="logSets" data-cols="[]"></div>
         <button type="button" class="ghost sm" data-addset="logSets">+ Set</button>
       </section>
+      <section id="ssSec">
+        <h3>Superset</h3>
+        <p class="hint" style="margin:2px 0 8px">Do these back to back with this one, then rest. Pick more than one for a circuit.</p>
+        <div class="chips wrap" id="ssChips"></div>
+      </section>
       <p class="hint" id="noFields" style="margin-top:14px">This exercise doesn't track sets, just notes. You can change what it tracks in the Library.</p>
       <div id="entryCalFields" data-pane="log">
         <label class="field" id="climbTimeWrap"><span>Time climbing (min)</span><input type="text" name="climbMins" id="climbMins" inputmode="decimal" autocomplete="off" placeholder="e.g. 90"></label>
@@ -770,7 +784,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.28-1";
+const APP_VERSION = "2026.09.29-1";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -946,7 +960,8 @@ const V12_ADDED = ["s-soccer"];
           plans (old plan builder, only read by migrations) }
    exercise = { id, name, cat, fields, notes, video }
    entry    = { id, ex, name, cat, fields, target: [set], log: [set], done, note,
-                mins?, sends?, grades?, autoLog? (log filled by the tick), pr? }
+                mins?, sends?, grades?, autoLog? (log filled by the tick), pr?,
+                ss? (superset id: neighbours with the same id are done back to back) }
    set      = { reps?, time? (s), mins?, dist? (mi), elev? (ft), load? (lb), edge? (mm), grip? }
    ========================================================= */
 
@@ -1442,7 +1457,7 @@ const state = {
   sessId: null,      // session open in the editor
   editGoal: null, goalType: "grade",
   dataWeeks: 8, progEx: null, liftDate: null, editGrades: [],
-  pyrAll: false, progRel: false, editHabit: null, hbGoal: "avoid", hbKind: "check", hc: null,
+  pyrAll: false, progRel: false, ssPick: [], editHabit: null, hbGoal: "avoid", hbKind: "check", hc: null,
   weekMode: "week", month: new Date(), checkDate: null, checkVals: {}, editProj: null,
 };
 
@@ -1476,14 +1491,79 @@ function entryLine(e) {
   return fieldsOf(e).length ? "Tap to set a target or log it" : "Tap to add notes";
 }
 
-function entryHTML(date, e) {
+/* ---------- Supersets ----------
+   Items in a day (or session) with the same ss id are a superset. Groups are always kept
+   together; tidySupersets fixes things after moves and removals. */
+
+// A group must be contiguous and have at least two members.
+function tidySupersets(list) {
+  const seen = new Set();
+  for (let i = 0; i < list.length;) {
+    const id = list[i].ss;
+    if (!id) { i++; continue; }
+    let j = i; while (j < list.length && list[j].ss === id) j++;
+    if (j - i < 2) delete list[i].ss;
+    else if (seen.has(id)) { const nid = "g" + uid(); for (let k = i; k < j; k++) list[k].ss = nid; seen.add(nid); }
+    else seen.add(id);
+    i = j;
+  }
+  return list;
+}
+function tidyAllSupersets() {
+  for (const list of Object.values(db.plan)) tidySupersets(list);
+  for (const x of db.sessions || []) tidySupersets(x.items);
+}
+// Puts item in one group with the picked items (and their existing partners), next to each other.
+function applySuperset(list, item, pickedIds) {
+  delete item.ss;
+  if (pickedIds.length) {
+    const groups = new Set(list.filter(x => pickedIds.includes(x.id) && x.ss).map(x => x.ss));
+    const members = list.filter(x => x === item || pickedIds.includes(x.id) || (x.ss && groups.has(x.ss)));
+    const id = "g" + uid();
+    const at = list.indexOf(members[0]);
+    for (const m of members) { m.ss = id; list.splice(list.indexOf(m), 1); }
+    list.splice(at, 0, ...members);
+  }
+  tidySupersets(list);
+}
+// id -> { tag: "A1", first, last } for drawing.
+function supersetMarks(list) {
+  const out = {}; let letter = 0;
+  for (let i = 0; i < list.length;) {
+    const id = list[i].ss;
+    if (!id) { i++; continue; }
+    let j = i; while (j < list.length && list[j].ss === id) j++;
+    const L = String.fromCharCode(65 + (letter++ % 26));
+    for (let k = i; k < j; k++) out[list[k].id] = { tag: `${L}${k - i + 1}`, first: k === i, last: k === j - 1 };
+    i = j;
+  }
+  return out;
+}
+const ssClass = m => m ? ` ss${m.first ? " ssfirst" : ""}${m.last ? " sslast" : ""}` : "";
+const ssTag = m => m ? `<span class="sstag" title="Superset">${m.tag}</span>` : "";
+
+function renderSsChips() {
+  const t = state.editEntry, item = editedItem();
+  const list = t.kind === "sess" ? currentSess().items : db.plan[t.date] || [];
+  const others = list.filter(x => x !== item);
+  $("#ssSec").hidden = !others.length;
+  $("#ssChips").innerHTML = others.map(x => `<button type="button" class="chip" data-ss="${esc(x.id)}" aria-pressed="${state.ssPick.includes(x.id)}">🔗 ${esc(nameOf(x))}</button>`).join("");
+}
+$("#ssChips").addEventListener("click", e => {
+  const b = e.target.closest("[data-ss]"); if (!b) return;
+  const id = b.dataset.ss;
+  state.ssPick = state.ssPick.includes(id) ? state.ssPick.filter(x => x !== id) : [...state.ssPick, id];
+  b.setAttribute("aria-pressed", String(state.ssPick.includes(id)));
+});
+
+function entryHTML(date, e, mark) {
   const name = nameOf(e), cat = catOf(e);
-  return `<li class="entry${e.done ? " done" : ""}" data-item="${esc(e.id)}" data-kind="cal" data-from="${date}">
+  return `<li class="entry${e.done ? " done" : ""}${ssClass(mark)}" data-item="${esc(e.id)}" data-kind="cal" data-from="${date}">
     ${HANDLE(name)}
     <input type="checkbox" data-act="toggle" data-date="${date}" data-id="${esc(e.id)}"${e.done ? " checked" : ""} aria-label="${esc(name)}: done${e.target.length && !hasLog(e) ? " as planned" : ""}">
     <button class="entrybtn" data-act="entry" data-date="${date}" data-id="${esc(e.id)}">
       <span class="dot" style="--c:${catColor(cat)}"></span>
-      <span><strong>${e.pr ? "🏆 " : ""}${esc(name)}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.sends ? `<small class="notesnip">🏅 ${esc(noteSnippet(e.sends))}</small>` : ""}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
+      <span><strong>${ssTag(mark)}${e.pr ? "🏆 " : ""}${esc(name)}</strong>${(line => line ? `<small>${line}</small>` : "")(entryLine(e))}${e.sends ? `<small class="notesnip">🏅 ${esc(noteSnippet(e.sends))}</small>` : ""}${e.note ? `<small class="notesnip">📝 ${esc(noteSnippet(e.note))}</small>` : ""}</span>
     </button>
     ${RM("cal", date, e.id, name)}
   </li>`;
@@ -1548,7 +1628,7 @@ function renderWeek() {
         <button class="ghost sm" data-act="add" data-date="${k}">+ Add</button>
       </div>
       ${(w => w ? `<p class="warnchip">⚠ ${esc(w)}</p>` : "")(dayWarning(k))}
-      ${entries.length ? `<ul class="entries">${entries.map(e => entryHTML(k, e)).join("")}</ul>` : `<p class="empty">Rest day</p>`}
+      ${entries.length ? `<ul class="entries">${(marks => entries.map(e => entryHTML(k, e, marks[e.id])).join(""))(supersetMarks(entries))}</ul>` : `<p class="empty">Rest day</p>`}
       <div class="dayfoot">
         <button type="button" class="liftbtn${db.lift[k] ? " has" : ""}" data-act="lift" data-date="${k}">⏱ ${db.lift[k] ? `Lifting ${fmtClimbMins(db.lift[k])}` : "Lifting"}</button>
         ${k <= todayKey ? `<button type="button" class="liftbtn${db.checkin[k] || db.bw[k] ? " has" : ""}" data-act="checkin" data-date="${k}">${db.checkin[k] || db.bw[k] ? `✅ ${esc(checkLabel(k) || "Checked in")}` : "🙂 Check-in"}</button>` : ""}
@@ -1579,8 +1659,9 @@ async function copyWeekForward() {
     const tk = dkey(addDays(d, 7));
     db.plan[tk] = (db.plan[tk] || []).concat(src.map(e => ({
       id: uid(), ex: e.ex, name: e.name, cat: e.cat, fields: clone(e.fields || fieldsOf(e)),
-      target: clone(e.log.length ? e.log : e.target), log: [], done: false, note: "",
+      target: clone(e.log.length ? e.log : e.target), log: [], done: false, note: "", ...(e.ss ? { ss: e.ss } : {}),
     })));
+    tidySupersets(db.plan[tk]);
   }
   save();
   toast(`Copied ${n} exercise${n === 1 ? "" : "s"} to next week`);
@@ -1819,6 +1900,11 @@ function openEntry(target) {
   $("#gradesWrap").hidden = isPlan || catOf(item) !== "Climbing";
   state.editGrades = [...(item.grades || [])];
   renderGradeChips();
+  {
+    const list = isPlan ? currentSess().items : db.plan[target.date] || [];
+    state.ssPick = item.ss ? list.filter(x => x !== item && x.ss === item.ss).map(x => x.id) : [];
+    renderSsChips();
+  }
   if (!isPlan) {
     f.date.value = target.date;
     f.note.value = item.note || "";
@@ -1864,6 +1950,7 @@ $("#entryForm").addEventListener("submit", ev => {
     return;
   }
   item.target = target;
+  applySuperset(t.kind === "sess" ? currentSess().items : db.plan[t.date], item, state.ssPick);
 
   if (t.kind === "sess") {
     save();
@@ -1899,6 +1986,8 @@ $("#entryForm").addEventListener("submit", ev => {
     const i = db.plan[t.date].indexOf(item);
     db.plan[t.date].splice(i, 1);
     if (!db.plan[t.date].length) delete db.plan[t.date];
+    delete item.ss;
+    tidySupersets(db.plan[t.date] || []);
     (db.plan[newDate] ||= []).push(item);
   }
   save();
@@ -1931,6 +2020,7 @@ function listFor(kind, key, create) {
 }
 
 function afterListChange(kind) {
+  tidyAllSupersets();
   if (kind === "cal") {
     for (const k of Object.keys(db.plan)) if (!db.plan[k].length) delete db.plan[k];
     save(); renderWeek(); renderLibrary();
@@ -2070,8 +2160,9 @@ function addSessionToDay(sess, date) {
   for (const s of sess.items) {
     const last = lastLog(s.ex, date);
     const target = last && last.entry.log && last.entry.log.length ? clone(last.entry.log) : clone(s.target || []);
-    list.push({ id: uid(), ex: s.ex, name: s.name, cat: s.cat, fields: clone(s.fields || fieldsOf(s)), target, log: [], done: false, note: "" });
+    list.push({ id: uid(), ex: s.ex, name: s.name, cat: s.cat, fields: clone(s.fields || fieldsOf(s)), target, log: [], done: false, note: "", ...(s.ss ? { ss: s.ss } : {}) });
   }
+  tidySupersets(list);
   save();
   renderWeek();
   toast(`Added ${sess.name} to ${shortDate(date)}`);
@@ -2086,7 +2177,7 @@ async function saveDayAsSession(date) {
   db.sessions.push({
     id: "ss-" + uid(), name,
     items: entries.map(e => ({ id: uid(), ex: e.ex, name: e.name, cat: e.cat, fields: clone(e.fields || fieldsOf(e)),
-      target: clone(e.log && e.log.length ? e.log : e.target || []) })),
+      target: clone(e.log && e.log.length ? e.log : e.target || []), ...(e.ss ? { ss: e.ss } : {}) })),
   });
   save();
   toast(`Saved "${name}". Find it in + Add and on the Plan tab.`);
@@ -2200,7 +2291,7 @@ function renderSessEditor() {
       <label class="field" style="margin-top:0"><span>Session name</span><input type="text" id="sessName" maxlength="60" value="${esc(x.name)}"></label>
     </div>
     <div class="bar"><h3 class="grouph" style="margin:10px 0 0">Exercises</h3><button class="ghost sm" data-act="sessadd">+ Add</button></div>
-    <p class="hint" style="margin:0">Tap an exercise to give it a target. Drag ⋮⋮ to reorder.</p>
+    <p class="hint" style="margin:0">Tap an exercise to give it a target or superset it. Drag ⋮⋮ to reorder.</p>
     <div id="sessItems"></div>
     <div class="row">
       <button class="primary" data-act="sesstoday" data-id="${esc(x.id)}">Add to today</button>
@@ -2215,15 +2306,15 @@ function renderSessEditor() {
 function renderSessBody() {
   const x = currentSess(); if (!x || !$("#sessItems")) return;
   $("#sessItems").innerHTML = `<section class="card day" data-drop="items" data-kind="sess">
-    ${x.items.length ? `<ul class="entries">${x.items.map(s => { const name = nameOf(s); return `
-      <li class="entry" data-item="${esc(s.id)}" data-kind="sess" data-from="items">
+    ${x.items.length ? `<ul class="entries">${(marks => x.items.map(s => { const name = nameOf(s), mark = marks[s.id]; return `
+      <li class="entry${ssClass(mark)}" data-item="${esc(s.id)}" data-kind="sess" data-from="items">
         ${HANDLE(name)}
         <button class="entrybtn" data-act="sessslot" data-id="${esc(s.id)}">
           <span class="dot" style="--c:${catColor(catOf(s))}"></span>
-          <span><strong>${esc(name)}</strong><small>${s.target && s.target.length ? `Target: ${esc(fmtSets(s.target))}` : "No target (uses last time's sets)"}</small></span>
+          <span><strong>${ssTag(mark)}${esc(name)}</strong><small>${s.target && s.target.length ? `Target: ${esc(fmtSets(s.target))}` : "No target (uses last time's sets)"}</small></span>
         </button>
         ${RM("sess", "items", s.id, name)}
-      </li>`; }).join("")}</ul>` : `<p class="empty">No exercises yet. Tap + Add.</p>`}
+      </li>`; }).join(""))(supersetMarks(x.items))}</ul>` : `<p class="empty">No exercises yet. Tap + Add.</p>`}
   </section>`;
 }
 
@@ -3068,7 +3159,7 @@ const b64url = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").re
 const unb64url = s => decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/"))));
 
 async function shareSession(x) {
-  const payload = { n: x.name, i: x.items.map(s => [s.ex, nameOf(s), catOf(s), fieldsOf(s), s.target || []]) };
+  const payload = { n: x.name, i: x.items.map(s => [s.ex, nameOf(s), catOf(s), fieldsOf(s), s.target || [], s.ss || 0]) };
   const url = `https://benniexbennie.github.io/CruxApp/#share=${b64url(JSON.stringify(payload))}`;
   try {
     if (navigator.share) { await navigator.share({ title: `Training Plan: ${x.name}`, text: `Here's my "${x.name}" session:`, url }); return; }
@@ -3084,11 +3175,12 @@ async function receiveShare() {
   let p; try { p = JSON.parse(unb64url(m[1])); } catch (e) { toast("That shared link is broken."); return; }
   if (!p || !Array.isArray(p.i)) return;
   if (!(await askConfirm(`Add the session "${p.n}" (${p.i.length} exercise${p.i.length === 1 ? "" : "s"}) to your Plan?`, "Add session"))) return;
-  const items = p.i.map(([id, name, cat, fields, target]) => {
+  const items = p.i.map(([id, name, cat, fields, target, ss]) => {
     let ex = findEx(id) || db.exercises.find(e => e.name === name);
     if (!ex) { ex = { id: id && id.startsWith("s-") ? id : "x-" + uid(), name, cat, fields: fields || [...DEFAULT_FIELDS], notes: "", video: "" }; db.exercises.push(ex); }
-    return { ...slotFrom(ex), target: target || [] };
+    return { ...slotFrom(ex), target: target || [], ...(ss ? { ss: String(ss) } : {}) };
   });
+  tidySupersets(items);
   db.sessions.push({ id: "ss-" + uid(), name: p.n, items });
   save();
   renderLibrary();
