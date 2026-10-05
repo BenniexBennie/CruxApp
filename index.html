@@ -232,6 +232,8 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 .hcell.miss{background:color-mix(in srgb,var(--danger) 16%,var(--surface));border-color:var(--danger);color:var(--danger)}
 .hcell:disabled{opacity:.35}
 .hstat{border-top:1px solid var(--line);padding:10px 0 4px;margin-top:8px}
+.hnav{align-items:center;margin-top:6px}
+.hnav .iconbtn:disabled{opacity:.3}
 .hstat .bar{align-items:center}
 .stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0 6px}
 .stepper button{width:56px;height:56px;border-radius:16px;font-size:1.6rem;font-weight:800;padding:0}
@@ -723,7 +725,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
         <label class="field"><span>Unit</span><input type="text" id="hbUnit" maxlength="20" autocomplete="off" placeholder="e.g. drinks"></label>
         <label class="field"><span id="hbLimitLabel">Daily limit</span><input type="text" id="hbLimit" inputmode="decimal" autocomplete="off" placeholder="0"></label>
       </div>
-      <p class="hint">Log it each day from the Week tab. Your streak counts good days in a row.</p>
+      <p class="hint">Log it each day on the Plan or Data tab. Your streak counts good days in a row.</p>
       <p class="err" id="hbErr"></p>
     </div>
     <div class="sheet-foot">
@@ -784,7 +786,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.09.29-1";
+const APP_VERSION = "2026.10.05-1";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -1457,7 +1459,7 @@ const state = {
   sessId: null,      // session open in the editor
   editGoal: null, goalType: "grade",
   dataWeeks: 8, progEx: null, liftDate: null, editGrades: [],
-  pyrAll: false, progRel: false, ssPick: [], editHabit: null, hbGoal: "avoid", hbKind: "check", hc: null,
+  pyrAll: false, progRel: false, ssPick: [], habitWeek: mondayOf(new Date()), editHabit: null, hbGoal: "avoid", hbKind: "check", hc: null,
   weekMode: "week", month: new Date(), checkDate: null, checkVals: {}, editProj: null,
 };
 
@@ -1602,7 +1604,6 @@ function renderWeek() {
       </span>
     </div>
   </div>`;
-  html += habitWeekHTML(days, todayKey);
 
   for (const d of days) {
     const k = dkey(d);
@@ -1688,7 +1689,6 @@ $("#view-week").addEventListener("click", ev => {
   else if (act === "lift") openLift(date);
   else if (act === "savesess") saveDayAsSession(date);
   else if (act === "checkin") openCheckin(date);
-  else if (act === "habit") tapHabit(t.dataset.h, date);
   else if (act === "mode") {
     state.weekMode = t.dataset.mode;
     if (state.weekMode === "month") state.month = new Date(state.week);
@@ -2324,6 +2324,8 @@ $("#view-plan").addEventListener("click", async ev => {
   if (act === "newgoal") openGoal(null);
   else if (act === "newproj") openProject(null);
   else if (act === "newhabit") openHabit(null);
+  else if (act === "habit") tapHabit(t.dataset.h, t.dataset.date);
+  else if (act === "hprev" || act === "hnext") habitNav(act);
   else if (act === "edithabit") openHabit(id);
   else if (act === "habittpl") openHabit(null, HABIT_TEMPLATES.find(x => x.name === t.dataset.name));
   else if (act === "projtry" || act === "projsent" || act === "projedit") projectAction(act, id);
@@ -2913,6 +2915,8 @@ $("#view-data").addEventListener("click", e => {
   if (b) { state.dataWeeks = Number(b.dataset.weeks); renderData(); }
   const p = e.target.closest("[data-pyr]"); if (p) { state.pyrAll = p.dataset.pyr === "all"; renderData(); }
   const r = e.target.closest("[data-rel]"); if (r) { state.progRel = r.dataset.rel === "1"; renderData(); }
+  const hb = e.target.closest("[data-act=habit]"); if (hb) tapHabit(hb.dataset.h, hb.dataset.date);
+  const hn = e.target.closest("[data-act=hprev],[data-act=hnext]"); if (hn) habitNav(hn.dataset.act);
   if (e.target.closest("[data-act=logbw]")) { openCheckin(dkey(new Date())); setTimeout(() => $("#ckBw").focus(), 50); }
 });
 $("#view-data").addEventListener("change", e => {
@@ -3558,8 +3562,17 @@ function habitBest(h) {
 }
 const streakWord = (h, n) => h.goal === "avoid" && h.kind === "check" ? `${n} day${n === 1 ? "" : "s"} ${h.name.toLowerCase()}-free` : `${n}-day streak: ${h.name}`;
 
-function habitWeekHTML(days, todayKey) {
+// The logging grid for one week (Plan and Data tabs), with ‹ › to log past weeks.
+function habitGridHTML() {
   if (!db.habits.length) return "";
+  const mon = state.habitWeek, todayKey = dkey(new Date());
+  const days = Array.from({ length: 7 }, (_, i) => addDays(mon, i));
+  const isCurrent = dkey(mon) === dkey(mondayOf(new Date()));
+  const label = isCurrent ? "This week" : `${fmt(mon, { month: "short", day: "numeric" })} – ${fmt(days[6], { month: "short", day: "numeric" })}`;
+  const nav = `<div class="bar hnav">
+    <button type="button" class="iconbtn sm" data-act="hprev" aria-label="Previous week">${ICON_L}</button>
+    <small class="muted"><b>${label}</b></small>
+    <button type="button" class="iconbtn sm" data-act="hnext" aria-label="Next week"${isCurrent ? " disabled" : ""}>${ICON_R}</button></div>`;
   const head = days.map(d => `<span class="hhd${dkey(d) === todayKey ? " now" : ""}">${fmt(d, { weekday: "narrow" })}</span>`).join("");
   const rows = db.habits.map(h => {
     const st = habitStreak(h);
@@ -3569,14 +3582,19 @@ function habitWeekHTML(days, todayKey) {
       return `<button type="button" class="hcell${ok === true ? " ok" : ok === false ? " miss" : ""}" data-act="habit" data-h="${esc(h.id)}" data-date="${k}"${k > todayKey ? " disabled" : ""} aria-label="${esc(h.name)}, ${fmt(d, { weekday: "long" })}: ${esc(habitWord(h, v))}">${txt}</button>`;
     }).join("");
   }).join("");
-  return `<div class="card habits"><div class="bar"><h3>Habits</h3><small class="muted">Tap a day to log</small></div><div class="hgrid">${head}${rows}</div></div>`;
+  return `${nav}<div class="hgrid">${head}${rows}</div>`;
+}
+function habitNav(act) {
+  if (act === "hprev") state.habitWeek = addDays(state.habitWeek, -7);
+  else if (dkey(state.habitWeek) < dkey(mondayOf(new Date()))) state.habitWeek = addDays(state.habitWeek, 7);
+  if (state.tab === "data") renderData(); else renderPlanTab();
 }
 
 function setHabit(h, k, v) {
   const day = db.habitLog[k] ||= {};
   if (v == null) delete day[h.id]; else day[h.id] = v;
   if (!Object.keys(day).length) delete db.habitLog[k];
-  save(); renderWeek();
+  save();
   if (state.tab === "data") renderData();
   if (state.tab === "plan") renderPlanTab();
   if (habitOK(h, v)) { const n = habitStreak(h); if (STREAK_MILESTONES.includes(n)) toast(`🔥 ${streakWord(h, n)}!`); }
@@ -3681,10 +3699,11 @@ function habitsPlanHTML() {
   const ideas = HABIT_TEMPLATES.filter(t => !db.habits.some(h => h.name.toLowerCase() === t.name.toLowerCase()));
   return `
     <div class="bar"><h3 class="grouph" style="margin:14px 0 0">Habits</h3><button class="ghost sm" data-act="newhabit">+ Habit</button></div>
+    ${db.habits.length ? `<div class="card habits">${habitGridHTML()}</div>` : ""}
     ${db.habits.map(h => { const st = habitStreak(h); return `<button class="card goal" data-act="edithabit" data-id="${esc(h.id)}">
       <span class="bar"><strong>${esc(h.emoji || "")} ${esc(h.name)}</strong>${st ? `<span class="gpill">🔥 ${st}</span>` : ""}</span>
       <small class="muted">${esc(habitDesc(h))}</small></button>`; }).join("")}
-    ${db.habits.length ? "" : `<p class="hint">Track anything daily: quitting nicotine, cutting back on drinks, stretching. Log it from the Week tab.</p>`}
+    ${db.habits.length ? "" : `<p class="hint">Track anything daily: quitting nicotine, cutting back on drinks, stretching. Log it here or on the Data tab.</p>`}
     ${ideas.length ? `<div class="chips wrap" style="margin-top:8px">${ideas.map(t => `<button type="button" class="chip" data-act="habittpl" data-name="${esc(t.name)}">+ ${t.emoji} ${esc(t.name)}</button>`).join("")}</div>` : ""}`;
 }
 
@@ -3716,7 +3735,7 @@ function habitsDataCard(weeks) {
   for (let d = new Date(weeks[0]); dkey(d) <= todayK; d = addDays(d, 1)) days.push(dkey(d));
   return `<section class="card">
     <h3>Habits</h3>
-    <p class="hint" style="margin-top:2px">Last ${weeks.length} weeks. Log on the Week tab.</p>
+    ${habitGridHTML()}
     ${db.habits.map(h => {
       const logged = days.filter(k => habitVal(h, k) != null), good = logged.filter(k => habitOK(h, habitVal(h, k)));
       const word = h.goal === "avoid" ? (h.kind === "count" && h.limit ? "Within limit" : "Free") : "Done";
@@ -3731,7 +3750,7 @@ function habitsDataCard(weeks) {
       }
       return `<div class="hstat">
         <div class="bar"><strong>${esc(h.emoji || "")} ${esc(h.name)}</strong><span class="gpill">🔥 ${st} · best ${best}</span></div>
-        <small class="muted">${logged.length ? `${word} on ${good.length} of ${logged.length} logged days (${Math.round((good.length / logged.length) * 100)}%)` : "Nothing logged in this range"}</small>
+        <small class="muted">${logged.length ? `Last ${weeks.length} weeks: ${word.toLowerCase()} on ${good.length} of ${logged.length} logged days (${Math.round((good.length / logged.length) * 100)}%)` : "Nothing logged in this range"}</small>
         ${chart}</div>`;
     }).join("")}
   </section>`;

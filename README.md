@@ -12,7 +12,7 @@ On iPhone, open it in Safari, tap Share, then **Add to Home Screen**.
   - Link exercises into supersets or circuits (A1/A2 tags) from any exercise's pop-up.
   - Track lifting time, a daily check-in (fingers, skin, energy) and load warnings.
   - Switch to the Month calendar for an overview. Bodyweight is logged in the check-in.
-- **Plan tab:** goals, habits (quit, cut back or build: yes/no or a count, logged on the Week tab), repeatable sessions (shareable by link) and boulder projects.
+- **Plan tab:** goals, habits (quit, cut back or build: yes/no or a count, logged here or on the Data tab), repeatable sessions (shareable by link) and boulder projects.
 - **Data tab:** training time per week, V grades, habit streaks, a grade pyramid, exercise progress (in lb or % of bodyweight), personal records, bodyweight and check-in averages.
 - **Library:** your exercises by category. Weights are in lb, edges in mm, distance in miles and elevation in feet.
 - **Timer:** ⏱ in any exercise opens a rest countdown or hang repeaters.

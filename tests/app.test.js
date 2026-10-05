@@ -259,8 +259,9 @@ test("habits: quit nicotine (yes/no) and count drinks, with streaks", async () =
   assert.equal(await page.evaluate(() => db.habits[1].limit), 2);
 
   // Six clean days logged before today, then today on the Week tab makes 7 → milestone toast.
-  await page.evaluate(id => { for (let i = 1; i <= 6; i++) (db.habitLog[dkey(addDays(new Date(), -i))] ||= {})[id] = 0; save(); }, nic);
-  await page.click(".tabs [data-tab=week]");
+  await page.evaluate(id => { for (let i = 1; i <= 6; i++) (db.habitLog[dkey(addDays(new Date(), -i))] ||= {})[id] = 0; save(); renderPlanTab(); }, nic);
+  // Logged on the Plan tab; the Week tab stays free of habits.
+  assert.equal(await page.locator("#view-week .hgrid").count(), 0);
   const k = await today(page);
   const cell = id => `[data-act=habit][data-h="${id}"][data-date="${k}"]`;
   await page.click(cell(nic));
@@ -279,10 +280,18 @@ test("habits: quit nicotine (yes/no) and count drinks, with streaks", async () =
   assert.equal(await page.textContent(cell(alc)), "3");
   assert.match(await page.getAttribute(cell(alc), "class"), /miss/);
 
+  // Last week is one tap back.
+  await page.click("#view-plan [data-act=hprev]");
+  const lastWeek = await page.evaluate(() => dkey(addDays(mondayOf(new Date()), -7)));
+  assert.equal(await page.locator(`#view-plan [data-h="${nic}"][data-date="${lastWeek}"]`).count(), 1);
+
   await page.click(".tabs [data-tab=data]");
+  await page.evaluate(() => { state.habitWeek = mondayOf(new Date()); renderData(); });
+  await page.click(`#view-data ${cell(nic)}`);   // logging works on the Data tab too
+  assert.equal(await page.textContent(`#view-data ${cell(nic)}`), "✓");
   const card = await page.locator("#view-data section:has-text('Habits')").innerText();
-  assert.match(card, /Nicotine[\s\S]*best 6/);
-  assert.match(card, /Alcohol[\s\S]*Within limit on 0 of 1 logged days/);
+  assert.match(card, /Nicotine[\s\S]*7 · best 7/);
+  assert.match(card, /Alcohol[\s\S]*within limit on 0 of 1 logged days/);
   assert.match(card, /Drinks per week/);
   assert.deepEqual(page.errors, []);
 });
