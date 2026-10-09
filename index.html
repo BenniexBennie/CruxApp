@@ -15,7 +15,7 @@
   --sun:#FFC93C; --on-sun:#3A2A00; --danger:#E4574B;
   --tape:#D1246C; --orange:#E2621B; --go:#0E8878; --blue:#2F63C8; --gold:#D89B00; --grey:#8A96A1;
   --violet:#7A4FC4; --on-violet:#FFFFFF; --leaf:#3B8F3F; --cyan:#1B8FB5;
-  --c-climb:#2F63C8; --c-lift:#C2410C; --c-cardio:#00897A;
+  --c-climb:#2F63C8; --c-lift:#C2410C; --c-cardio:#00897A; --c-yoga:#C98500;
   --display:"Fredoka","Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
   --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
   box-sizing:border-box;
@@ -28,7 +28,7 @@
     --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
     --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
     --violet:#A98BFF; --on-violet:#1B1036; --leaf:#6CCB6F; --cyan:#4CC3E8;
-    --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893;
+    --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893; --c-yoga:#C98500;
     color-scheme:dark;
   }
 }
@@ -38,7 +38,7 @@
   --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
   --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
   --violet:#A98BFF; --on-violet:#1B1036; --leaf:#6CCB6F; --cyan:#4CC3E8;
-  --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893;
+  --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893; --c-yoga:#C98500;
   color-scheme:dark;
 }
 html{height:100%}
@@ -211,6 +211,7 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 /* Timer */
 #tmClock{font-family:var(--display);font-size:5.5rem;font-weight:600;line-height:1;text-align:center;margin:18px 0 4px;font-variant-numeric:tabular-nums;color:var(--ink)}
 #tmClock.hang{color:var(--tape)}
+#tmClock.yoga{color:var(--accent-press)}
 #tmPhase{text-align:center;font-weight:700;color:var(--muted);margin-bottom:14px}
 .tmrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 /* Check-in */
@@ -656,6 +657,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
     <div class="seg" id="tmMode" style="margin-top:12px">
       <button type="button" class="chip" data-tm="rest">Rest</button>
       <button type="button" class="chip" data-tm="hang">Hang repeaters</button>
+      <button type="button" class="chip" data-tm="yoga">Yoga</button>
     </div>
     <div id="tmClock" aria-live="off">0</div>
     <p id="tmPhase" aria-live="polite"></p>
@@ -671,10 +673,48 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
       <label class="field"><span>Off (s)</span><input type="text" id="tmOff" inputmode="numeric" autocomplete="off"></label>
       <label class="field"><span>Reps</span><input type="text" id="tmReps" inputmode="numeric" autocomplete="off"></label>
     </div>
-    <p class="hint">Beeps on each change. Keep the app open; phones pause timers in the background.</p>
+    <div id="tmYogaOpts">
+      <div class="seg" id="tmYogaKind">
+        <button type="button" class="chip" data-yk="poses">Timed poses</button>
+        <button type="button" class="chip" data-yk="session">Session</button>
+      </div>
+      <div id="tmPoseOpts">
+        <p class="hint" style="margin:12px 0 6px">Hold each pose for</p>
+        <div class="chips wrap" id="tmHolds">
+          <button type="button" class="chip" data-hold="30">30s</button>
+          <button type="button" class="chip" data-hold="45">45s</button>
+          <button type="button" class="chip" data-hold="60">1 min</button>
+          <button type="button" class="chip" data-hold="90">1:30</button>
+          <button type="button" class="chip" data-hold="120">2 min</button>
+          <button type="button" class="chip" data-hold="180">3 min</button>
+        </div>
+        <div class="grid2">
+          <label class="field"><span>Poses</span><input type="text" id="tmPoses" inputmode="numeric" autocomplete="off"></label>
+          <label class="field"><span>Switch time (s)</span><input type="text" id="tmSwitch" inputmode="numeric" autocomplete="off"></label>
+        </div>
+      </div>
+      <div id="tmSessOpts">
+        <p class="hint" style="margin:12px 0 6px">Session length</p>
+        <div class="chips wrap" id="tmSess">
+          <button type="button" class="chip" data-sess="10">10 min</button>
+          <button type="button" class="chip" data-sess="20">20 min</button>
+          <button type="button" class="chip" data-sess="30">30 min</button>
+          <button type="button" class="chip" data-sess="45">45 min</button>
+          <button type="button" class="chip" data-sess="60">60 min</button>
+        </div>
+        <p class="hint" style="margin:10px 0 6px">Chime every</p>
+        <div class="chips wrap" id="tmBell">
+          <button type="button" class="chip" data-bell="0">Only at the end</button>
+          <button type="button" class="chip" data-bell="5">5 min</button>
+          <button type="button" class="chip" data-bell="10">10 min</button>
+        </div>
+      </div>
+    </div>
+    <p class="hint" id="tmHint">Beeps on each change. Keep the app open; phones pause timers in the background.</p>
   </div>
   <div class="sheet-foot">
     <button type="button" class="ghost" id="tmReset">Reset</button>
+    <button type="button" class="ghost" id="tmLog" hidden>Log</button>
     <span class="spacer"></span>
     <button type="button" class="primary" id="tmStart">Start</button>
   </div>
@@ -725,7 +765,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
         <label class="field"><span>Unit</span><input type="text" id="hbUnit" maxlength="20" autocomplete="off" placeholder="e.g. drinks"></label>
         <label class="field"><span id="hbLimitLabel">Daily limit</span><input type="text" id="hbLimit" inputmode="decimal" autocomplete="off" placeholder="0"></label>
       </div>
-      <p class="hint">Log it each day on the Plan or Data tab. Your streak counts good days in a row.</p>
+      <p class="hint">Log it each day here on the Plan tab. Your streak counts good days in a row.</p>
       <p class="err" id="hbErr"></p>
     </div>
     <div class="sheet-foot">
@@ -786,7 +826,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.10.05-1";
+const APP_VERSION = "2026.10.09-1";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -812,6 +852,7 @@ const CATS = [
   ["Strength", "var(--ink)"],
   ["Core", "var(--muted)"],
   ["Cardio", "var(--gold)"],
+  ["Yoga", "var(--cyan)"],
 ];
 const CAT_COLOR = Object.fromEntries(CATS);
 const catColor = c => CAT_COLOR[c] || "var(--grey)";
@@ -829,7 +870,7 @@ const COL_HEAD = { reps: "Reps", time: "Sec", mins: "Min", dist: "Miles", elev: 
 const DEFAULT_FIELDS = ["reps", "load"];
 const CAT_FIELDS = {
   "Warm-up & mobility": ["reps", "time"], Climbing: ["reps"], "Climbing power": ["reps"], Fingers: ["time", "load", "edge"],
-  Strength: ["reps", "load"], Core: ["reps", "time"], Cardio: ["mins", "dist"],
+  Strength: ["reps", "load"], Core: ["reps", "time"], Cardio: ["mins", "dist"], Yoga: ["mins"],
 };
 const FIELD_OVERRIDES = {
   "s-warmup": [], "s-limit": [], "s-board": [], "s-dyno": [], "s-arc": [], "s-mileage": [], "s-rice": [],
@@ -931,6 +972,7 @@ const SEED = [
   { id: "s-run", name: "Run", cat: "Cardio", notes: "Keep most runs at an easy, conversational pace." },
   { id: "s-hike", name: "Hike", cat: "Cardio", notes: "Note the trail in your session notes." },
   { id: "s-soccer", name: "Soccer", cat: "Cardio", notes: "Log the minutes you played. Note the position or intensity in your session notes." },
+  { id: "s-yoga", name: "Yoga", cat: "Yoga", notes: "Log the minutes. The ⏱ timer has a Yoga mode: timed poses or a whole session, with a soft chime. Note the style (flow, yin, hot) in your session notes." },
 ];
 SEED.forEach(x => { x.fields = defaultFields(x.id, x.cat); });
 
@@ -954,6 +996,8 @@ const V10_ADDED = ["s-rdl"];
 const V11_ADDED = ["s-frontsquat", "s-trxrow"];
 // Library version 12: elevation gain on bike rides and runs; soccer added.
 const V12_ADDED = ["s-soccer"];
+// Library version 14: a Yoga category.
+const V14_ADDED = ["s-yoga"];
 
 /* =========================================================
    Storage
@@ -969,7 +1013,7 @@ const V12_ADDED = ["s-soccer"];
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 13, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], checkin: {}, bw: {}, habits: [], habitLog: {}, projects: [], theme: "system" });
+const freshDb = () => ({ v: 14, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], checkin: {}, bw: {}, habits: [], habitLog: {}, projects: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -1103,6 +1147,11 @@ function normalize(d) {
     // Elevation gain on hikes too.
     for (const e of d.exercises) if (e.id === "s-hike" && !e.fields.includes("elev")) e.fields.push("elev");
     d.v = 13;
+  }
+  if (d.v < 14) {
+    const have = new Set(d.exercises.map(e => e.id));
+    d.exercises.push(...clone(SEED.filter(x => V14_ADDED.includes(x.id) && !have.has(x.id))));
+    d.v = 14;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
@@ -1459,7 +1508,7 @@ const state = {
   sessId: null,      // session open in the editor
   editGoal: null, goalType: "grade",
   dataWeeks: 8, progEx: null, liftDate: null, editGrades: [],
-  pyrAll: false, progRel: false, ssPick: [], habitWeek: mondayOf(new Date()), editHabit: null, hbGoal: "avoid", hbKind: "check", hc: null,
+  pyrAll: false, progMetric: null, ssPick: [], habitWeek: mondayOf(new Date()), editHabit: null, hbGoal: "avoid", hbKind: "check", hc: null,
   weekMode: "week", month: new Date(), checkDate: null, checkVals: {}, editProj: null,
 };
 
@@ -2584,7 +2633,7 @@ $("#restoreBtn").addEventListener("click", () => {
    Data tab: weekly training time, V grades by week, exercise progress
    ========================================================= */
 
-const SERIES = [["climb", "Climbing", "var(--c-climb)"], ["lift", "Lifting", "var(--c-lift)"], ["cardio", "Cardio", "var(--c-cardio)"]];
+const SERIES = [["climb", "Climbing", "var(--c-climb)"], ["lift", "Lifting", "var(--c-lift)"], ["cardio", "Cardio", "var(--c-cardio)"], ["yoga", "Yoga", "var(--c-yoga)"]];
 const wkLabel = d => `${d.getMonth() + 1}/${d.getDate()}`;
 
 function weekStarts(n) {
@@ -2600,16 +2649,17 @@ function weekEntries(mon) {
 
 // Minutes per week: climbing time on sessions, lifting time per day, cardio minutes in logged sets.
 function weekTime(mon) {
-  let climb = 0, lift = 0, cardio = 0;
+  let climb = 0, lift = 0, cardio = 0, yoga = 0;
   for (let i = 0; i < 7; i++) {
     const k = dkey(addDays(mon, i));
     lift += db.lift[k] || 0;
     for (const e of db.plan[k] || []) {
       climb += e.mins || 0;
-      for (const s of e.log || []) cardio += s.mins || 0;
+      const isYoga = catOf(e) === "Yoga";
+      for (const s of e.log || []) if (isYoga) yoga += s.mins || 0; else cardio += s.mins || 0;
     }
   }
-  return { climb, lift, cardio, total: climb + lift + cardio };
+  return { climb, lift, cardio, yoga, total: climb + lift + cardio + yoga };
 }
 
 const weekGrades = mon => weekEntries(mon).flatMap(e => e.grades || []);
@@ -2627,8 +2677,32 @@ function progressMetric(ex) {
 function fmtMetric(v, m) {
   if (v == null) return "–";
   const r = Math.round(v * 10) / 10;
-  return { load: fmtLoad(r), reps: `${r} reps`, time: `${r}s`, mins: `${r} min`, dist: `${r} mi`, climb: fmtClimbMins(r), rel: `${Math.round(v)}% BW`, bw: `${r} lb` }[m.key];
+  return { load: fmtLoad(r), reps: `${r} reps`, vol: `${r} reps`, time: `${r}s`, mins: `${r} min`, dist: `${r} mi`, climb: fmtClimbMins(r), rel: `${Math.round(v)}% BW`, bw: `${r} lb` }[m.key];
 }
+// Every way an exercise can be charted, from what it tracks.
+function metricsFor(ex) {
+  const f = ex.fields || [], out = [];
+  if (f.includes("load")) out.push({ key: "load", name: "Weight", label: "Heaviest set", agg: "max" });
+  if (f.includes("load") && Object.keys(db.bw).length) out.push({ key: "rel", name: "% bodyweight", label: "Best set as % of bodyweight", agg: "max" });
+  if (f.includes("reps")) out.push({ key: "reps", name: "Reps", label: "Most reps in a set", agg: "max" },
+    { key: "vol", field: "reps", name: "Total reps", label: "Total reps (all sets)", agg: "sum" });
+  if (f.includes("time")) out.push({ key: "time", name: "Hold", label: "Longest hold", agg: "max" });
+  if (f.includes("dist")) out.push({ key: "dist", name: "Distance", label: "Total miles", agg: "sum" });
+  if (f.includes("mins")) out.push({ key: "mins", name: "Time", label: "Total minutes", agg: "sum" });
+  return out.length ? out : [progressMetric(ex)];
+}
+// One week's sets of an exercise.
+const weekSets = (exId, mon) => weekEntries(mon).filter(e => e.ex === exId).flatMap(e => e.log || []);
+// "+35 lb × 5" for the heaviest set, "12 reps at +25 lb" for the biggest set of reps.
+function bestSetLabel(sets, key) {
+  const pick = key === "reps"
+    ? sets.filter(x => x.reps != null).sort((a, b) => b.reps - a.reps || (b.load ?? -1e9) - (a.load ?? -1e9))[0]
+    : sets.filter(x => x.load != null).sort((a, b) => b.load - a.load || (b.reps || 0) - (a.reps || 0))[0];
+  if (!pick) return null;
+  if (key === "reps") return `${pick.reps} reps${pick.load ? ` at ${fmtLoad(pick.load)}` : ""}`;
+  return `${fmtLoad(pick.load)}${pick.reps ? ` × ${pick.reps}` : ""}`;
+}
+
 function weekValue(exId, mon, m) {
   let v = null;
   for (let i = 0; i < 7; i++) for (const e of db.plan[dkey(addDays(mon, i))] || []) {
@@ -2636,7 +2710,7 @@ function weekValue(exId, mon, m) {
     const k = dkey(addDays(mon, i));
     const vals = m.key === "climb" ? (e.mins ? [e.mins] : [])
       : m.key === "rel" ? (e.log || []).filter(s => s.load != null).map(s => relStrength(findEx(exId), s.load, bwOn(k))).filter(x => x != null)
-      : (e.log || []).map(s => s[m.key]).filter(x => x != null);
+      : (e.log || []).map(s => s[m.field || m.key]).filter(x => x != null);
     for (const x of vals) v = v == null ? x : m.agg === "sum" ? v + x : Math.max(v, x);
   }
   return v;
@@ -2687,7 +2761,7 @@ function timeChart(weeks, rows) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Training time per week">${s}</svg>`;
 }
 
-function lineChart(weeks, vals, m) {
+function lineChart(weeks, vals, m, labels) {
   const W = 340, H = 170, L = 52, R = 14, T = 18, B = 22, pw = W - L - R, ph = H - T - B;
   const got = vals.filter(v => v != null);
   let lo = Math.min(...got), hi = Math.max(...got);
@@ -2710,12 +2784,12 @@ function lineChart(weeks, vals, m) {
   vals.forEach((v, i) => {
     if ((n - 1 - i) % every === 0) s += `<text class="ax" x="${x(i)}" y="${H - 6}" text-anchor="middle">${wkLabel(weeks[i])}</text>`;
     if (v != null) { s += `<circle class="pt" cx="${x(i)}" cy="${y(v)}" r="4"/>`; lastI = i; }
-    const tip = `Week of ${wkLabel(weeks[i])}: ${v == null ? "not logged" : fmtMetric(v, m)}`;
+    const tip = `Week of ${wkLabel(weeks[i])}: ${v == null ? "not logged" : (labels && labels[i]) || fmtMetric(v, m)}`;
     s += `<rect class="hit" x="${x(i) - pw / n / 2}" y="${T}" width="${pw / n}" height="${ph}" data-tip="${esc(tip)}"/>`;
   });
   const prevV = vals.slice(0, Math.max(0, lastI)).filter(v => v != null).pop();
   const below = prevV != null && prevV > vals[lastI];   // falling line: label under the point so it clears the line
-  if (lastI >= 0) s += `<text class="val" x="${x(lastI)}" y="${y(vals[lastI]) + (below ? 20 : -10)}" text-anchor="${lastI === n - 1 ? "end" : "middle"}">${esc(fmtMetric(vals[lastI], m))}</text>`;
+  if (lastI >= 0) s += `<text class="val" x="${x(lastI)}" y="${y(vals[lastI]) + (below ? 20 : -10)}" text-anchor="${lastI === n - 1 ? "end" : "middle"}">${esc((labels && labels[lastI]) || fmtMetric(vals[lastI], m))}</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(m.label)} per week">${s}</svg>`;
 }
 
@@ -2824,9 +2898,13 @@ function renderData() {
   const logged = Object.keys(lastDate).map(id => findEx(id)).filter(Boolean).sort((a, b) => lastDate[b.id].localeCompare(lastDate[a.id]));
   if (!logged.some(e => e.id === state.progEx)) state.progEx = logged[0] ? logged[0].id : null;
   const ex = state.progEx && findEx(state.progEx);
-  const canRel = !!(ex && progressMetric(ex).key === "load" && Object.keys(db.bw).length);
-  const m = ex && (canRel && state.progRel ? { key: "rel", label: "Best set as % of bodyweight", agg: "max" } : progressMetric(ex));
+  const metrics = ex ? metricsFor(ex) : [];
+  const m = ex && (metrics.find(x => x.key === state.progMetric) || metrics[0]);
   const vals = ex ? weeks.map(w => weekValue(ex.id, w, m)) : [];
+  const sets = ex ? weeks.map(w => weekSets(ex.id, w)) : [];
+  // Weight and reps charts say which set it was: "+35 lb × 5".
+  const labels = m && (m.key === "load" || m.key === "reps") ? sets.map(x => bestSetLabel(x, m.key)) : null;
+  const hasReps = !!(ex && (ex.fields || []).includes("reps"));
 
   const range = [4, 8, 12, 26].map(k => `<button type="button" class="chip" data-weeks="${k}" aria-pressed="${k === n}">${k} weeks</button>`).join("");
   $("#view-data").innerHTML = `
@@ -2842,7 +2920,7 @@ function renderData() {
 
     <section class="card">
       <h3>Training time per week</h3>
-      <p class="hint" style="margin-top:2px">Climbing + lifting + cardio. Tap a bar for the breakdown.</p>
+      <p class="hint" style="margin-top:2px">Climbing + lifting + cardio + yoga. Tap a bar for the breakdown.</p>
       <div class="legend2">${SERIES.map(([k, label, c]) => `<span><i style="background:${c}"></i>${label} <b>${fmtClimbMins(Math.round(times.reduce((a, t) => a + t[k], 0)))}</b></span>`).join("")}</div>
       <div class="chartwrap">${timeChart(weeks, times)}<div class="ctip" hidden></div></div>
       <details class="tableview"><summary>Show as table</summary>
@@ -2863,13 +2941,16 @@ function renderData() {
       ${logged.length ? `
         <label class="field" style="margin-top:8px"><span class="sr">Exercise</span>
           <select id="progEx">${logged.map(e => `<option value="${esc(e.id)}"${e.id === state.progEx ? " selected" : ""}>${esc(e.name)}</option>`).join("")}</select></label>
-        ${canRel ? `<div class="seg" style="margin-top:8px"><button type="button" class="chip" data-rel="0" aria-pressed="${!state.progRel}">Pounds</button><button type="button" class="chip" data-rel="1" aria-pressed="${!!state.progRel}">% bodyweight</button></div>` : ""}
+        ${metrics.length > 1 ? `<div class="chips" style="margin-top:8px">${metrics.map(x => `<button type="button" class="chip" data-metric="${x.key}" aria-pressed="${x.key === m.key}">${esc(x.name)}</button>`).join("")}</div>` : ""}
         <p class="hint">${esc(m.label)} each week</p>
-        ${vals.some(v => v != null) ? `<div class="chartwrap">${lineChart(weeks, vals, m)}<div class="ctip" hidden></div></div>`
+        ${vals.some(v => v != null) ? `<div class="chartwrap">${lineChart(weeks, vals, m, labels)}<div class="ctip" hidden></div></div>
+        <details class="tableview"><summary>Show as table</summary>
+          <table class="dt"><thead><tr><th>Week</th><th>Best set</th><th>Sets</th>${hasReps ? "<th>Total reps</th>" : ""}</tr></thead><tbody>
+          ${sets.map((x, i) => x.length ? `<tr><td>${wkLabel(weeks[i])}</td><td>${esc(bestSetLabel(x, "load") || bestSetLabel(x, "reps") || fmtSets([x[0]]))}</td><td>${x.length}</td>${hasReps ? `<td>${x.reduce((a, y) => a + (y.reps || 0), 0) || "–"}</td>` : ""}</tr>` : "").reverse().join("")}
+          </tbody></table></details>`
           : `<p class="empty">Nothing logged for ${esc(ex.name)} in the last ${n} weeks.</p>`}`
       : `<p class="empty">Log some sets on the Week tab and your progress shows up here.</p>`}
     </section>
-    ${habitsDataCard(weeks)}
     ${prCard()}
     ${bwCard(weeks)}
     ${checkinCard(weeks)}`;
@@ -2883,7 +2964,8 @@ function prCard() {
   const rows = [...(grade ? [{ name: "Hardest send", v: `V${grade.v}`, date: grade.date }] : []),
     ...list.map(r => {
       const rel = r.m.key === "load" ? relStrength(r.ex, r.v, bwOn(r.date)) : null;
-      return { name: r.ex.name, v: fmtMetric(r.v, r.m) + (rel != null ? ` (${Math.round(rel)}% BW)` : ""), date: r.date };
+      const reps = r.m.key === "load" && r.s.reps ? ` × ${r.s.reps}` : "";
+      return { name: r.ex.name, v: fmtMetric(r.v, r.m) + reps + (rel != null ? ` (${Math.round(rel)}% BW)` : ""), date: r.date };
     })];
   return `<section class="card">
     <h3>🏆 Personal records</h3>
@@ -2914,13 +2996,11 @@ $("#view-data").addEventListener("click", e => {
   const b = e.target.closest("[data-weeks]");
   if (b) { state.dataWeeks = Number(b.dataset.weeks); renderData(); }
   const p = e.target.closest("[data-pyr]"); if (p) { state.pyrAll = p.dataset.pyr === "all"; renderData(); }
-  const r = e.target.closest("[data-rel]"); if (r) { state.progRel = r.dataset.rel === "1"; renderData(); }
-  const hb = e.target.closest("[data-act=habit]"); if (hb) tapHabit(hb.dataset.h, hb.dataset.date);
-  const hn = e.target.closest("[data-act=hprev],[data-act=hnext]"); if (hn) habitNav(hn.dataset.act);
+  const mt = e.target.closest("[data-metric]"); if (mt) { state.progMetric = mt.dataset.metric; renderData(); }
   if (e.target.closest("[data-act=logbw]")) { openCheckin(dkey(new Date())); setTimeout(() => $("#ckBw").focus(), 50); }
 });
 $("#view-data").addEventListener("change", e => {
-  if (e.target.id === "progEx") { state.progEx = e.target.value; renderData(); }
+  if (e.target.id === "progEx") { state.progEx = e.target.value; state.progMetric = null; renderData(); }
 });
 // Chart tooltips: hover on desktop, tap on phones.
 function showTip(target) {
@@ -3240,7 +3320,7 @@ function personalRecords() {
     for (const s of e.log || []) {
       const v = s[m.key]; if (v == null) continue;
       const b = best[ex.id];
-      if (!b || v > b.v || (v === b.v && k < b.date)) best[ex.id] = { ex, m, v, date: k };
+      if (!b || v > b.v || (v === b.v && ((s.reps || 0) > (b.s.reps || 0) || ((s.reps || 0) === (b.s.reps || 0) && k < b.date)))) best[ex.id] = { ex, m, v, s, date: k };
     }
   }
   let grade = null;
@@ -3253,7 +3333,9 @@ function personalRecords() {
    Timer: rest countdown, or hang repeaters (on / off × reps)
    ========================================================= */
 
-const timer = { mode: "rest", rest: 120, on: 7, off: 3, reps: 6, phases: [], i: 0, endAt: 0, left: 0, running: false, iv: null, lock: null };
+const timer = { mode: "rest", rest: 120, on: 7, off: 3, reps: 6,
+  yoga: "poses", hold: 60, poses: 10, sw: 5, sessMin: 20, bell: 0,   // yoga: timed poses, or a whole session
+  phases: [], i: 0, endAt: 0, left: 0, running: false, iv: null, lock: null };
 let actx = null;
 function beep(freq = 880, dur = 0.15) {
   try {
@@ -3266,8 +3348,42 @@ function beep(freq = 880, dur = 0.15) {
   } catch (e) {}
   try { navigator.vibrate && navigator.vibrate(dur > 0.2 ? 250 : 60); } catch (e) {}
 }
+// A soft singing-bowl chime for yoga: a few sine partials that fade slowly.
+function chime(freq = 528, dur = 2.5) {
+  try {
+    actx ||= new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime;
+    for (const [mult, vol] of [[1, 0.22], [2.76, 0.07], [5.4, 0.03]]) {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = "sine"; o.frequency.value = freq * mult;
+      o.connect(g); g.connect(actx.destination);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur / Math.sqrt(mult));
+      o.start(t); o.stop(t + dur);
+    }
+  } catch (e) {}
+  try { navigator.vibrate && navigator.vibrate(40); } catch (e) {}
+}
+const fmtSecs = n => n >= 60 ? `${Math.floor(n / 60)}${n % 60 ? `:${String(n % 60).padStart(2, "0")}` : " min"}` : `${n}s`;
+
 function buildPhases() {
   if (timer.mode === "rest") return [{ label: "Rest", secs: timer.rest }];
+  if (timer.mode === "yoga") {
+    const p = [{ label: "Settle in", secs: 10 }];
+    if (timer.yoga === "poses") {
+      for (let r = 1; r <= timer.poses; r++) {
+        p.push({ label: "Pose", secs: timer.hold, rep: r });
+        if (r < timer.poses && timer.sw) p.push({ label: "Switch", secs: timer.sw, rep: r });
+      }
+    } else {
+      // One long phase, or one per bell.
+      let left = timer.sessMin * 60;
+      const seg = timer.bell ? timer.bell * 60 : left;
+      while (left > 0) { p.push({ label: "Yoga", secs: Math.min(seg, left) }); left -= seg; }
+    }
+    return p;
+  }
   const p = [{ label: "Get ready", secs: 5 }];
   for (let r = 1; r <= timer.reps; r++) {
     p.push({ label: "Hang", secs: timer.on, rep: r });
@@ -3275,28 +3391,59 @@ function buildPhases() {
   }
   return p;
 }
+// Minutes of yoga in the plan (not counting the settle-in).
+const yogaMins = () => Math.max(1, Math.round(buildPhases().slice(1).reduce((a, p) => a + p.secs, 0) / 60));
+
+function phaseText(ph) {
+  if (!timer.phases.length) {
+    if (timer.mode === "rest") return "Rest timer";
+    if (timer.mode === "hang") return `${timer.reps} × ${timer.on}s on / ${timer.off}s off`;
+    return timer.yoga === "poses" ? `${timer.poses} poses × ${fmtSecs(timer.hold)} · about ${yogaMins()} min`
+      : `${timer.sessMin} min session${timer.bell ? ` · chime every ${timer.bell} min` : ""}`;
+  }
+  if (!ph) return timer.mode === "yoga" ? "Namaste 🙏" : "Done ✓";
+  if (ph.label === "Pose") return `Pose ${ph.rep} of ${timer.poses}`;
+  if (ph.label === "Switch") return `Switch to pose ${ph.rep + 1}`;
+  if (ph.label === "Yoga") return "Breathe";
+  return `${ph.label}${ph.rep ? ` · rep ${ph.rep} of ${timer.reps}` : ""}`;
+}
 function renderTimer() {
   const ph = timer.phases[timer.i], secs = timer.running || timer.left ? timer.left : ph ? ph.secs : timer.phases.length ? 0 : buildPhases()[0].secs;
   $("#tmClock").textContent = secs >= 60 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}` : String(secs);
-  $("#tmPhase").textContent = !timer.phases.length ? (timer.mode === "rest" ? "Rest timer" : `${timer.reps} × ${timer.on}s on / ${timer.off}s off`)
-    : ph ? `${ph.label}${ph.rep ? ` · rep ${ph.rep} of ${timer.reps}` : ""}` : "Done ✓";
-  $("#tmClock").className = ph && ph.label === "Hang" ? "hang" : "";
+  $("#tmPhase").textContent = phaseText(ph);
+  $("#tmClock").className = ph && ph.label === "Hang" ? "hang" : ph && (ph.label === "Pose" || ph.label === "Yoga") ? "yoga" : "";
   $("#tmStart").textContent = timer.running ? "Pause" : timer.phases.length && timer.i < timer.phases.length ? "Resume" : "Start";
-  document.querySelectorAll("#tmMode [data-tm]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tm === timer.mode)));
-  document.querySelectorAll("#tmPresets [data-rest]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.rest) === timer.rest)));
+  const press = (sel, attr, v) => document.querySelectorAll(sel).forEach(b => b.setAttribute("aria-pressed", String(b.dataset[attr] === String(v))));
+  press("#tmMode [data-tm]", "tm", timer.mode);
+  press("#tmPresets [data-rest]", "rest", timer.rest);
+  press("#tmYogaKind [data-yk]", "yk", timer.yoga);
+  press("#tmHolds [data-hold]", "hold", timer.hold);
+  press("#tmSess [data-sess]", "sess", timer.sessMin);
+  press("#tmBell [data-bell]", "bell", timer.bell);
   $("#tmRestOpts").hidden = timer.mode !== "rest";
   $("#tmHangOpts").hidden = timer.mode !== "hang";
+  $("#tmYogaOpts").hidden = timer.mode !== "yoga";
+  $("#tmPoseOpts").hidden = timer.yoga !== "poses";
+  $("#tmSessOpts").hidden = timer.yoga !== "session";
+  $("#tmHint").textContent = timer.mode === "yoga" ? "A soft chime marks each change. Keep the app open; phones pause timers in the background."
+    : "Beeps on each change. Keep the app open; phones pause timers in the background.";
+  // Finished a yoga timer from an exercise that logs minutes: offer to log it.
+  const item = editedItem(), canLog = timer.mode === "yoga" && timer.phases.length && !ph && item
+    && state.editEntry.kind === "cal" && fieldsOf(item).includes("mins") && $("#entryDialog").open;
+  $("#tmLog").hidden = !canLog;
+  if (canLog) $("#tmLog").textContent = `Log ${yogaMins()} min`;
 }
 function tick() {
   const ph = timer.phases[timer.i]; if (!ph) return;
   const left = Math.max(0, Math.ceil((timer.endAt - Date.now()) / 1000));
-  if (left !== timer.left && left > 0 && left <= 3) beep(660, 0.08);
+  if (timer.mode !== "yoga" && left !== timer.left && left > 0 && left <= 3) beep(660, 0.08);
   timer.left = left;
   if (left <= 0) {
     timer.i++;
     const next = timer.phases[timer.i];
-    if (!next) { stopTimer(); timer.left = 0; beep(990, 0.5); renderTimer(); return; }
-    beep(next.label === "Hang" ? 990 : 520, 0.3);
+    if (!next) { stopTimer(); timer.left = 0; timer.mode === "yoga" ? chime(396, 4) : beep(990, 0.5); renderTimer(); return; }
+    if (timer.mode === "yoga") chime(next.label === "Switch" ? 440 : 528);
+    else beep(next.label === "Hang" ? 990 : 520, 0.3);
     timer.endAt = Date.now() + next.secs * 1000; timer.left = next.secs;
   }
   renderTimer();
@@ -3305,7 +3452,7 @@ async function startTimer() {
   if (!timer.phases.length || timer.i >= timer.phases.length) { timer.phases = buildPhases(); timer.i = 0; timer.left = timer.phases[0].secs; }
   timer.endAt = Date.now() + timer.left * 1000;
   timer.running = true;
-  beep(timer.phases[timer.i].label === "Hang" ? 990 : 520, 0.12);
+  if (timer.mode === "yoga") chime(528, 1.5); else beep(timer.phases[timer.i].label === "Hang" ? 990 : 520, 0.12);
   clearInterval(timer.iv); timer.iv = setInterval(tick, 200);
   try { timer.lock = await navigator.wakeLock.request("screen"); } catch (e) {}   // keep the screen on if allowed
   renderTimer();
@@ -3318,26 +3465,42 @@ function stopTimer() {
 function resetTimer() { stopTimer(); timer.phases = []; timer.i = 0; timer.left = 0; renderTimer(); }
 
 function openTimer() {
-  // Hang settings from the target's first set when it has a hold time.
+  // Yoga exercises open in Yoga mode; holds open as hang repeaters; everything else as a rest timer.
   const item = editedItem(), first = item && (item.target || [])[0];
-  if (first && first.time) { timer.mode = "hang"; timer.on = first.time; }
-  if (item && catOf(item) !== "Fingers" && !(first && first.time)) timer.mode = "rest";
+  if (item && catOf(item) === "Yoga") timer.mode = "yoga";
+  else if (first && first.time) { timer.mode = "hang"; timer.on = first.time; }
+  else if (item && catOf(item) !== "Fingers") timer.mode = "rest";
   $("#tmOn").value = timer.on; $("#tmOff").value = timer.off; $("#tmReps").value = timer.reps;
+  $("#tmPoses").value = timer.poses; $("#tmSwitch").value = timer.sw;
   resetTimer();
   openSheet($("#timerDialog"));
 }
 $("#timerBtn").addEventListener("click", openTimer);
 $("#timerDialog").addEventListener("click", e => {
-  const m = e.target.closest("[data-tm]"); if (m) { timer.mode = m.dataset.tm; resetTimer(); }
-  const r = e.target.closest("[data-rest]"); if (r) { timer.rest = Number(r.dataset.rest); resetTimer(); }
+  const pick = (attr, set) => { const b = e.target.closest(`[data-${attr}]`); if (b) { set(b.dataset[attr]); resetTimer(); } };
+  pick("tm", v => { timer.mode = v; });
+  pick("rest", v => { timer.rest = Number(v); });
+  pick("yk", v => { timer.yoga = v; });
+  pick("hold", v => { timer.hold = Number(v); });
+  pick("sess", v => { timer.sessMin = Number(v); });
+  pick("bell", v => { timer.bell = Number(v); });
   if (e.target.closest("#tmStart")) timer.running ? (stopTimer(), renderTimer()) : startTimer();
   if (e.target.closest("#tmReset")) resetTimer();
+  if (e.target.closest("#tmLog")) {
+    const mins = yogaMins();
+    renderSets($("#logSets"), [...readSets($("#logSets")), { mins }]);
+    setPane("log");
+    closeSheet($("#timerDialog"));
+    toast(`Added ${mins} min to the log. Tap Save.`);
+  }
 });
 $("#timerDialog").addEventListener("input", e => {
-  const n = Math.max(1, Math.round(parseNum(e.target.value) || 0));
+  const v = Math.round(parseNum(e.target.value) || 0), n = Math.max(1, v);
   if (e.target.id === "tmOn") timer.on = n;
   if (e.target.id === "tmOff") timer.off = n;
   if (e.target.id === "tmReps") timer.reps = n;
+  if (e.target.id === "tmPoses") timer.poses = n;
+  if (e.target.id === "tmSwitch") timer.sw = Math.max(0, v);
   if (!timer.running) resetTimer();
 });
 $("#timerDialog").addEventListener("close", stopTimer);
@@ -3474,9 +3637,10 @@ function kindOf(e) {
   if (c === "Climbing" || c === "Climbing power" || c === "Fingers") return "climb";
   if (c === "Strength" || c === "Core") return "lift";
   if (c === "Cardio") return "cardio";
+  if (c === "Yoga") return "yoga";
   return "other";
 }
-const KIND_COLOR = { climb: "var(--c-climb)", lift: "var(--c-lift)", cardio: "var(--c-cardio)", other: "var(--grey)" };
+const KIND_COLOR = { climb: "var(--c-climb)", lift: "var(--c-lift)", cardio: "var(--c-cardio)", yoga: "var(--c-yoga)", other: "var(--grey)" };
 
 function renderMonth() {
   const first = new Date(state.month.getFullYear(), state.month.getMonth(), 1);
@@ -3500,7 +3664,7 @@ function renderMonth() {
       <button class="iconbtn" data-act="mnext" aria-label="Next month">${ICON_R}</button>
     </div>
     <div class="mgrid">${["M", "T", "W", "T", "F", "S", "S"].map(x => `<span class="mhead">${x}</span>`).join("")}${cells}</div>
-    <div class="legend2">${[["climb", "Climbing & fingers"], ["lift", "Lifting"], ["cardio", "Cardio"], ["other", "Mobility"]].map(([k, l]) => `<span><i style="background:${KIND_COLOR[k]}"></i>${l}</span>`).join("")}</div>
+    <div class="legend2">${[["climb", "Climbing & fingers"], ["lift", "Lifting"], ["cardio", "Cardio"], ["yoga", "Yoga"], ["other", "Mobility"]].map(([k, l]) => `<span><i style="background:${KIND_COLOR[k]}"></i>${l}</span>`).join("")}</div>
     <p class="hint">Tap a day to open its week.</p>
   </div>`;
 }
@@ -3587,7 +3751,7 @@ function habitGridHTML() {
 function habitNav(act) {
   if (act === "hprev") state.habitWeek = addDays(state.habitWeek, -7);
   else if (dkey(state.habitWeek) < dkey(mondayOf(new Date()))) state.habitWeek = addDays(state.habitWeek, 7);
-  if (state.tab === "data") renderData(); else renderPlanTab();
+  renderPlanTab();
 }
 
 function setHabit(h, k, v) {
@@ -3595,7 +3759,6 @@ function setHabit(h, k, v) {
   if (v == null) delete day[h.id]; else day[h.id] = v;
   if (!Object.keys(day).length) delete db.habitLog[k];
   save();
-  if (state.tab === "data") renderData();
   if (state.tab === "plan") renderPlanTab();
   if (habitOK(h, v)) { const n = habitStreak(h); if (STREAK_MILESTONES.includes(n)) toast(`🔥 ${streakWord(h, n)}!`); }
 }
@@ -3703,58 +3866,10 @@ function habitsPlanHTML() {
     ${db.habits.map(h => { const st = habitStreak(h); return `<button class="card goal" data-act="edithabit" data-id="${esc(h.id)}">
       <span class="bar"><strong>${esc(h.emoji || "")} ${esc(h.name)}</strong>${st ? `<span class="gpill">🔥 ${st}</span>` : ""}</span>
       <small class="muted">${esc(habitDesc(h))}</small></button>`; }).join("")}
-    ${db.habits.length ? "" : `<p class="hint">Track anything daily: quitting nicotine, cutting back on drinks, stretching. Log it here or on the Data tab.</p>`}
+    ${db.habits.length ? "" : `<p class="hint">Track anything daily: quitting nicotine, cutting back on drinks, stretching. Log it right here.</p>`}
     ${ideas.length ? `<div class="chips wrap" style="margin-top:8px">${ideas.map(t => `<button type="button" class="chip" data-act="habittpl" data-name="${esc(t.name)}">+ ${t.emoji} ${esc(t.name)}</button>`).join("")}</div>` : ""}`;
 }
 
-/* ---------- Habits on the Data tab ---------- */
-
-function weekBars(weeks, vals, h) {
-  const W = 340, H = 120, L = 30, R = 8, T = 18, B = 22, pw = W - L - R, ph = H - T - B;
-  const max = niceMax(Math.max(1, ...vals.filter(v => v != null)));
-  const y = v => T + ph - (v / max) * ph;
-  const n = weeks.length, slot = pw / n, bw = Math.max(5, Math.min(30, slot - 6)), every = labelEvery(n);
-  const unit = h.unit || "";
-  let s = "";
-  for (const t of [0, max]) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
-  let lastI = -1;
-  vals.forEach((v, i) => {
-    const x = L + slot * i + (slot - bw) / 2;
-    if (v) s += `<path d="${barPath(x, y(v), bw, T + ph - y(v), 4)}" fill="var(--accent)"/>`;
-    if (v != null) lastI = i;
-    if ((n - 1 - i) % every === 0) s += `<text class="ax" x="${x + bw / 2}" y="${H - 6}" text-anchor="middle">${wkLabel(weeks[i])}</text>`;
-    s += `<rect class="hit" x="${L + slot * i}" y="${T}" width="${slot}" height="${ph}" data-tip="${esc(`Week of ${wkLabel(weeks[i])}: ${v == null ? "not logged" : `${v} ${unit}`.trim()}`)}"/>`;
-  });
-  if (lastI >= 0) s += `<text class="val" x="${L + slot * lastI + (slot + bw) / 2}" y="${y(vals[lastI]) - 6}" text-anchor="end">${esc(`${vals[lastI]} ${unit}`.trim())}</text>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(h.name)} per week">${s}</svg>`;
-}
-
-function habitsDataCard(weeks) {
-  if (!db.habits.length) return "";
-  const todayK = dkey(new Date()), days = [];
-  for (let d = new Date(weeks[0]); dkey(d) <= todayK; d = addDays(d, 1)) days.push(dkey(d));
-  return `<section class="card">
-    <h3>Habits</h3>
-    ${habitGridHTML()}
-    ${db.habits.map(h => {
-      const logged = days.filter(k => habitVal(h, k) != null), good = logged.filter(k => habitOK(h, habitVal(h, k)));
-      const word = h.goal === "avoid" ? (h.kind === "count" && h.limit ? "Within limit" : "Free") : "Done";
-      const st = habitStreak(h), best = habitBest(h);
-      let chart = "";
-      if (h.kind === "count") {
-        const vals = weeks.map(w => {
-          const v = [0, 1, 2, 3, 4, 5, 6].map(i => habitVal(h, dkey(addDays(w, i)))).filter(x => x != null);
-          return v.length ? v.reduce((a, b) => a + b, 0) : null;
-        });
-        if (vals.some(v => v != null)) chart = `<p class="hint" style="margin:8px 0 0">${esc(h.unit ? h.unit[0].toUpperCase() + h.unit.slice(1) : "Total")} per week</p><div class="chartwrap">${weekBars(weeks, vals, h)}<div class="ctip" hidden></div></div>`;
-      }
-      return `<div class="hstat">
-        <div class="bar"><strong>${esc(h.emoji || "")} ${esc(h.name)}</strong><span class="gpill">🔥 ${st} · best ${best}</span></div>
-        <small class="muted">${logged.length ? `Last ${weeks.length} weeks: ${word.toLowerCase()} on ${good.length} of ${logged.length} logged days (${Math.round((good.length / logged.length) * 100)}%)` : "Nothing logged in this range"}</small>
-        ${chart}</div>`;
-    }).join("")}
-  </section>`;
-}
 
 /* =========================================================
    Tabs, dialogs, boot

@@ -228,7 +228,7 @@ test("bodyweight from the check-in shows strength as % of bodyweight", async () 
   await page.click(".tabs [data-tab=data]");
   assert.match(await page.innerText("#view-data"), /Max hangs\s+\+34 lb \(120% BW\)/);
   await page.selectOption("#progEx", "s-maxhang");
-  await page.click("[data-rel='1']");
+  await page.click("[data-metric=rel]");
   assert.match(await page.innerText("#view-data"), /% of bodyweight[\s\S]*120% BW/);
   assert.match(await page.innerText("#view-data"), /Bodyweight[\s\S]*Latest 170 lb/);
   assert.deepEqual(page.errors, []);
@@ -286,13 +286,8 @@ test("habits: quit nicotine (yes/no) and count drinks, with streaks", async () =
   assert.equal(await page.locator(`#view-plan [data-h="${nic}"][data-date="${lastWeek}"]`).count(), 1);
 
   await page.click(".tabs [data-tab=data]");
-  await page.evaluate(() => { state.habitWeek = mondayOf(new Date()); renderData(); });
-  await page.click(`#view-data ${cell(nic)}`);   // logging works on the Data tab too
-  assert.equal(await page.textContent(`#view-data ${cell(nic)}`), "✓");
-  const card = await page.locator("#view-data section:has-text('Habits')").innerText();
-  assert.match(card, /Nicotine[\s\S]*7 · best 7/);
-  assert.match(card, /Alcohol[\s\S]*within limit on 0 of 1 logged days/);
-  assert.match(card, /Drinks per week/);
+  assert.equal(await page.locator("#view-data .hgrid").count(), 0, "habits are not on the Data tab");
+  assert.equal(await page.evaluate(() => habitBest(db.habits[0])), 6);
   assert.deepEqual(page.errors, []);
 });
 
@@ -338,5 +333,57 @@ test("supersets: link exercises, keep them together, carry them over", async () 
   const nk = await page.evaluate(k => dkey(addDays(parseKey(k), 7)), k);
   const next = await page.evaluate(nk => db.plan[nk].map(e => !!e.ss), nk);
   assert.equal(next.filter(Boolean).length, 2);
+  assert.deepEqual(page.errors, []);
+});
+
+test("exercise progress shows reps: best set, rep charts, and a table", async () => {
+  const page = await openApp();
+  await seed(page, [
+    [-7, "s-wpullup", { log: [{ reps: 6, load: 25 }, { reps: 5, load: 25 }], done: true }],
+    [0, "s-wpullup", { log: [{ reps: 5, load: 35 }, { reps: 4, load: 35 }, { reps: 8, load: 0 }], done: true }],
+  ]);
+  await page.click(".tabs [data-tab=data]");
+  await page.selectOption("#progEx", "s-wpullup");
+  const chips = await page.$$eval("#view-data [data-metric]", els => els.map(e => e.textContent));
+  assert.deepEqual(chips, ["Weight", "Reps", "Total reps"]);
+  const svg = () => page.locator("#view-data section:has-text('Exercise progress') svg").innerHTML();
+  assert.match(await svg(), /\+35 lb × 5/);           // heaviest set says how many reps
+  await page.click("[data-metric=reps]");
+  assert.match(await svg(), /8 reps/);
+  await page.click("[data-metric=vol]");
+  assert.match(await svg(), /17 reps/);               // 5 + 4 + 8
+  await page.click("#view-data section:has-text('Exercise progress') summary");
+  const table = await page.locator("#view-data section:has-text('Exercise progress') table").innerText();
+  assert.match(table, /\+35 lb × 5\s+3\s+17/);
+  assert.match(table, /\+25 lb × 6\s+2\s+11/);
+  assert.match(await page.innerText("#view-data"), /Personal records[\s\S]*Weighted pull-ups\s+\+35 lb × 5/);
+  assert.deepEqual(page.errors, []);
+});
+
+test("yoga: a category to log, counted in training time, with a yoga timer", async () => {
+  const page = await openApp();
+  assert.equal(await page.evaluate(() => findEx("s-yoga") && findEx("s-yoga").cat), "Yoga");
+  await seed(page, [[0, "s-yoga"]]);
+  const k = await today(page);
+  await page.click(`#day-${k} [data-act=entry] >> text=Yoga`);
+  await page.click("#timerBtn");
+  assert.equal(await page.getAttribute("#tmMode [data-tm=yoga]", "aria-pressed"), "true", "yoga opens in Yoga mode");
+  // A tiny routine: 1 pose of 30s, no switch. Speed the clock up to finish fast.
+  await page.click("#tmHolds [data-hold='30']");
+  await page.fill("#tmPoses", "1");
+  assert.match(await page.textContent("#tmPhase"), /1 poses × 30s/);
+  await page.click("#tmYogaKind [data-yk=session]");
+  await page.click("#tmSess [data-sess='20']");
+  await page.click("#tmBell [data-bell='5']");
+  assert.equal(await page.evaluate(() => buildPhases().filter(p => p.label === "Yoga").length), 4);
+  assert.equal(await page.textContent("#tmClock"), "10");
+  await page.evaluate(() => { timer.phases = buildPhases(); timer.i = timer.phases.length; timer.left = 0; renderTimer(); });
+  assert.equal(await page.textContent("#tmPhase"), "Namaste 🙏");
+  assert.equal(await page.textContent("#tmLog"), "Log 20 min");
+  await page.click("#tmLog");
+  await page.click("#entryForm button.primary[type=submit]");
+  assert.deepEqual(await page.evaluate(k => db.plan[k][0].log, k), [{ mins: 20 }]);
+  assert.equal(await page.evaluate(() => weekTime(mondayOf(new Date())).yoga), 20);
+  assert.equal(await page.evaluate(() => weekTime(mondayOf(new Date())).cardio), 0);
   assert.deepEqual(page.errors, []);
 });
