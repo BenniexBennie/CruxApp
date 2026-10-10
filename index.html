@@ -221,6 +221,8 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 .ckbtn{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 0;font-weight:800;font-size:1.05rem}
 .ckbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .cktable td,.cktable th{text-align:center}
+.recrow{align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.recrow span{font-size:.9rem}
 /* Habits */
 .hgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;align-items:center;margin-top:8px}
 .hhd{text-align:center;font-size:.75rem;font-weight:800;color:var(--muted)}
@@ -641,6 +643,10 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
         <input type="file" id="importFile" accept="application/json,.json" hidden>
       </div>
     </fieldset>
+    <fieldset><legend>Bring back lost workouts</legend>
+      <p class="hint" style="margin:-2px 0 10px">Adds back anything missing from an earlier copy: workouts, logs, check-ins, sessions. Nothing you have now is removed.</p>
+      <div id="recoverBox"></div>
+    </fieldset>
     <fieldset><legend>Library</legend>
       <button type="button" class="ghost sm" id="restoreBtn">Restore starter exercises</button>
       <p class="hint">Adds back any built-in exercises you deleted. Your own exercises are untouched.</p>
@@ -828,7 +834,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.10.10-1";
+const APP_VERSION = "2026.10.10-2";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -1179,7 +1185,10 @@ function load() {
       const d = JSON.parse(raw);
       if (validDb(d)) return normalize(d);
     }
-  } catch (e) { /* storage blocked or corrupt: start fresh in memory */ }
+  } catch (e) {
+    // Couldn't read it: keep the raw copy aside so starting fresh never destroys it.
+    try { const raw = localStorage.getItem(STORE); if (raw) localStorage.setItem(STORE + ".unreadable-" + Date.now(), raw); } catch (e2) {}
+  }
   return freshDb();
 }
 
@@ -2594,14 +2603,14 @@ $("#exDelete").addEventListener("click", async () => {
    Settings: theme, backup, restore
    ========================================================= */
 
-$("#settingsBtn").addEventListener("click", () => { applyTheme(); renderSyncSettings(); openSheet($("#settingsDialog")); });
+$("#settingsBtn").addEventListener("click", () => { applyTheme(); renderSyncSettings(); renderRecover(); openSheet($("#settingsDialog")); });
 
 $("#themeSeg").addEventListener("click", e => {
   const b = e.target.closest("[data-theme]"); if (!b) return;
   db.theme = b.dataset.theme; save(); applyTheme();
 });
 
-$("#sync").addEventListener("click", () => { applyTheme(); renderSyncSettings(); openSheet($("#settingsDialog")); });
+$("#sync").addEventListener("click", () => { applyTheme(); renderSyncSettings(); renderRecover(); openSheet($("#settingsDialog")); });
 
 $("#exportBtn").addEventListener("click", () => {
   db.lastBackup = dkey(new Date());
@@ -2621,7 +2630,12 @@ $("#importFile").addEventListener("change", async e => {
   try {
     const d = JSON.parse(await file.text());
     if (!validDb(d)) throw new Error("bad file");
-    if (!(await askConfirm("Replace everything in this browser with the backup?", "Replace", true))) return;
+    if (await askConfirm("Combine the backup with what's here? Nothing here is removed; missing workouts come back.", "Combine", false, "Other options")) {
+      closeSheet($("#settingsDialog"));
+      return restoreCopy(d, "the backup");
+    }
+    if (!(await askConfirm("Replace everything in this browser with the backup instead? Anything not in the backup is lost.", "Replace", true))) return;
+    snapshot("before import");
     db = normalize(d);
     state.sessId = null;
     ensureSessions();
@@ -3144,84 +3158,200 @@ function syncFailed(e) {
   else setSync("Sync error", true, e.message);
 }
 
-// Replace this device's data with a copy from GitHub.
+/* ---------- Merging two copies of the data ----------
+   Every workout, exercise, session, goal, habit day… is a separate record. A sync
+   compares this device, GitHub and the copy both had at the last sync (the "base"):
+   whatever changed on one side wins; if both changed the same record, the newer
+   copy wins. Nothing one device adds is ever dropped because another device saved later. */
+
+const BASE_KEY = "trainingplan.syncbase";
+const SECTIONS = ["exercises", "sessions", "goals", "projects", "habits"];
+const MAPS = ["lift", "checkin", "bw"];
+
+function recordsOf(d) {
+  const r = new Map();
+  for (const [k, list] of Object.entries(d.plan || {})) for (const e of list) r.set(`plan|${k}|${e.id}`, e);
+  for (const sec of SECTIONS) for (const x of d[sec] || []) if (x && x.id) r.set(`${sec}|${x.id}`, x);
+  for (const sec of MAPS) for (const [k, v] of Object.entries(d[sec] || {})) r.set(`${sec}|${k}`, v);
+  for (const [k, day] of Object.entries(d.habitLog || {})) for (const [h, v] of Object.entries(day)) r.set(`habitLog|${k}|${h}`, v);
+  return r;
+}
+const sameRec = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+function mergeDb(local, remote, base) {
+  const L = recordsOf(local), R = recordsOf(remote), B = base ? recordsOf(base) : new Map();
+  const localNewer = (local.updatedAt || 0) >= (remote.updatedAt || 0);
+  const out = new Map();
+  for (const k of new Set([...L.keys(), ...R.keys(), ...B.keys()])) {
+    const l = L.get(k), r = R.get(k), b = B.get(k);
+    let v;
+    if (sameRec(l, r)) v = l;
+    else if (sameRec(l, b)) v = r;            // only GitHub changed it (or deleted it)
+    else if (sameRec(r, b)) v = l;            // only this device changed it (or deleted it)
+    else v = l === undefined ? r : r === undefined ? l : localNewer ? l : r;   // both: an edit beats a delete, else newest
+    if (v !== undefined) out.set(k, v);
+  }
+  // Rebuild, keeping the newer copy's order and settings.
+  const first = localNewer ? local : remote, second = localNewer ? remote : local;
+  const d = clone(first);
+  d.updatedAt = Math.max(local.updatedAt || 0, remote.updatedAt || 0);
+  const order = (get) => { const seen = []; for (const src of [first, second]) for (const key of get(src)) if (!seen.includes(key)) seen.push(key); return seen; };
+  d.plan = {};
+  const dates = order(src => Object.keys(src.plan || {}));
+  for (const k of dates) {
+    const ids = order(src => (src.plan[k] || []).map(e => e.id));
+    const list = ids.map(id => out.get(`plan|${k}|${id}`)).filter(Boolean).map(clone);
+    if (list.length) d.plan[k] = tidySupersets(list);
+  }
+  for (const sec of SECTIONS) {
+    const ids = order(src => (src[sec] || []).filter(x => x && x.id).map(x => x.id));
+    d[sec] = ids.map(id => out.get(`${sec}|${id}`)).filter(Boolean).map(clone);
+  }
+  for (const sec of MAPS) {
+    d[sec] = {};
+    for (const k of order(src => Object.keys(src[sec] || {}))) if (out.has(`${sec}|${k}`)) d[sec][k] = clone(out.get(`${sec}|${k}`));
+  }
+  d.habitLog = {};
+  for (const [key, v] of out) if (key.startsWith("habitLog|")) { const [, k, h] = key.split("|"); (d.habitLog[k] ||= {})[h] = v; }
+  return d;
+}
+
+/* ---------- Snapshots: a few saved copies on this device, to undo a bad sync ---------- */
+
+const SNAP_KEY = "trainingplan.snapshots";
+function snapshots() { try { return JSON.parse(localStorage.getItem(SNAP_KEY) || "[]"); } catch (e) { return []; } }
+function snapshot(why) {
+  try {
+    const list = snapshots().filter(x => x.why !== why || Date.now() - x.at > 6 * 3600e3);   // at most one per reason every 6 h
+    list.unshift({ at: Date.now(), why, data: JSON.parse(JSON.stringify(db)) });
+    localStorage.setItem(SNAP_KEY, JSON.stringify(list.slice(0, 6)));
+  } catch (e) { /* storage full: snapshots are a nice-to-have */ }
+}
+
+// Bring back anything in an older copy that's missing now: workouts, logs, sessions, check-ins…
+// Nothing current is removed or overwritten, except a workout that's now empty gets its old log back.
+function recoverFrom(old) {
+  old = normalize(clone(old));
+  let n = 0;
+  const now = new Map();
+  for (const [k, list] of Object.entries(db.plan)) for (const e of list) now.set(e.id, { k, e });
+  for (const [k, list] of Object.entries(old.plan)) for (const e of list) {
+    const cur = now.get(e.id);
+    if (!cur) { (db.plan[k] ||= []).push(clone(e)); n++; }
+    else if (!hasLog(cur.e) && hasLog(e)) {
+      for (const f of ["log", "mins", "grades", "sends", "pr"]) if (e[f] != null) cur.e[f] = clone(e[f]);
+      if (e.note && !cur.e.note) cur.e.note = e.note;
+      cur.e.done = cur.e.done || e.done;
+      n++;
+    }
+  }
+  for (const sec of SECTIONS) {
+    const have = new Set(db[sec].map(x => x.id));
+    for (const x of old[sec] || []) if (x.id && !have.has(x.id)) { db[sec].push(clone(x)); n++; }
+  }
+  for (const sec of MAPS) for (const [k, v] of Object.entries(old[sec] || {})) if (db[sec][k] == null) { db[sec][k] = clone(v); n++; }
+  for (const [k, day] of Object.entries(old.habitLog || {})) for (const [h, v] of Object.entries(day))
+    if (!(db.habitLog[k] && db.habitLog[k][h] != null)) { (db.habitLog[k] ||= {})[h] = v; n++; }
+  tidyAllSupersets();
+  return n;
+}
+async function restoreCopy(old, label) {
+  const before = clone(db);
+  const n = recoverFrom(old);
+  if (!n) { toast(`Nothing missing compared with ${label}.`); return; }
+  save(); renderAll(); if (state.tab === "data") renderData();
+  closeAllSheets();
+  toast(`Brought back ${n} item${n === 1 ? "" : "s"} from ${label}`, { label: "Undo", run: () => { db = before; save(); renderAll(); } });
+}
+
+/* ---------- Sync ---------- */
+
+// Replace this device's data (used after a merge).
 function adopt(remote) {
+  snapshot("before sync");
   db = normalize(remote);
   ensureSessions();
   persist();
   applyTheme();
-  state.sessId = null;
+  if (state.sessId && !currentSess()) state.sessId = null;
   renderAll();
   if (state.tab === "data") renderData();
 }
+function syncBase() { try { const b = localStorage.getItem(BASE_KEY); return b ? JSON.parse(b) : null; } catch (e) { return null; } }
+function setSyncBase(d) { try { localStorage.setItem(BASE_KEY, JSON.stringify(d)); } catch (e) {} }
 
-async function syncPush() {
+let syncing = null;
+// Pull, merge, push: one round trip that never loses a change from either side.
+async function syncNow() {
   if (!syncState.token) return;
-  clearTimeout(syncState.timer);
+  if (syncing) { syncState.again = true; return syncing; }
+  clearTimeout(syncState.timer); syncState.timer = null;
   setSync("Syncing…");
-  const files = { [GIST_FILE]: { content: JSON.stringify(db) } };
-  const create = async () => { syncState.gistId = (await gh("/gists", { method: "POST", body: JSON.stringify({ description: GIST_DESC, public: false, files }) })).id; };
-  try {
-    if (!syncState.gistId) await create();   // first device: make the private sync file
-    else {
-      try { await gh(`/gists/${syncState.gistId}`, { method: "PATCH", body: JSON.stringify({ files }) }); }
-      catch (e) { if (e.status !== 404) throw e; await create(); }   // file was deleted on GitHub
-    }
-    syncState.lastSync = Date.now(); saveSyncCfg();
-    setSync("Synced ✓", false, `Synced with GitHub at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`);
-  } catch (e) { syncFailed(e); }
+  syncing = (async () => {
+    try {
+      const startedAt = db.updatedAt;
+      let remote = null;
+      if (syncState.gistId) {
+        try { remote = await readGist(await gh(`/gists/${syncState.gistId}`)); }
+        catch (e) { if (e.status !== 404) throw e; syncState.gistId = null; }   // file was deleted on GitHub
+      }
+      if (db.updatedAt !== startedAt) { syncState.again = true; return; }    // you changed something meanwhile: go again
+      const merged = remote ? normalize(mergeDb(db, remote, syncBase())) : db;
+      if (remote && !sameRec(merged, db)) adopt(merged);
+      if (!remote || !sameRec(merged, remote)) {
+        const files = { [GIST_FILE]: { content: JSON.stringify(db) } };
+        if (syncState.gistId) await gh(`/gists/${syncState.gistId}`, { method: "PATCH", body: JSON.stringify({ files }) });
+        else syncState.gistId = (await gh("/gists", { method: "POST", body: JSON.stringify({ description: GIST_DESC, public: false, files }) })).id;
+      }
+      setSyncBase(db);
+      syncState.lastSync = Date.now(); saveSyncCfg();
+      setSync("Synced ✓", false, `Synced with GitHub at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`);
+    } catch (e) { syncFailed(e); }
+  })();
+  await syncing;
+  syncing = null;
+  if (syncState.again) { syncState.again = false; schedulePush(); }
 }
+const syncPush = syncNow, syncPull = syncNow;
 function schedulePush() {
   if (!syncState.token) return;
   clearTimeout(syncState.timer);
   setSync("Syncing…");
-  syncState.timer = setTimeout(syncPush, 2000);
+  syncState.timer = setTimeout(syncNow, 1500);
 }
-
-async function syncPull() {
-  if (!syncState.token || !syncState.gistId) return;
-  setSync("Syncing…");
-  try {
-    const remote = await readGist(await gh(`/gists/${syncState.gistId}`));
-    if (remote && (remote.updatedAt || 0) > (db.updatedAt || 0)) adopt(remote);
-    else if (!remote || (db.updatedAt || 0) > (remote.updatedAt || 0)) return syncPush();
-    syncState.lastSync = Date.now(); saveSyncCfg();
-    setSync("Synced ✓", false, `Synced with GitHub at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`);
-  } catch (e) { syncFailed(e); }
-}
+// Leaving the app: send a waiting change right away instead of after the delay.
+function flushSync() { if (syncState.timer) syncNow(); }
 
 async function connectSync(token) {
   syncState.token = token.trim();
   setSync("Connecting…");
   try {
     const user = await gh("/user");
-    // Reuse the sync file if another device already made one.
+    // Reuse the sync file if another device already made one, and combine the two.
     let found = null;
     for (let page = 1; page <= 5 && !found; page++) {
       const list = await gh(`/gists?per_page=100&page=${page}`);
       found = list.find(g => g.files && g.files[GIST_FILE]);
       if (list.length < 100) break;
     }
-    let adopted = false;
-    if (found) {
-      syncState.gistId = found.id;
-      const remote = await readGist(await gh(`/gists/${found.id}`));
-      if (remote && Object.keys(remote.plan || {}).length) {
-        const when = remote.updatedAt ? new Date(remote.updatedAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "earlier";
-        const useRemote = await askConfirm(`Your GitHub already has training data (last changed ${when}). Use it on this device? This device's current data will be replaced.`, "Use GitHub data", false, "Keep this device's");
-        if (useRemote) { adopt(remote); adopted = true; }
-      }
-    }
+    if (found) syncState.gistId = found.id;
+    try { localStorage.removeItem(BASE_KEY); } catch (e) {}   // first sync: keep everything from both sides
     saveSyncCfg();
-    if (adopted) { syncState.lastSync = Date.now(); saveSyncCfg(); setSync("Synced ✓"); }
-    else await syncPush();   // creates the sync file on first connect, or updates it with this device's data
-    toast(`Syncing with GitHub as ${user.login}`);
+    await syncNow();
+    if (!syncState.warn) toast(found ? `Syncing as ${user.login}. Combined this device with your GitHub data.` : `Syncing with GitHub as ${user.login}`);
   } catch (e) {
     syncState.token = null; syncState.gistId = null; saveSyncCfg();
     setSync("");
     $("#syncErr").textContent = e instanceof TypeError ? "Couldn't reach GitHub. Check your connection and try again." : e.message;
   }
 }
+
+// Earlier versions of the sync file on GitHub (every sync is kept).
+async function gistHistory() {
+  const list = await gh(`/gists/${syncState.gistId}/commits?per_page=60`);
+  return list.map(c => ({ sha: c.version, at: Date.parse(c.committed_at) }));
+}
+async function gistVersion(sha) { return readGist(await gh(`/gists/${syncState.gistId}/${sha}`)); }
 
 function disconnectSync() {
   syncState.token = null; syncState.gistId = null; syncState.lastSync = null;
@@ -3259,6 +3389,46 @@ $("#settingsDialog").addEventListener("click", e => {
   else if (b.dataset.sync === "off") disconnectSync();
 });
 window.addEventListener("online", () => syncPull());
+
+// How many items an older copy would bring back (a dry run of recoverFrom).
+function previewRecover(old) {
+  const keep = db; db = clone(keep);
+  let n = 0; try { n = recoverFrom(old); } finally { db = keep; }
+  return n;
+}
+const fmtWhen = t => new Date(t).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+function renderRecover(history) {
+  const box = $("#recoverBox"); if (!box) return;
+  const snaps = snapshots();
+  box.innerHTML = `
+    ${snaps.length ? `<p class="hint" style="margin:0 0 4px"><b>Copies saved on this device</b></p>${snaps.map((x, i) => {
+      const n = previewRecover(x.data);
+      return `<div class="bar recrow"><span>${fmtWhen(x.at)} <small class="muted">${esc(x.why)}</small></span>${n ? `<button type="button" class="ghost sm" data-recover="snap" data-i="${i}">Bring back ${n}</button>` : `<small class="muted">nothing missing</small>`}</div>`;
+    }).join("")}` : `<p class="hint">No copies saved on this device yet.</p>`}
+    ${syncState.token && syncState.gistId ? (history
+      ? `<p class="hint" style="margin:12px 0 4px"><b>GitHub history</b> (every sync is kept)</p>${history.map(h => `<div class="bar recrow"><span>${fmtWhen(h.at)}</span><button type="button" class="ghost sm" data-recover="gh" data-sha="${esc(h.sha)}">Check</button></div>`).join("")}`
+      : `<button type="button" class="ghost sm" data-recover="loadgh" style="margin-top:10px">Show GitHub history</button>`) : ""}`;
+}
+$("#recoverBox").addEventListener("click", async e => {
+  const b = e.target.closest("[data-recover]"); if (!b) return;
+  try {
+    if (b.dataset.recover === "snap") {
+      const x = snapshots()[Number(b.dataset.i)];
+      if (x) restoreCopy(x.data, `the copy from ${fmtWhen(x.at)}`);
+    } else if (b.dataset.recover === "loadgh") {
+      b.textContent = "Loading…";
+      renderRecover(await gistHistory());
+    } else if (b.dataset.recover === "gh") {
+      b.textContent = "Checking…";
+      const old = await gistVersion(b.dataset.sha);
+      const n = old ? previewRecover(old) : 0;
+      if (!n) { b.textContent = "Nothing missing"; b.disabled = true; return; }
+      const when = b.closest(".recrow").querySelector("span").textContent;
+      if (await askConfirm(`The GitHub copy from ${when} has ${n} item${n === 1 ? "" : "s"} you don't have now. Bring ${n === 1 ? "it" : "them"} back?`, "Bring back")) restoreCopy(old, `GitHub (${when})`);
+      else b.textContent = "Check";
+    }
+  } catch (err) { toast(err.message || "Couldn't load that copy"); }
+});
 
 /* ---------- Share a session as a link ---------- */
 
@@ -3936,6 +4106,7 @@ applyTheme();
 renderAll();
 persist();
 renderStatus();
+snapshot("daily");
 syncPull();
 receiveShare();
 $("#appVersion").textContent = APP_VERSION;
@@ -3954,13 +4125,18 @@ async function checkForUpdate() {
     if (!m || m[1] === APP_VERSION) return;
     const key = "updated-to-" + m[1];
     try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch (e) {}
+    if (syncState.timer || syncing) await syncNow();   // never reload with a change still waiting to sync
     location.replace(url + "?v=" + encodeURIComponent(m[1]) + location.hash);   // keep a #share link
   } catch (e) { /* offline: keep using this copy */ }
 }
 checkForUpdate();
 // Offline: a service worker keeps a copy of the app (only on the real site, not in previews).
 if ("serviceWorker" in navigator && location.hostname.endsWith("github.io")) navigator.serviceWorker.register("sw.js").catch(() => {});
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { checkForUpdate(); syncPull(); } });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") { checkForUpdate(); syncPull(); }
+  else flushSync();   // send a change you just made before the phone puts the app to sleep
+});
+window.addEventListener("pagehide", flushSync);
 
 // In a stretched frame the bottom tab bar would sit at the very end of the page: put it under the header.
 function placeTabs() {

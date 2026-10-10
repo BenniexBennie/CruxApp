@@ -18,7 +18,8 @@ after(() => browser.close());
 
 // Fake GitHub gist API: one user, token "ghp_good", gists kept in memory.
 function fakeGitHub() {
-  const gists = {}; let n = 0; const net = { online: true };
+  const gists = {}, history = {}; let n = 0, rev = 0; const net = { online: true };
+  const record = id => (history[id] ||= []).unshift({ version: "v" + (++rev), committed_at: new Date(Date.now() + rev * 1000).toISOString(), content: gists[id].files["training-plan.json"].content });
   const handler = async route => {
     if (!net.online) return route.abort("internetdisconnected");
     const req = route.request(), u = new URL(req.url()), auth = req.headers()["authorization"] || "";
@@ -30,18 +31,24 @@ function fakeGitHub() {
     if (u.pathname === "/gists" && req.method() === "POST") {
       const body = req.postDataJSON(), id = "g" + (++n);
       gists[id] = { id, description: body.description, files: Object.fromEntries(Object.entries(body.files).map(([k, v]) => [k, { content: v.content, truncated: false }])) };
+      record(id);
       return json(201, gists[id]);
     }
+    const hc = u.pathname.match(/^\/gists\/(\w+)\/commits$/);
+    if (hc) return json(200, (history[hc[1]] || []).map(({ version, committed_at }) => ({ version, committed_at })));
+    const hv = u.pathname.match(/^\/gists\/(\w+)\/(v\d+)$/);
+    if (hv) { const h = (history[hv[1]] || []).find(x => x.version === hv[2]); return h ? json(200, { id: hv[1], files: { "training-plan.json": { content: h.content, truncated: false } } }) : json(404, {}); }
     const m = u.pathname.match(/^\/gists\/(\w+)$/);
     if (m && !gists[m[1]]) return json(404, {});
     if (m && req.method() === "GET") return json(200, gists[m[1]]);
     if (m && req.method() === "PATCH") {
       for (const [k, v] of Object.entries(req.postDataJSON().files)) gists[m[1]].files[k] = { content: v.content, truncated: false };
+      record(m[1]);
       return json(200, gists[m[1]]);
     }
     return json(500, {});
   };
-  return { gists, net, handler };
+  return { gists, history, net, handler };
 }
 
 async function openApp({ github, url = SITE } = {}) {
@@ -170,33 +177,86 @@ test("sync: two devices share data through a gist", async () => {
     await page.click("#settingsBtn");
     await page.fill("#syncToken", token);
     await page.click("[data-sync=connect]");
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(500);
   };
+  const notes = page => page.evaluate(() => Object.values(db.plan).flat().map(e => e.note).sort());
   const phone = await openApp({ github });
-  await seed(phone, [[0, "s-wpullup", { log: [{ reps: 5, load: 30 }], done: true, note: "from phone" }]]);
+  await seed(phone, [[-7, "s-limit", { grades: [5, 6], mins: 90, done: true, note: "phone climb" }]]);
   await connect(phone, "ghp_wrong");
   assert.match(await phone.textContent("#syncErr"), /./);
   await phone.fill("#syncToken", "ghp_good"); await phone.click("[data-sync=connect]"); await phone.waitForTimeout(500);
   assert.equal(Object.keys(github.gists).length, 1);
 
+  // A second device that already has its own workouts: connecting combines both, nothing is replaced.
   const laptop = await openApp({ github });
+  await seed(laptop, [[-1, "s-bench", { log: [{ reps: 5, load: 135 }], done: true, note: "laptop lift" }]]);
   await connect(laptop, "ghp_good");
-  await laptop.click("#confirmYes"); await laptop.waitForTimeout(400);
-  assert.deepEqual(await laptop.evaluate(() => Object.values(db.plan).flat().map(e => e.note)), ["from phone"]);
+  assert.deepEqual(await notes(laptop), ["laptop lift", "phone climb"]);
+  await phone.evaluate(() => syncNow()); await phone.waitForTimeout(300);
+  assert.deepEqual(await notes(phone), ["laptop lift", "phone climb"]);
 
+  // The bug that lost workouts: the phone logs a session but the app is closed before it uploads,
+  // then the laptop saves something newer. Both changes must survive.
+  await phone.evaluate(() => {
+    const ex = findEx("s-tension");
+    db.plan[dkey(addDays(new Date(), -3))] = [{ id: uid(), ex: ex.id, name: ex.name, cat: ex.cat, fields: ex.fields, target: [], log: [], done: true, note: "unsent TB", grades: [6] }];
+    save(); clearTimeout(syncState.timer); syncState.timer = null;   // app closed before the upload
+  });
   await laptop.evaluate(() => { db.lift[dkey(new Date())] = 55; save(); });
-  await laptop.waitForTimeout(2600);
-  await phone.evaluate(() => syncPull()); await phone.waitForTimeout(400);
+  await laptop.waitForTimeout(2200);
+  await phone.evaluate(() => syncNow()); await phone.waitForTimeout(400);
+  assert.deepEqual(await notes(phone), ["laptop lift", "phone climb", "unsent TB"]);
   assert.equal(await phone.evaluate(() => db.lift[dkey(new Date())]), 55);
+  const onGitHub = JSON.parse(github.gists.g1.files["training-plan.json"].content);
+  assert.ok(Object.values(onGitHub.plan).flat().some(e => e.note === "unsent TB"), "the unsent session reached GitHub");
+  await laptop.evaluate(() => syncNow()); await laptop.waitForTimeout(300);
+  assert.deepEqual(await notes(laptop), ["laptop lift", "phone climb", "unsent TB"]);
 
+  // A delete on one device is a delete everywhere (it isn't brought back by the other copy).
+  await laptop.evaluate(() => { for (const k of Object.keys(db.plan)) db.plan[k] = db.plan[k].filter(e => e.note !== "laptop lift"); for (const k of Object.keys(db.plan)) if (!db.plan[k].length) delete db.plan[k]; save(); });
+  await laptop.waitForTimeout(2200);
+  await phone.evaluate(() => syncNow()); await phone.waitForTimeout(300);
+  assert.deepEqual(await notes(phone), ["phone climb", "unsent TB"]);
+
+  // Offline: saved locally, synced when back.
   github.net.online = false;
   await phone.evaluate(() => { db.lift[dkey(new Date())] = 60; save(); });
-  await phone.waitForTimeout(2600);
+  await phone.waitForTimeout(2000);
+  assert.match(await phone.textContent("#sync"), /Offline/);
   github.net.online = true;
   await phone.evaluate(() => window.dispatchEvent(new Event("online"))); await phone.waitForTimeout(500);
   assert.equal(Object.values(JSON.parse(github.gists.g1.files["training-plan.json"].content).lift)[0], 60);
   assert.equal(await phone.evaluate(() => JSON.stringify(db).includes("ghp_")), false, "token never stored in the data");
   assert.deepEqual([...phone.errors, ...laptop.errors], []);
+});
+
+test("bring back lost workouts from GitHub history or a saved copy", async () => {
+  const github = fakeGitHub();
+  const page = await openApp({ github });
+  await seed(page, [[-7, "s-tension", { grades: [5, 6], mins: 80, done: true, note: "lost TB" }], [-6, "s-limit", { grades: [4], done: true, note: "lost limit" }]]);
+  await page.click("#settingsBtn");
+  await page.fill("#syncToken", "ghp_good"); await page.click("[data-sync=connect]"); await page.waitForTimeout(500);
+  // Simulate the loss: last week's climbs vanish and that copy is synced.
+  await page.evaluate(() => { for (const k of Object.keys(db.plan)) delete db.plan[k]; db.lift[dkey(new Date())] = 30; save(); });
+  await page.waitForTimeout(2200);
+  assert.equal(await page.evaluate(() => Object.keys(db.plan).length), 0);
+
+  await page.evaluate(() => closeAllSheets());
+  await page.click("#settingsBtn");
+  await page.click("[data-recover=loadgh]");
+  await page.waitForSelector("[data-recover=gh]");
+  await page.click("[data-recover=gh] >> nth=-1");   // the oldest copy
+  await page.waitForSelector("#confirmDialog[open]");
+  assert.match(await page.textContent("#confirmMsg"), /has 2 items you don't have now/);
+  await page.click("#confirmYes");
+  assert.deepEqual(await page.evaluate(() => Object.values(db.plan).flat().map(e => e.note).sort()), ["lost TB", "lost limit"]);
+  assert.equal(await page.evaluate(() => db.lift[dkey(new Date())]), 30, "newer data is kept");
+  assert.deepEqual(await page.evaluate(() => Object.values(db.plan).flat().find(e => e.note === "lost TB").grades), [5, 6]);
+
+  // Copies saved on this device work the same way.
+  const snapCount = await page.evaluate(() => { snapshot("test"); for (const k of Object.keys(db.plan)) delete db.plan[k]; save(); return previewRecover(snapshots()[0].data); });
+  assert.equal(snapCount, 2);
+  assert.deepEqual(page.errors, []);
 });
 
 test("a shared session link adds the session", async () => {
@@ -423,4 +483,22 @@ test("older saved data gets the Tension Board session", async () => {
     const n = normalize(d); return [n.v, n.exercises.some(e => e.id === "s-tension")];
   });
   assert.deepEqual(v, [15, true]);
+});
+
+test("syncing with nothing new doesn't write to GitHub", async () => {
+  const github = fakeGitHub();
+  const page = await openApp({ github });
+  await seed(page, [[0, "s-bench", { log: [{ reps: 5, load: 135 }], done: true }]]);
+  await page.click("#settingsBtn");
+  await page.fill("#syncToken", "ghp_good"); await page.click("[data-sync=connect]"); await page.waitForTimeout(500);
+  const before = github.history.g1.length;
+  for (let i = 0; i < 3; i++) await page.evaluate(() => syncNow());
+  assert.equal(github.history.g1.length, before);
+  // A second device joining with an empty library doesn't write either, unless it adds something.
+  const other = await openApp({ github });
+  await other.click("#settingsBtn");
+  await other.fill("#syncToken", "ghp_good"); await other.click("[data-sync=connect]"); await other.waitForTimeout(500);
+  await other.evaluate(() => syncNow());
+  assert.ok(github.history.g1.length <= before + 1);
+  assert.deepEqual([...page.errors, ...other.errors], []);
 });

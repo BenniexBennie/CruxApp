@@ -20,7 +20,8 @@ On iPhone, open it in Safari, tap Share, then **Add to Home Screen**.
 ## Where data lives
 
 Data is saved in the browser's `localStorage` under the key `crux.v1`.
-- **Sync with GitHub:** in Settings, your data is kept in a private gist and synced between devices. You need a token with only the `gist` scope. The newest change wins.
+- **Sync with GitHub:** in Settings, your data is kept in a private gist and synced between devices. You need a token with only the `gist` scope. Sync merges record by record (each workout, check-in, session…) against the last synced copy, so nothing one device adds is lost when another saves later.
+- **Bring back lost workouts:** Settings lists copies saved on the device and the GitHub history; restoring adds back only what is missing.
 - **Export backup:** saves a JSON file.
 - **Offline:** a service worker (`sw.js`) keeps a copy so the app opens without a connection.
 
