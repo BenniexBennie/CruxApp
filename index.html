@@ -15,7 +15,7 @@
   --sun:#FFC93C; --on-sun:#3A2A00; --danger:#E4574B;
   --tape:#D1246C; --orange:#E2621B; --go:#0E8878; --blue:#2F63C8; --gold:#D89B00; --grey:#8A96A1;
   --violet:#7A4FC4; --on-violet:#FFFFFF; --leaf:#3B8F3F; --cyan:#1B8FB5;
-  --c-climb:#2F63C8; --c-lift:#C2410C; --c-cardio:#00897A; --c-yoga:#C98500;
+  --c-climb:#2F63C8; --c-lift:#C2410C; --c-cardio:#00897A; --c-yoga:#C98500; --c-tb:#C2410C;
   --display:"Fredoka","Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
   --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
   box-sizing:border-box;
@@ -28,7 +28,7 @@
     --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
     --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
     --violet:#A98BFF; --on-violet:#1B1036; --leaf:#6CCB6F; --cyan:#4CC3E8;
-    --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893; --c-yoga:#C98500;
+    --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893; --c-yoga:#C98500; --c-tb:#DD6A30;
     color-scheme:dark;
   }
 }
@@ -38,7 +38,7 @@
   --sun:#FFD166; --on-sun:#3A2A00; --danger:#FF7A6E;
   --tape:#FF4D92; --orange:#FF8440; --go:#28BFA9; --blue:#6E9BFF; --gold:#F2C230; --grey:#7C8F84;
   --violet:#A98BFF; --on-violet:#1B1036; --leaf:#6CCB6F; --cyan:#4CC3E8;
-  --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893; --c-yoga:#C98500;
+  --c-climb:#5A8BF5; --c-lift:#DD6A30; --c-cardio:#1FA893; --c-yoga:#C98500; --c-tb:#DD6A30;
   color-scheme:dark;
 }
 html{height:100%}
@@ -243,7 +243,9 @@ dialog.as-float{position:absolute;left:12px;right:12px;width:auto;z-index:50;mar
 .pyr{display:grid;grid-template-columns:34px 1fr 30px;gap:4px 8px;align-items:center;margin-top:10px}
 .pyr b{font-size:.85rem;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
 .pyr .track{display:flex;justify-content:center;height:22px;border-radius:4px}
+.pyr .track{gap:2px}
 .pyr .track span{display:block;height:100%;border-radius:4px;background:var(--c-climb);min-width:6px}
+.pyr .track span.tb{background:var(--c-tb)}
 .pyr .track.on{background:color-mix(in srgb,var(--ink) 6%,transparent)}
 .pyr small{font-size:.85rem;font-weight:800;font-variant-numeric:tabular-nums}
 /* Load warning */
@@ -826,7 +828,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 "use strict";
 
 // Bump on every release. The home-screen app compares this with the live site to update itself.
-const APP_VERSION = "2026.10.09-1";
+const APP_VERSION = "2026.10.10-1";
 
 // If anything goes wrong, say so on screen instead of silently doing nothing.
 function showError(msg) {
@@ -873,7 +875,7 @@ const CAT_FIELDS = {
   Strength: ["reps", "load"], Core: ["reps", "time"], Cardio: ["mins", "dist"], Yoga: ["mins"],
 };
 const FIELD_OVERRIDES = {
-  "s-warmup": [], "s-limit": [], "s-board": [], "s-dyno": [], "s-arc": [], "s-mileage": [], "s-rice": [],
+  "s-warmup": [], "s-limit": [], "s-board": [], "s-tension": [], "s-dyno": [], "s-arc": [], "s-mileage": [], "s-rice": [],
   "s-lockoff": ["reps", "time", "load"], "s-oap-neg": ["reps", "time", "load"], "s-oap-lock": ["reps", "time", "load"],
   "s-lever": ["time"], "s-plank": ["time"], "s-legraise": ["reps"], "s-explosive": ["reps", "load"],
   "s-scappull": ["reps"], "s-fingerext": ["reps"],
@@ -902,7 +904,8 @@ const SEED = [
   { id: "s-oah", name: "One-arm hangs", cat: "Fingers", notes: "Hang on one arm with a slight bend in the elbow, assisted by a pulley counterweight (negative load). Alternate arms each set." },
   // Climbing power (and on-the-wall sessions)
   { id: "s-limit", name: "Limit bouldering", cat: "Climbing", notes: "3–5 problems at or just above your max. Short attempts with 3+ min rest. Quality over quantity: stop when you stop getting closer." },
-  { id: "s-board", name: "Board session", cat: "Climbing", notes: "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts." },
+  { id: "s-board", name: "Board session", cat: "Climbing", notes: "Moon / Kilter / other boards. Pick benchmarks near your limit and rest fully between attempts. On the Tension Board, log a Tension Board session instead so those sends show separately." },
+  { id: "s-tension", name: "Tension Board session", cat: "Climbing", notes: "Tension Board 1 or 2. Tap a grade for each problem you send: they get their own color in the Data tab's grade pyramid. Note the angle and any benchmarks in your session notes." },
   { id: "s-campus", name: "Campus ladders", cat: "Climbing power", notes: "1-2-3-4 or 1-3-5 ladders, no feet. Only once you have a solid finger-strength base. Stop at the first sloppy catch." },
   { id: "s-bumps", name: "Campus bumps", cat: "Climbing power", notes: "Start matched, then bump one hand up rung by rung and back down without matching. Precise, snappy catches." },
   { id: "s-dyno", name: "Dyno practice", cat: "Climbing", notes: "Pick 3–4 dynamic or coordination problems. Commit fully on every try and rest between attempts." },
@@ -998,6 +1001,8 @@ const V11_ADDED = ["s-frontsquat", "s-trxrow"];
 const V12_ADDED = ["s-soccer"];
 // Library version 14: a Yoga category.
 const V14_ADDED = ["s-yoga"];
+// Library version 15: Tension Board sessions, kept apart from other climbing in the grade pyramid.
+const V15_ADDED = ["s-tension"];
 
 /* =========================================================
    Storage
@@ -1013,7 +1018,7 @@ const V14_ADDED = ["s-yoga"];
 
 const STORE = "crux.v1";
 const clone = o => JSON.parse(JSON.stringify(o));
-const freshDb = () => ({ v: 14, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], checkin: {}, bw: {}, habits: [], habitLog: {}, projects: [], theme: "system" });
+const freshDb = () => ({ v: 15, exercises: clone(SEED), plan: {}, plans: [], lift: {}, goals: [], checkin: {}, bw: {}, habits: [], habitLog: {}, projects: [], theme: "system" });
 const validDb = d => d && typeof d === "object" && Array.isArray(d.exercises) && d.plan && typeof d.plan === "object";
 
 // --- v4 helpers: old saves had preset numbers, with load in kg ---
@@ -1152,6 +1157,13 @@ function normalize(d) {
     const have = new Set(d.exercises.map(e => e.id));
     d.exercises.push(...clone(SEED.filter(x => V14_ADDED.includes(x.id) && !have.has(x.id))));
     d.v = 14;
+  }
+  if (d.v < 15) {
+    const have = new Set(d.exercises.map(e => e.id));
+    d.exercises.push(...clone(SEED.filter(x => V15_ADDED.includes(x.id) && !have.has(x.id))));
+    const board = d.exercises.find(e => e.id === "s-board");
+    if (board && board.notes === "Moon / Kilter / Tension board. Pick benchmarks near your limit and rest fully between attempts.") board.notes = "Moon / Kilter / other boards. Pick benchmarks near your limit and rest fully between attempts. On the Tension Board, log a Tension Board session instead so those sends show separately.";
+    d.v = 15;
   }
   for (const e of d.exercises) {
     if (!Array.isArray(e.fields)) e.fields = [...DEFAULT_FIELDS];
@@ -1344,8 +1356,8 @@ document.addEventListener("click", e => {
 // Most recent logged session of an exercise before a given date.
 // Bouldering sessions (the Climbing category and the bouldering warm-up) also log total time on the wall.
 const tracksClimbTime = item => catOf(item) === "Climbing" || item.ex === "s-warmup";
-// Limit bouldering and board sessions also record notable sends.
-const tracksSends = item => item.ex === "s-limit" || item.ex === "s-board";
+// Limit bouldering and board sessions (including the Tension Board) also record notable sends.
+const tracksSends = item => item.ex === "s-limit" || item.ex === "s-board" || item.ex === "s-tension";
 const hasLog = e => (e.log && e.log.length) || e.mins || e.sends || (e.grades && e.grades.length);
 const fmtClimbMins = m => m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${Math.round(m % 60)} min` : ""}` : `${m} min`;
 // What was done in a session: sets, then time climbing.
@@ -2854,19 +2866,27 @@ function bwCard(weeks) {
 
 /* ---------- Grade pyramid ---------- */
 
+// Tension Board sends are kept apart from gym/outdoor climbing (custom exercises with "Tension" in the name count too).
+const isTension = e => e.ex === "s-tension" || /tension/i.test(nameOf(e));
+
 function pyramidCard(weeks) {
   const all = state.pyrAll;
-  const grades = all ? Object.values(db.plan).flat().flatMap(e => e.grades || []) : weeks.flatMap(weekGrades);
+  const entries = all ? Object.values(db.plan).flat() : weeks.flatMap(weekEntries);
+  const sends = entries.flatMap(e => (e.grades || []).map(g => ({ g, tb: isTension(e) })));
+  const grades = sends.map(x => x.g);
   const chips = `<div class="seg" style="margin-top:8px">
     <button type="button" class="chip" data-pyr="range" aria-pressed="${!all}">Last ${weeks.length} weeks</button>
     <button type="button" class="chip" data-pyr="all" aria-pressed="${all}">All time</button></div>`;
   if (!grades.length) return `<section class="card"><h3>Grade pyramid</h3>${chips}<p class="empty">No sends ${all ? "logged yet" : "in this range"}.</p></section>`;
-  const count = {}; for (const g of grades) count[g] = (count[g] || 0) + 1;
+  const count = {}, tb = {};
+  for (const x of sends) { count[x.g] = (count[x.g] || 0) + 1; if (x.tb) tb[x.g] = (tb[x.g] || 0) + 1; }
+  const nTb = sends.filter(x => x.tb).length;
   const hi = Math.max(...grades), lo = Math.min(...grades), max = Math.max(...Object.values(count));
   let rows = "";
   for (let g = hi; g >= lo; g--) {
-    const n = count[g] || 0;
-    rows += `<b>V${g}</b><div class="track hit" data-tip="${n} send${n === 1 ? "" : "s"} at V${g}">${n ? `<span style="width:${(n / max) * 100}%"></span>` : ""}</div><small>${n || ""}</small>`;
+    const n = count[g] || 0, t = tb[g] || 0, o = n - t;
+    const tip = `V${g}: ${n} send${n === 1 ? "" : "s"}${t ? `\n${o} gym & outdoor · ${t} Tension Board` : ""}`;
+    rows += `<b>V${g}</b><div class="track hit" data-tip="${esc(tip)}">${o ? `<span style="width:${(o / max) * 100}%"></span>` : ""}${t ? `<span class="tb" style="width:${(t / max) * 100}%"></span>` : ""}</div><small>${n || ""}</small>`;
   }
   // A solid base has roughly twice as many sends at each grade as the one above it.
   let tip = "";
@@ -2875,11 +2895,14 @@ function pyramidCard(weeks) {
     if (above && here < 2 * above) { tip = `Build your base at <b>V${g}</b>: ${here} send${here === 1 ? "" : "s"} vs ${above} at V${g + 1}. Around ${2 * above} gives a solid platform to push V${hi + 1}.`; break; }
   }
   if (!tip && hi > lo) tip = `Solid pyramid: each grade has at least double the sends of the one above. Time to project V${hi + 1}.`;
+  const tbTop = nTb ? Math.max(...sends.filter(x => x.tb).map(x => x.g)) : null;
+  const label = Object.keys(count).sort((a, b) => b - a).map(g => `V${g}: ${count[g]}${tb[g] ? ` (${tb[g]} Tension Board)` : ""}`).join(", ");
   return `<section class="card">
     <h3>Grade pyramid</h3>
     <p class="hint" style="margin-top:2px">${grades.length} send${grades.length === 1 ? "" : "s"} by grade.</p>
     ${chips}
-    <div class="chartwrap"><div class="pyr" role="img" aria-label="${esc(Object.entries(count).sort((a, b) => b[0] - a[0]).map(([g, n]) => `V${g}: ${n}`).join(", "))}">${rows}</div><div class="ctip" hidden></div></div>
+    <div class="legend2"><span><i style="background:var(--c-climb)"></i>Gym & outdoor <b>${grades.length - nTb}</b></span><span><i style="background:var(--c-tb)"></i>Tension Board <b>${nTb}</b>${tbTop != null ? ` · top V${tbTop}` : ""}</span></div>
+    <div class="chartwrap"><div class="pyr" role="img" aria-label="${esc(label)}">${rows}</div><div class="ctip" hidden></div></div>
     ${tip ? `<p class="hint" style="margin-top:10px">${tip}</p>` : ""}
   </section>`;
 }
@@ -3549,7 +3572,7 @@ const checkLabel = k => [checkSummary(db.checkin[k] || {}), db.bw[k] ? `${db.bw[
    Load warnings
    ========================================================= */
 
-const FINGER_HEAVY = ["s-limit", "s-board", "s-campus", "s-bumps"];
+const FINGER_HEAVY = ["s-limit", "s-board", "s-tension", "s-campus", "s-bumps"];
 const isHard = e => catOf(e) === "Fingers" || catOf(e) === "Climbing power" || FINGER_HEAVY.includes(e.ex);
 const hardDay = k => (db.plan[k] || []).some(isHard);
 

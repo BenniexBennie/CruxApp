@@ -13,7 +13,7 @@ On iPhone, open it in Safari, tap Share, then **Add to Home Screen**.
   - Track lifting time, a daily check-in (fingers, skin, energy) and load warnings.
   - Switch to the Month calendar for an overview. Bodyweight is logged in the check-in.
 - **Plan tab:** goals, habits (quit, cut back or build: yes/no or a count, logged right there), repeatable sessions (shareable by link) and boulder projects.
-- **Data tab:** training time per week, V grades, a grade pyramid, exercise progress (weight with reps, reps, total reps or % of bodyweight), personal records, bodyweight and check-in averages.
+- **Data tab:** training time per week, V grades, a grade pyramid (Tension Board sends in their own color), exercise progress (weight with reps, reps, total reps or % of bodyweight), personal records, bodyweight and check-in averages.
 - **Library:** your exercises by category. Categories include Yoga. Weights are in lb, edges in mm, distance in miles and elevation in feet.
 - **Timer:** ⏱ in any exercise opens a rest countdown, hang repeaters, or a yoga timer (timed poses or a session, with a soft chime).
 

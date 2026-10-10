@@ -387,3 +387,40 @@ test("yoga: a category to log, counted in training time, with a yoga timer", asy
   assert.equal(await page.evaluate(() => weekTime(mondayOf(new Date())).cardio), 0);
   assert.deepEqual(page.errors, []);
 });
+
+test("Tension Board sessions log sends that show apart in the grade pyramid", async () => {
+  const page = await openApp();
+  const ex = await page.evaluate(() => findEx("s-tension"));
+  assert.equal(ex.name, "Tension Board session");
+  assert.equal(ex.cat, "Climbing");
+  await seed(page, [[-2, "s-limit", { grades: [5, 4, 4], done: true }], [0, "s-tension"]]);
+  const k = await today(page);
+  // Log two Tension Board sends with the grade buttons.
+  await page.click(`#day-${k} [data-act=entry] >> text=Tension Board session`);
+  assert.ok(await page.isVisible("#gradeBtns"), "grade buttons on a Tension Board session");
+  assert.ok(await page.isVisible("#sendsWrap"), "notable sends box too");
+  await page.click("#gradeBtns button >> text=V5");
+  await page.click("#gradeBtns button >> text=V6");
+  await page.click("#entryForm button.primary[type=submit]");
+  await page.click(".tabs [data-tab=data]");
+  const card = page.locator("#view-data section:has-text('Grade pyramid')");
+  const text = await card.innerText();
+  assert.match(text, /Gym & outdoor 3/);
+  assert.match(text, /Tension Board 2 · top V6/);
+  // V5 has one of each: two segments, the Tension Board one marked.
+  const v5 = card.locator(".track").nth(1);
+  assert.equal(await v5.locator("span").count(), 2);
+  assert.equal(await v5.locator("span.tb").count(), 1);
+  assert.match(await v5.getAttribute("data-tip"), /1 gym & outdoor · 1 Tension Board/);
+  assert.match(await card.locator(".pyr").getAttribute("aria-label"), /V6: 1 \(1 Tension Board\)/);
+  assert.deepEqual(page.errors, []);
+});
+
+test("older saved data gets the Tension Board session", async () => {
+  const ctxPage = await openApp();
+  const v = await ctxPage.evaluate(() => {
+    const d = clone(db); d.v = 14; d.exercises = d.exercises.filter(e => e.id !== "s-tension");
+    const n = normalize(d); return [n.v, n.exercises.some(e => e.id === "s-tension")];
+  });
+  assert.deepEqual(v, [15, true]);
+});
